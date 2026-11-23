@@ -153,13 +153,15 @@ export function createParcoursTimelineBar({ quantumBase, getState }) {
         }
         const photosByStop = new Map();
         for (const slot of photoSlots(tl)) {
-            const entry = photosByStop.get(slot.stop);
+            // Photo en chemin : son propre repère, à son arrêt.
+            const key = slot.route ? `route:${slot.order}` : slot.stop;
+            const entry = photosByStop.get(key);
             if (entry) entry.count++;
-            else photosByStop.set(slot.stop, { fromQ: slot.fromQ, count: 1 });
+            else photosByStop.set(key, { fromQ: slot.fromQ, count: 1, route: !!slot.route, stop: slot.stop });
         }
-        for (const [index, { fromQ, count }] of photosByStop) {
+        for (const { fromQ, count, route, stop } of photosByStop.values()) {
             const photos = count === 1 ? t('1 photo') : t('${n} photos', { n: count });
-            push(fromQ, 'photo', photos + ' · ' + stopLabel(tl.stops[index]));
+            push(fromQ, 'photo', photos + ' · ' + (route ? t('en chemin') : stopLabel(tl.stops[stop])));
         }
         return marks;
     }

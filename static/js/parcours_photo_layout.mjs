@@ -21,6 +21,7 @@
 // (tests/js/parcours_photo_layout.test.mjs).
 
 import { IMAGE_EFFECT_EASINGS, cubicBezier, effectTransform } from './images_render.mjs';
+import { legPauses } from './parcours_timeline.mjs';
 
 export const PHOTO_ASPECTS = Object.freeze(['original', '1:1', '4:3', '3:4', '16:9']);
 export const PHOTO_FOCUS_RANGE = Object.freeze([0, 100]);
@@ -161,6 +162,9 @@ export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
     duration: 1.5,
     max_per_stop: 4,
     overflow: 'share',
+    // Photos prises en chemin, rattachées à aucune étape : montrées à leur
+    // position, le géocacheur s'y arrête (routePhotos, legPauses).
+    en_route: false,
     caption: '{legende}',
 });
 
@@ -188,6 +192,7 @@ export function normalizePhotoDisplay(raw) {
         duration: Math.round(numberIn(o.duration, PHOTO_DURATION_RANGE, d.duration) * 10) / 10,
         max_per_stop: Math.round(numberIn(o.max_per_stop, PHOTO_MAX_PER_STOP_RANGE, d.max_per_stop)),
         overflow: choice('overflow', PHOTO_OVERFLOWS),
+        en_route: flag('en_route'),
         caption: caption !== null && caption.length <= PHOTO_CAPTION_TEMPLATE_MAX ? caption : d.caption,
     };
 }
@@ -235,10 +240,12 @@ export function photoCaptionText(template, values = {}) {
 export const PHOTO_LEAD_Q = 2;
 export const PHOTO_FADE_Q = 2;
 
-// Créneaux des photos de la chronologie, dans l'ordre d'affichage :
-// [{ photoId, stop (index dans `stops`), day, order, k (rang dans l'étape),
-// fromQ, toQ }]. Une photo est montrée de fromQ à toQ, puis s'efface en
-// PHOTO_FADE_Q quanta (la suivante de l'étape entre à toQ).
+// Créneaux des photos de la chronologie, dans l'ordre d'affichage (fromQ
+// croissant) : [{ photoId, stop (index dans `stops`, null en chemin), day,
+// order, k (rang dans l'étape), fromQ, toQ }]. Une photo est montrée de
+// fromQ à toQ, puis s'efface en PHOTO_FADE_Q quanta (la suivante de l'étape
+// entre à toQ). Photo en chemin : `route`, `leg` (index dans `legs`) et
+// `at` ([lon, lat], où le géocacheur s'arrête) — son créneau est l'arrêt.
 const slotsCache = new WeakMap();
 export function photoSlots(timeline) {
     if (!timeline || typeof timeline !== 'object') return [];
@@ -249,9 +256,20 @@ export function photoSlots(timeline) {
         const photos = Array.isArray(stop.photos) ? stop.photos : [];
         photos.forEach((photoId, k) => {
             const fromQ = stop.q + PHOTO_LEAD_Q + k * stop.photoQ;
-            slots.push({ photoId, stop: i, day: stop.day, order: slots.length, k, fromQ, toQ: fromQ + stop.photoQ });
+            slots.push({ photoId, stop: i, day: stop.day, order: 0, k, fromQ, toQ: fromQ + stop.photoQ });
         });
     });
+    (timeline.legs || []).forEach((leg, li) => {
+        for (const pause of legPauses(leg)) {
+            const photo = leg.photos[pause.k];
+            slots.push({
+                photoId: pause.id, stop: null, route: true, leg: li, at: [photo.lon, photo.lat],
+                day: timeline.stops?.[leg.from]?.day ?? null, order: 0, k: 0, fromQ: pause.fromQ, toQ: pause.toQ,
+            });
+        }
+    });
+    slots.sort((a, b) => a.fromQ - b.fromQ);
+    slots.forEach((slot, order) => { slot.order = order; });
     slotsCache.set(timeline, slots);
     return slots;
 }
@@ -329,6 +347,7 @@ function insideScreen(p, width, height) {
 // Cartes à dessiner à la position `qf` du moteur. `view` :
 //   width, height  — canevas en px réels ; ratio — px réels par px CSS ;
 //   stopPixel(i)   — position à l'écran de l'étape i ([x, y] px réels) ;
+//   pointPixel([lon, lat]) — idem pour un point (photo en chemin) ;
 //   aspectOf(id)   — proportions de la photo montrée (photoAspect) ;
 //   captionOf(slot) — légende déjà composée ('' : aucune).
 // Retour : { cards: [{ photoId, slot, x, y, w, h, frame, scale, rotation,
@@ -415,7 +434,8 @@ export function photoFrameAt(timeline, qf, display, view) {
         const last = pile[pile.length - 1];
         if (qf < first.fromQ) break;
         if (!display.pin && qf > last.toQ + PHOTO_FADE_Q) continue;
-        const stop = view.stopPixel?.(first.stop) || null;
+        // Repère de la pile : l'étape, ou le point d'arrêt d'une photo en chemin.
+        const stop = (first.route ? view.pointPixel?.(first.at) : view.stopPixel?.(first.stop)) || null;
         const cards = pile.map(cardOf);
         // Pose de chaque photo pendant son affichage : seule à côté de
         // l'étape (ou à l'ancre), ou dans la pile.
@@ -441,7 +461,7 @@ export function photoFrameAt(timeline, qf, display, view) {
         // Vignette : grand côté pinPx, sur le côté de l'étape le plus libre
         // (pinDirection), en petite pile.
         const pinOf = (k) => {
-            const [dx, dy] = pinDirection(timeline, first.stop);
+            const [dx, dy] = first.route ? PIN_DIRECTIONS[0] : pinDirection(timeline, first.stop);
             const half = pinPx * (0.5 + PIN_SPREAD);
             const p = stop || [width / 2, height / 2];
             const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
@@ -535,7 +555,8 @@ function onScreen(card, width, height) {
     return card.x + r > 0 && card.y + r > 0 && card.x - r < width && card.y - r < height;
 }
 
-// Photos regroupées par étape (créneaux contigus d'une même étape).
+// Photos regroupées par étape (créneaux contigus d'une même étape) ; une
+// photo en chemin a sa pile à elle (son propre point d'arrêt).
 const pilesCache = new WeakMap();
 function photoPiles(timeline) {
     const cached = pilesCache.get(timeline);
@@ -543,7 +564,7 @@ function photoPiles(timeline) {
     const piles = [];
     for (const slot of photoSlots(timeline)) {
         const last = piles[piles.length - 1];
-        if (last && last[0].stop === slot.stop) last.push(slot);
+        if (last && !slot.route && !last[0].route && last[0].stop === slot.stop) last.push(slot);
         else piles.push([slot]);
     }
     pilesCache.set(timeline, piles);

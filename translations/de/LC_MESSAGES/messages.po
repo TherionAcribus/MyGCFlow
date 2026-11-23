@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-23 15:00+0100\n"
+"POT-Creation-Date: 2026-11-23 15:20+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -759,7 +759,7 @@ msgstr "Deaktiviert"
 msgid "Archivée"
 msgstr "Archiviert"
 
-#: settings_manager.py:3115
+#: settings_manager.py:3116
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -768,45 +768,45 @@ msgstr ""
 "Der Name „%(name)s“ enthält kein verwendbares Zeichen (mindestens ein "
 "Buchstabe oder eine Ziffer ist erforderlich)"
 
-#: blueprints/profiles.py:607 settings_manager.py:3155 settings_manager.py:3232
-#: settings_manager.py:3284
+#: blueprints/profiles.py:607 settings_manager.py:3156 settings_manager.py:3233
+#: settings_manager.py:3285
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Design „%(name)s“ nicht gefunden"
 
-#: settings_manager.py:3176
+#: settings_manager.py:3177
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "Kein Design mit der UUID gefunden: %(uid)s"
 
-#: settings_manager.py:3212 settings_manager.py:3237
+#: settings_manager.py:3213 settings_manager.py:3238
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "Ein Design mit dem Namen „%(name)s“ existiert bereits"
 
-#: settings_manager.py:3249
+#: settings_manager.py:3250
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Quelldesign „%(name)s“ nicht gefunden"
 
-#: settings_manager.py:3265
+#: settings_manager.py:3266
 msgid "Mode de thème inconnu"
 msgstr "Unbekannter Design-Modus"
 
-#: settings_manager.py:3268
+#: settings_manager.py:3269
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "Das Design „%(name)s“ gehört bereits zu diesem Modus"
 
-#: settings_manager.py:3460
+#: settings_manager.py:3461
 msgid "Payload invalide"
 msgstr "Ungültige Nutzdaten"
 
-#: settings_manager.py:3463
+#: settings_manager.py:3464
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Ungültige Designdatei (Kennung fehlt)"
 
-#: settings_manager.py:3467
+#: settings_manager.py:3468
 msgid "Section 'profile' manquante"
 msgstr "Abschnitt „profile“ fehlt"
 
@@ -921,7 +921,7 @@ msgid "Confirmer"
 msgstr "Bestätigen"
 
 #: blueprints/core.py:231 static/js/notifications.js:448
-#: static/js/parcours_photos_panel.mjs:933
+#: static/js/parcours_photos_panel.mjs:940
 #: static/js/stats_page_card_actions.js:45
 #: static/js/stats_page_dashboard.js:721 static/js/stats_page_links.js:219
 #: static/js/stats_page_links.js:267 static/js/stats_page_video.js:75
@@ -2866,8 +2866,8 @@ msgstr "Pro Tag des Zeitraums"
 msgid "Par km² (densité)"
 msgstr "Pro km² (Dichte)"
 
-#: static/js/chart_labels.mjs:313 static/js/parcours_photos_panel.mjs:580
-#: static/js/parcours_photos_panel.mjs:786
+#: static/js/chart_labels.mjs:313 static/js/parcours_photos_panel.mjs:581
+#: static/js/parcours_photos_panel.mjs:793
 #: static/js/parcours_tracks_panel.mjs:86 templates/menu_flash.html:68
 #: templates/menu_flash_disappear.html:49 templates/menu_flash_dnf.html:56
 #: templates/menu_flash_dnf.html:125
@@ -4893,8 +4893,8 @@ msgstr "Dieses Bild wird endgültig aus der Bibliothek gelöscht."
 #: static/js/images_ui.js:1107 static/js/images_ui.js:1153
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
 #: static/js/parcours_list.mjs:168 static/js/parcours_list.mjs:327
-#: static/js/parcours_photos_panel.mjs:605
-#: static/js/parcours_photos_panel.mjs:612 static/js/parcours_plan.mjs:416
+#: static/js/parcours_photos_panel.mjs:606
+#: static/js/parcours_photos_panel.mjs:613 static/js/parcours_plan.mjs:416
 #: static/js/parcours_plan.mjs:423 static/js/profiles.js:978
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
@@ -6219,8 +6219,8 @@ msgstr "Aktiv, wenn eigene Caches angezeigt werden"
 msgid "Arrêtez la lecture avant d’ajuster le parcours."
 msgstr "Beenden Sie die Wiedergabe, bevor Sie die Tour anpassen."
 
-#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:446
-#: static/js/parcours_data.js:1021 static/js/parcours_photos_panel.mjs:1055
+#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:448
+#: static/js/parcours_data.js:1026 static/js/parcours_photos_panel.mjs:1063
 #: static/js/parcours_playback_ui.mjs:109 static/js/parcours_upload.mjs:120
 #: static/js/parcours_upload.mjs:134 static/js/parcours_upload.mjs:164
 #: templates/_app_header.html:29 templates/_app_header.html:31
@@ -6275,43 +6275,43 @@ msgstr "${count} Cache-Seiten hinzugefügt oder aktualisiert."
 msgid "Compléter depuis geocaching.com"
 msgstr "Von geocaching.com ergänzen"
 
-#: static/js/parcours_data.js:446
+#: static/js/parcours_data.js:448
 msgid "Le parcours s’ouvrira à la fin de l’animation."
 msgstr "Die Tour wird nach dem Ende der Animation geöffnet."
 
-#: static/js/parcours_data.js:810 static/js/parcours_stops_panel.mjs:584
+#: static/js/parcours_data.js:815 static/js/parcours_stops_panel.mjs:584
 msgid "Lire depuis ici"
 msgstr "Ab hier abspielen"
 
-#: static/js/parcours_data.js:838 static/js/parcours_list.mjs:113
+#: static/js/parcours_data.js:843 static/js/parcours_list.mjs:113
 #: static/js/parcours_list.mjs:454
 msgid "Une journée"
 msgstr "Ein Tag"
 
-#: static/js/parcours_data.js:838 static/js/parcours_list.mjs:113
+#: static/js/parcours_data.js:843 static/js/parcours_list.mjs:113
 #: static/js/parcours_list.mjs:454 static/js/parcours_stops_panel.mjs:141
 #: static/js/stats_panels.js:1534 static/js/ui.js:8729
 #, python-brace-format
 msgid "${n} jours"
 msgstr "${n} Tage"
 
-#: static/js/parcours_data.js:910
+#: static/js/parcours_data.js:915
 msgid "Reprendre le suivi"
 msgstr "Verfolgung fortsetzen"
 
-#: static/js/parcours_data.js:969
+#: static/js/parcours_data.js:974
 msgid "Itinéraires © contributeurs OpenStreetMap, openrouteservice"
 msgstr "Routen © OpenStreetMap-Mitwirkende, openrouteservice"
 
-#: static/js/parcours_data.js:970
+#: static/js/parcours_data.js:975
 msgid "Itinéraires © contributeurs OpenStreetMap, FOSSGIS"
 msgstr "Routen © OpenStreetMap-Mitwirkende, FOSSGIS"
 
-#: static/js/parcours_data.js:1021
+#: static/js/parcours_data.js:1026
 msgid "Les réglages de lecture n’ont pas pu être enregistrés."
 msgstr "Wiedergabeeinstellungen konnten nicht gespeichert werden."
 
-#: static/js/parcours_data.js:1270
+#: static/js/parcours_data.js:1276
 msgid ""
 "Annuler tous les ajustements de ce parcours (ordre, heures, journées, "
 "exclusions) ? Les lieux posés sont gardés."
@@ -6319,15 +6319,15 @@ msgstr ""
 "Alle Anpassungen dieser Tour rückgängig machen (Reihenfolge, Uhrzeiten, "
 "Tage, Ausschlüsse)? Gesetzte Orte bleiben erhalten."
 
-#: static/js/parcours_data.js:1271
+#: static/js/parcours_data.js:1277
 msgid "Annuler les ajustements"
 msgstr "Anpassungen rückgängig machen"
 
-#: static/js/parcours_data.js:1274
+#: static/js/parcours_data.js:1280
 msgid "Tout annuler"
 msgstr "Alles rückgängig machen"
 
-#: static/js/parcours_data.js:1350
+#: static/js/parcours_data.js:1356
 #, python-brace-format
 msgid "Ouvrir la photo ${name} dans l’onglet Photos"
 msgstr "Foto ${name} im Tab Fotos öffnen"
@@ -6488,14 +6488,14 @@ msgid "déplacée du ${day}"
 msgstr "verschoben vom ${day}"
 
 #: static/js/parcours_labels.mjs:180 static/js/parcours_list.mjs:192
-#: static/js/parcours_photos_panel.mjs:447
-#: static/js/parcours_photos_panel.mjs:719 static/js/parcours_tbar.mjs:187
+#: static/js/parcours_photos_panel.mjs:448
+#: static/js/parcours_photos_panel.mjs:726 static/js/parcours_tbar.mjs:190
 msgid "1 photo"
 msgstr "1 Foto"
 
 #: static/js/parcours_labels.mjs:180 static/js/parcours_list.mjs:192
-#: static/js/parcours_list.mjs:316 static/js/parcours_photos_panel.mjs:447
-#: static/js/parcours_photos_panel.mjs:719 static/js/parcours_tbar.mjs:187
+#: static/js/parcours_list.mjs:316 static/js/parcours_photos_panel.mjs:448
+#: static/js/parcours_photos_panel.mjs:726 static/js/parcours_tbar.mjs:190
 #, python-brace-format
 msgid "${n} photos"
 msgstr "${n} Fotos"
@@ -6741,249 +6741,268 @@ msgstr "Parcours kürzen"
 msgid "Raccourcir quand même"
 msgstr "Trotzdem kürzen"
 
-#: static/js/parcours_photos_panel.mjs:141
-#: static/js/parcours_photos_panel.mjs:338
+#: static/js/parcours_photos_panel.mjs:142
+#: static/js/parcours_photos_panel.mjs:339
 #, python-brace-format
 msgid "${camera} (n° ${serial})"
 msgstr "${camera} (Nr. ${serial})"
 
-#: static/js/parcours_photos_panel.mjs:312
+#: static/js/parcours_photos_panel.mjs:313
 msgid "Aucune photo pour ce parcours."
 msgstr "Keine Fotos für diese Tour."
 
-#: static/js/parcours_photos_panel.mjs:314
+#: static/js/parcours_photos_panel.mjs:315
 msgid "1 photo, rattachée à une étape"
 msgstr "1 Foto, einer Station zugeordnet"
 
-#: static/js/parcours_photos_panel.mjs:314
+#: static/js/parcours_photos_panel.mjs:315
 msgid "1 photo, non rattachée"
 msgstr "1 Foto, nicht zugeordnet"
 
-#: static/js/parcours_photos_panel.mjs:317
+#: static/js/parcours_photos_panel.mjs:318
 #, python-brace-format
 msgid "${n} photos, 1 rattachée à une étape"
 msgstr "${n} Fotos, 1 einer Station zugeordnet"
 
-#: static/js/parcours_photos_panel.mjs:318
+#: static/js/parcours_photos_panel.mjs:319
 #, python-brace-format
 msgid "${n} photos, ${linked} rattachées à une étape"
 msgstr "${n} Fotos, ${linked} einer Station zugeordnet"
 
-#: static/js/parcours_photos_panel.mjs:352
+#: static/js/parcours_photos_panel.mjs:353
 #, python-brace-format
 msgid "${camera} : horloge recalée (${offset})"
 msgstr "${camera}: Uhr korrigiert (${offset})"
 
-#: static/js/parcours_photos_panel.mjs:354
+#: static/js/parcours_photos_panel.mjs:355
 #, python-brace-format
 msgid "${camera} : horloge recalée comme le modèle (${offset})"
 msgstr "${camera}: Uhr wie das Modell korrigiert (${offset})"
 
-#: static/js/parcours_photos_panel.mjs:355
+#: static/js/parcours_photos_panel.mjs:356
 #, python-brace-format
 msgid "${camera} : horloge non recalée, heures ignorées"
 msgstr "${camera}: Uhr nicht korrigiert, Uhrzeiten ignoriert"
 
-#: static/js/parcours_photos_panel.mjs:363
+#: static/js/parcours_photos_panel.mjs:364
 msgid "Décalage en minutes"
 msgstr "Korrektur in Minuten"
 
-#: static/js/parcours_photos_panel.mjs:366
+#: static/js/parcours_photos_panel.mjs:367
 #: static/js/parcours_stops_panel.mjs:702
 msgid "min"
 msgstr "Min."
 
-#: static/js/parcours_photos_panel.mjs:368
-#: static/js/parcours_photos_panel.mjs:922
+#: static/js/parcours_photos_panel.mjs:369
+#: static/js/parcours_photos_panel.mjs:929
 msgid "Recaler l’horloge"
 msgstr "Uhr korrigieren"
 
-#: static/js/parcours_photos_panel.mjs:375
+#: static/js/parcours_photos_panel.mjs:376
 msgid "Oublier ce recalage"
 msgstr "Diese Korrektur verwerfen"
 
-#: static/js/parcours_photos_panel.mjs:405
+#: static/js/parcours_photos_panel.mjs:406
 #, python-brace-format
 msgid "Toutes (${n})"
 msgstr "Alle (${n})"
 
-#: static/js/parcours_photos_panel.mjs:406
+#: static/js/parcours_photos_panel.mjs:407
 #, python-brace-format
 msgid "Non rattachées (${n})"
 msgstr "Nicht zugeordnet (${n})"
 
-#: static/js/parcours_photos_panel.mjs:407
+#: static/js/parcours_photos_panel.mjs:408
 #, python-brace-format
 msgid "Favorites (${n})"
 msgstr "Favoriten (${n})"
 
-#: static/js/parcours_photos_panel.mjs:408
+#: static/js/parcours_photos_panel.mjs:409
 #, python-brace-format
 msgid "Masquées (${n})"
 msgstr "Ausgeblendet (${n})"
 
-#: static/js/parcours_photos_panel.mjs:428
+#: static/js/parcours_photos_panel.mjs:429
 msgid "Aucune photo dans ce filtre."
 msgstr "Keine Fotos in diesem Filter."
 
-#: static/js/parcours_photos_panel.mjs:444
+#: static/js/parcours_photos_panel.mjs:445
 msgid "Sans date"
 msgstr "Ohne Datum"
 
-#: static/js/parcours_photos_panel.mjs:452
-#: static/js/parcours_photos_panel.mjs:615
+#: static/js/parcours_photos_panel.mjs:453
 #: static/js/parcours_photos_panel.mjs:616
+#: static/js/parcours_photos_panel.mjs:617
 msgid "Désélectionner"
 msgstr "Auswahl aufheben"
 
-#: static/js/parcours_photos_panel.mjs:452
+#: static/js/parcours_photos_panel.mjs:453
 msgid "Tout sélectionner"
 msgstr "Alle auswählen"
 
-#: static/js/parcours_photos_panel.mjs:454
+#: static/js/parcours_photos_panel.mjs:455
 #, python-brace-format
 msgid "Désélectionner les photos de : ${day}"
 msgstr "Auswahl der Fotos aufheben: ${day}"
 
-#: static/js/parcours_photos_panel.mjs:455
+#: static/js/parcours_photos_panel.mjs:456
 #, python-brace-format
 msgid "Sélectionner les photos de : ${day}"
 msgstr "Fotos auswählen: ${day}"
 
-#: static/js/parcours_photos_panel.mjs:472
+#: static/js/parcours_photos_panel.mjs:473
 msgid "masquée dans la vidéo"
 msgstr "im Video ausgeblendet"
 
-#: static/js/parcours_photos_panel.mjs:473
+#: static/js/parcours_photos_panel.mjs:474
 msgid "étape choisie retirée du parcours"
 msgstr "gewählte Station aus der Tour entfernt"
 
-#: static/js/parcours_photos_panel.mjs:474
+#: static/js/parcours_photos_panel.mjs:475
 msgid "sélectionnée"
 msgstr "ausgewählt"
 
-#: static/js/parcours_photos_panel.mjs:475
+#: static/js/parcours_photos_panel.mjs:476
 msgid "favorite"
 msgstr "Favorit"
 
-#: static/js/parcours_photos_panel.mjs:569
+#: static/js/parcours_photos_panel.mjs:570
 msgid "1 photo sélectionnée"
 msgstr "1 Foto ausgewählt"
 
-#: static/js/parcours_photos_panel.mjs:569
+#: static/js/parcours_photos_panel.mjs:570
 #, python-brace-format
 msgid "${n} photos sélectionnées"
 msgstr "${n} Fotos ausgewählt"
 
-#: static/js/parcours_photos_panel.mjs:573
+#: static/js/parcours_photos_panel.mjs:574
 msgid "Rattacher les photos sélectionnées à une étape"
 msgstr "Ausgewählte Fotos einer Etappe zuordnen"
 
-#: static/js/parcours_photos_panel.mjs:576
+#: static/js/parcours_photos_panel.mjs:577
 msgid "Rattacher à…"
 msgstr "Zuordnen zu …"
 
-#: static/js/parcours_photos_panel.mjs:589
+#: static/js/parcours_photos_panel.mjs:590
 msgid "Masquer les photos sélectionnées dans la vidéo"
 msgstr "Ausgewählte Fotos im Video ausblenden"
 
-#: static/js/parcours_photos_panel.mjs:589
+#: static/js/parcours_photos_panel.mjs:590
 msgid "Masquer"
 msgstr "Ausblenden"
 
-#: static/js/parcours_photos_panel.mjs:593
+#: static/js/parcours_photos_panel.mjs:594
 msgid "Montrer les photos sélectionnées dans la vidéo"
 msgstr "Ausgewählte Fotos im Video zeigen"
 
-#: static/js/parcours_photos_panel.mjs:593
+#: static/js/parcours_photos_panel.mjs:594
 msgid "Montrer"
 msgstr "Zeigen"
 
-#: static/js/parcours_photos_panel.mjs:601
+#: static/js/parcours_photos_panel.mjs:602
 msgid "Retirer les photos sélectionnées des favorites"
 msgstr "Ausgewählte Fotos aus den Favoriten entfernen"
 
-#: static/js/parcours_photos_panel.mjs:601
+#: static/js/parcours_photos_panel.mjs:602
 msgid "Mettre les photos sélectionnées en favorites"
 msgstr "Ausgewählte Fotos als Favoriten markieren"
 
-#: static/js/parcours_photos_panel.mjs:602
+#: static/js/parcours_photos_panel.mjs:603
 msgid "Retirer des favorites"
 msgstr "Aus Favoriten entfernen"
 
-#: static/js/parcours_photos_panel.mjs:602
+#: static/js/parcours_photos_panel.mjs:603
 msgid "Favorites"
 msgstr "Favoriten"
 
-#: static/js/parcours_photos_panel.mjs:605
+#: static/js/parcours_photos_panel.mjs:606
 msgid "Supprimer les photos sélectionnées"
 msgstr "Ausgewählte Fotos löschen"
 
-#: static/js/parcours_photos_panel.mjs:608
+#: static/js/parcours_photos_panel.mjs:609
 msgid "Supprimer la photo sélectionnée du parcours ?"
 msgstr "Das ausgewählte Foto aus der Tour löschen?"
 
-#: static/js/parcours_photos_panel.mjs:608
+#: static/js/parcours_photos_panel.mjs:609
 #, python-brace-format
 msgid "Supprimer les ${n} photos sélectionnées du parcours ?"
 msgstr "Die ${n} ausgewählten Fotos aus der Tour löschen?"
 
-#: static/js/parcours_photos_panel.mjs:609
+#: static/js/parcours_photos_panel.mjs:610
 msgid "Supprimer les photos"
 msgstr "Fotos löschen"
 
-#: static/js/parcours_photos_panel.mjs:700
+#: static/js/parcours_photos_panel.mjs:701
+msgid ""
+"Prises loin de toute étape, elles sont montrées en chemin. Faites de "
+"chaque endroit un lieu du parcours pour qu’il devienne une étape."
+msgstr ""
+"Fern von jeder Etappe aufgenommen, werden sie unterwegs gezeigt. Machen "
+"Sie jeden Ort zu einem Ort der Tour, damit er eine Etappe wird."
+
+#: static/js/parcours_photos_panel.mjs:702
+#: templates/menu_photos_parcours.html:55
+msgid ""
+"Prises loin de toute étape, elles ne sont pas montrées dans la vidéo. "
+"Faites de chaque endroit un lieu du parcours : ses photos s'y "
+"rattacheront."
+msgstr ""
+"Fern von jeder Etappe aufgenommen, werden sie im Video nicht gezeigt. "
+"Machen Sie jede Stelle zu einem Ort der Tour: Ihre Fotos werden ihm "
+"zugeordnet."
+
+#: static/js/parcours_photos_panel.mjs:707
 msgid "1 photo hors des étapes"
 msgstr "1 Foto abseits der Etappen"
 
-#: static/js/parcours_photos_panel.mjs:700
+#: static/js/parcours_photos_panel.mjs:707
 #, python-brace-format
 msgid "${n} photos hors des étapes"
 msgstr "${n} Fotos abseits der Etappen"
 
-#: static/js/parcours_photos_panel.mjs:729
+#: static/js/parcours_photos_panel.mjs:736
 msgid "Nom du lieu (facultatif)"
 msgstr "Name des Orts (optional)"
 
-#: static/js/parcours_photos_panel.mjs:730
+#: static/js/parcours_photos_panel.mjs:737
 msgid "Nom du lieu"
 msgstr "Name des Orts"
 
-#: static/js/parcours_photos_panel.mjs:732
+#: static/js/parcours_photos_panel.mjs:739
 #: static/js/parcours_stops_panel.mjs:480
 msgid "Créer ce lieu"
 msgstr "Diesen Ort anlegen"
 
-#: static/js/parcours_photos_panel.mjs:765
+#: static/js/parcours_photos_panel.mjs:772
 msgid "sans heure"
 msgstr "ohne Uhrzeit"
 
-#: static/js/parcours_photos_panel.mjs:766
+#: static/js/parcours_photos_panel.mjs:773
 msgid "géolocalisée"
 msgstr "mit Standort"
 
-#: static/js/parcours_photos_panel.mjs:766
+#: static/js/parcours_photos_panel.mjs:773
 msgid "située par la trace GPS"
 msgstr "per GPS-Track verortet"
 
-#: static/js/parcours_photos_panel.mjs:766
+#: static/js/parcours_photos_panel.mjs:773
 msgid "sans position"
 msgstr "ohne Standort"
 
-#: static/js/parcours_photos_panel.mjs:773
+#: static/js/parcours_photos_panel.mjs:780
 msgid "Étape"
 msgstr "Station"
 
-#: static/js/parcours_photos_panel.mjs:786
+#: static/js/parcours_photos_panel.mjs:793
 #, python-brace-format
 msgid "Automatique : ${label}"
 msgstr "Automatisch: ${label}"
 
-#: static/js/parcours_photos_panel.mjs:791
+#: static/js/parcours_photos_panel.mjs:798
 msgid "Étape retirée du parcours"
 msgstr "Station aus der Tour entfernt"
 
-#: static/js/parcours_photos_panel.mjs:805
+#: static/js/parcours_photos_panel.mjs:812
 msgid ""
 "L’étape choisie pour cette photo a été retirée du parcours : la photo "
 "suit le rattachement automatique, et retrouvera son étape si elle "
@@ -6993,7 +7012,7 @@ msgstr ""
 "Foto folgt der automatischen Zuordnung und kehrt zu seiner Station "
 "zurück, sobald sie wieder dabei ist."
 
-#: static/js/parcours_photos_panel.mjs:811
+#: static/js/parcours_photos_panel.mjs:818
 msgid ""
 "Prise hors des heures couvertes par les traces GPS du parcours : elle n’y"
 " est pas située."
@@ -7001,7 +7020,7 @@ msgstr ""
 "Außerhalb der von den GPS-Tracks der Tour abgedeckten Zeiten aufgenommen:"
 " Es wird dort nicht verortet."
 
-#: static/js/parcours_photos_panel.mjs:812
+#: static/js/parcours_photos_panel.mjs:819
 msgid ""
 "Recalez l’horloge de cet appareil : la trace GPS du parcours situera la "
 "photo."
@@ -7009,40 +7028,40 @@ msgstr ""
 "Korrigieren Sie die Uhr dieser Kamera: Der GPS-Track der Tour verortet "
 "dann das Foto."
 
-#: static/js/parcours_photos_panel.mjs:834
+#: static/js/parcours_photos_panel.mjs:841
 msgid "Caler l’horloge de l’appareil sur cette étape"
 msgstr "Kamerauhr an dieser Station ausrichten"
 
-#: static/js/parcours_photos_panel.mjs:835
+#: static/js/parcours_photos_panel.mjs:842
 #, python-brace-format
 msgid "Caler l’horloge sur l’étape (${offset})"
 msgstr "Uhr an der Station ausrichten (${offset})"
 
-#: static/js/parcours_photos_panel.mjs:845
+#: static/js/parcours_photos_panel.mjs:852
 msgid "Caler l’horloge de l’appareil sur une photo prise au même moment"
 msgstr "Die Uhr der Kamera nach einem gleichzeitig aufgenommenen Foto stellen"
 
-#: static/js/parcours_photos_panel.mjs:846
+#: static/js/parcours_photos_panel.mjs:853
 msgid "Caler sur une autre photo"
 msgstr "Nach einem anderen Foto stellen"
 
-#: static/js/parcours_photos_panel.mjs:859
+#: static/js/parcours_photos_panel.mjs:866
 msgid "Ouvrir l’aperçu en pause sur cette photo"
 msgstr "Vorschau pausiert bei diesem Foto öffnen"
 
-#: static/js/parcours_photos_panel.mjs:859
+#: static/js/parcours_photos_panel.mjs:866
 #: static/js/parcours_stops_panel.mjs:907 static/js/stats_page_cards.js:636
 #: static/js/stats_page_links.js:277 static/js/stats_page_links.js:325
 #: static/js/stats_page_links.js:344
 msgid "Voir sur la carte"
 msgstr "Auf der Karte anzeigen"
 
-#: static/js/parcours_photos_panel.mjs:863
-#: static/js/parcours_photos_panel.mjs:864
+#: static/js/parcours_photos_panel.mjs:870
+#: static/js/parcours_photos_panel.mjs:871
 msgid "Supprimer la photo"
 msgstr "Foto löschen"
 
-#: static/js/parcours_photos_panel.mjs:886
+#: static/js/parcours_photos_panel.mjs:893
 msgid ""
 "Choisissez une photo prise au même moment par un téléphone ou par un "
 "appareil déjà recalé :"
@@ -7050,16 +7069,16 @@ msgstr ""
 "Wählen Sie ein Foto, das im selben Moment mit einem Handy oder einer "
 "bereits korrigierten Kamera aufgenommen wurde:"
 
-#: static/js/parcours_photos_panel.mjs:890
+#: static/js/parcours_photos_panel.mjs:897
 msgid "Photos de référence"
 msgstr "Referenzfotos"
 
-#: static/js/parcours_photos_panel.mjs:920
+#: static/js/parcours_photos_panel.mjs:927
 #, python-brace-format
 msgid "Décalage de ${camera} : ${offset}"
 msgstr "Abweichung von ${camera}: ${offset}"
 
-#: static/js/parcours_photos_panel.mjs:976
+#: static/js/parcours_photos_panel.mjs:983
 msgid ""
 "Photo entière : choisissez un cadrage ou un zoom pour n’en garder qu’une "
 "partie."
@@ -7067,11 +7086,11 @@ msgstr ""
 "Ganzes Foto: Wählen Sie einen Ausschnitt oder einen Zoom, um nur einen "
 "Teil zu behalten."
 
-#: static/js/parcours_photos_panel.mjs:977
+#: static/js/parcours_photos_panel.mjs:984
 msgid "Glissez sur la photo pour choisir la partie gardée."
 msgstr "Ziehen Sie auf dem Foto, um den behaltenen Teil zu wählen."
 
-#: static/js/parcours_photos_panel.mjs:1055
+#: static/js/parcours_photos_panel.mjs:1063
 #: static/js/parcours_playback_ui.mjs:109 static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Die Einstellung wird am Ende der Animation angewendet."
@@ -7419,6 +7438,10 @@ msgstr "Gesamt: ${text}"
 #, python-brace-format
 msgid "DNF : ${code}"
 msgstr "DNF: ${code}"
+
+#: static/js/parcours_tbar.mjs:191
+msgid "en chemin"
+msgstr "unterwegs"
 
 #: static/js/parcours_tracks_panel.mjs:62
 msgid "1 étape calée sur une trace"
@@ -18980,16 +19003,6 @@ msgstr "Strg+Klick oder Umschalt+Klick: mehrere Fotos auswählen."
 msgid "Photos sélectionnées"
 msgstr "Ausgewählte Fotos"
 
-#: templates/menu_photos_parcours.html:55
-msgid ""
-"Prises loin de toute étape, elles ne sont pas montrées dans la vidéo. "
-"Faites de chaque endroit un lieu du parcours : ses photos s'y "
-"rattacheront."
-msgstr ""
-"Fern von jeder Etappe aufgenommen, werden sie im Video nicht gezeigt. "
-"Machen Sie jede Stelle zu einem Ort der Tour: Ihre Fotos werden ihm "
-"zugeordnet."
-
 #: templates/menu_photos_parcours.html:66
 msgid "Partie gardée de la photo : glisser, ou flèches du clavier"
 msgstr "Behaltener Teil des Fotos: ziehen oder Pfeiltasten"
@@ -19011,7 +19024,7 @@ msgstr ""
 "kommen über der Obergrenze pro Etappe zuerst."
 
 #: templates/menu_photos_parcours.html:85
-#: templates/menu_photos_parcours.html:250 templates/menu_zones.html:165
+#: templates/menu_photos_parcours.html:255 templates/menu_zones.html:165
 #: templates/stats_page.html:695
 msgid "Légende"
 msgstr "Legende"
@@ -19150,27 +19163,41 @@ msgstr "Leichte Neigung"
 msgid "Zoom lent pendant l'affichage"
 msgstr "Langsamer Zoom während der Anzeige"
 
+#: templates/menu_photos_parcours.html:230
+msgid "Montrer les photos prises en chemin"
+msgstr "Unterwegs aufgenommene Fotos zeigen"
+
 #: templates/menu_photos_parcours.html:231
+msgid ""
+"Prises entre deux étapes, loin de l'une comme de l'autre (photo "
+"géolocalisée, ou située par la trace) : le géocacheur s'arrête à leur "
+"position le temps de les montrer."
+msgstr ""
+"Zwischen zwei Etappen aufgenommen, fern von beiden (Foto mit Standort "
+"oder per Track verortet): Der Geocacher hält an ihrer Position an, "
+"solange sie gezeigt werden."
+
+#: templates/menu_photos_parcours.html:236
 msgid "Durée par photo (s)"
 msgstr "Dauer pro Foto (s)"
 
-#: templates/menu_photos_parcours.html:235
+#: templates/menu_photos_parcours.html:240
 msgid "Plafond par étape"
 msgstr "Obergrenze pro Etappe"
 
-#: templates/menu_photos_parcours.html:241
+#: templates/menu_photos_parcours.html:246
 msgid "Au-delà du plafond"
 msgstr "Über der Obergrenze"
 
-#: templates/menu_photos_parcours.html:243
+#: templates/menu_photos_parcours.html:248
 msgid "Montrer toutes les photos, plus brièvement"
 msgstr "Alle Fotos zeigen, dafür kürzer"
 
-#: templates/menu_photos_parcours.html:244
+#: templates/menu_photos_parcours.html:249
 msgid "Ne montrer que les premières"
 msgstr "Nur die ersten zeigen"
 
-#: templates/menu_photos_parcours.html:246
+#: templates/menu_photos_parcours.html:251
 msgid ""
 "Au-delà de ce nombre de photos, une étape ne s'allonge plus : ses photos "
 "se partagent ce temps, ou seules les premières prises sont montrées."
@@ -19178,7 +19205,7 @@ msgstr ""
 "Ab dieser Anzahl Fotos wird eine Etappe nicht länger: Ihre Fotos teilen "
 "sich diese Zeit, oder nur die zuerst aufgenommenen werden gezeigt."
 
-#: templates/menu_photos_parcours.html:254
+#: templates/menu_photos_parcours.html:259
 #, python-brace-format
 msgid ""
 "Balises : {legende} (celle de la photo), {etape}, {heure}, {jour}, "
@@ -19187,7 +19214,7 @@ msgstr ""
 "Platzhalter: {legende} (die des Fotos), {etape}, {heure}, {jour}, {date}."
 " Leer: keine Bildunterschrift."
 
-#: templates/menu_photos_parcours.html:260
+#: templates/menu_photos_parcours.html:265
 msgid "Voir la première photo sur la carte"
 msgstr "Erstes Foto auf der Karte zeigen"
 

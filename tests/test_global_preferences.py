@@ -653,6 +653,12 @@ class SettingsApiTests(unittest.TestCase):
                          ('strip', 600, 2.3, 'postcard', True, '{etape} · {heure}', 4, 'share'))
         self.client.put('/api/settings', json={'parcours_photo_display': {'overflow': 'first'}})
         self.assertEqual(self.client.get('/api/settings').get_json()['parcours_photo_display']['overflow'], 'first')
+        # Photos en chemin : booléen, désactivé par défaut.
+        self.assertFalse(photo['en_route'])
+        self.client.put('/api/settings', json={'parcours_photo_display': {'en_route': 'oui'}})
+        self.assertFalse(self.client.get('/api/settings').get_json()['parcours_photo_display']['en_route'])
+        self.client.put('/api/settings', json={'parcours_photo_display': {'en_route': True}})
+        self.assertTrue(self.client.get('/api/settings').get_json()['parcours_photo_display']['en_route'])
         self.client.put('/api/settings', json={'parcours_photo_display': {
             'effect': 'zoom', 'stack': True, 'pin': True, 'pin_size': 7}})
         photo = self.client.get('/api/settings').get_json()['parcours_photo_display']

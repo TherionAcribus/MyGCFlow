@@ -139,6 +139,7 @@ let inputs = null;            // entrées du parcours ouvert, ajustements compri
 let ordered = null;           // reconstruction du parcours ouvert (photos comprises)
 let photoMatches = new Map(); // rattachement de chaque photo (parcours_photos.mjs)
 let photoPositions = new Map(); // photos sans GPS situées par la trace : id → { lon, lat }
+let photoByLeg = new Map();    // photos en chemin : « from>to » → [{ id, lon, lat }] (routePhotos)
 let photoByStop = new Map();  // clé d'étape → photos, dans l'ordre d'affichage
 let trackMatches = new Map(); // clé d'étape → passage d'une trace (parcours_tracks.mjs)
 let legPaths = new Map();     // « from>to » → vrai chemin [[lon, lat], ...]
@@ -442,6 +443,8 @@ function applyTimeline({ fit = false } = {}) {
     timeline = ordered ? buildParcoursTimeline(ordered, {
         pace: playback.pace,
         photosByStop: photoDisplay.layout === PHOTO_LAYOUT_NONE ? null : photoByStop,
+        // Photos en chemin : seulement si l'option est cochée.
+        photosByLeg: photoDisplay.layout !== PHOTO_LAYOUT_NONE && photoDisplay.en_route ? photoByLeg : null,
         photoFavorites: favoritePhotoIds(inputs?.photos),
         legPaths,
         // Cartons d'ouverture (vue d'ensemble puis descente) et final :
@@ -1065,6 +1068,7 @@ function rebuild() {
     legPaths = new Map([...routing.effects().paths, ...result.legPaths]);
     utcOffset = result.utcOffset;
     photoPositions = result.photoPositions;
+    photoByLeg = result.byLeg;
 }
 
 

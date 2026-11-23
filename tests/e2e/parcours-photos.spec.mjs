@@ -242,6 +242,68 @@ test('appareil sans GPS recalé : situé par la trace, rattaché à l’étape o
   expect(errors).toEqual([]);
 });
 
+test('photos en chemin : le géocacheur s’arrête à la position de la photo le temps de la montrer', async ({ page, request }) => {
+  // Appareil recalé sur 09:50 UTC : situé par la trace entre GCPAR01 et
+  // GCPAR02, à ~350 m de toute étape — rattaché à rien.
+  const errors = collectErrors(page);
+  const parcours = await createWeekend(request);
+  expect((await request.patch(`/api/parcours/${parcours.id}`, { data: { utc_offset_minutes: 120 } })).ok()).toBeTruthy();
+  const trace = path.join(HERE, 'fixtures', 'parcours-trace.gpx');
+  expect((await request.post(`/api/parcours/${parcours.id}/tracks`, {
+    multipart: { track: { name: 'trace.gpx', mimeType: 'application/gpx+xml', buffer: readFileSync(trace) } },
+  })).ok()).toBeTruthy();
+  expect((await request.put(`/api/parcours/${parcours.id}/cameras`,
+    { data: { camera: 'Canon EOS 80D', offsetMinutes: -1210 } })).ok()).toBeTruthy();
+  const sent = await request.post(`/api/parcours/${parcours.id}/photos`, {
+    multipart: { photo: { name: 'appareil.jpg', mimeType: 'image/jpeg', buffer: readFileSync(files[1]) } },
+  });
+  const { photo } = await sent.json();
+  await openReady(page);
+  await openPhotosTab(page);
+  const state = await snapshot(page);
+  expect(state.photos[0]).toMatchObject({ match: { key: null, source: null } });
+  expect(state.photos[0].trackPosition).not.toBeNull();
+  // Option coupée (défaut) : pas de créneau, proposée comme lieu.
+  expect(state.photoSlots).toEqual([]);
+  await expect(page.locator('#parcoursPhotoPlacesHint')).toContainText('pas montrées dans la vidéo');
+  const before = state.timeline.quanta;
+
+  // Option cochée : un créneau en chemin, sur le trajet GCPAR01 → GCPAR02.
+  await page.locator('#parcoursPhotoEnRoute').check();
+  await expect.poll(async () => (await page.request.get('/api/settings').then((r) => r.json()))
+    .parcours_photo_display.en_route).toBe(true);
+  await expect.poll(async () => (await snapshot(page)).photoSlots.length).toBe(1);
+  const after = await snapshot(page);
+  const [slot] = after.photoSlots;
+  expect(slot).toMatchObject({ photoId: photo.id, route: true, stop: null });
+  expect(after.timeline.quanta).toBe(before + 15);
+  await expect(page.locator('#parcoursPhotoPlacesHint')).toContainText('montrées en chemin');
+
+  // En lecture : arrêté au point de la photo pendant tout le créneau, la
+  // carte postale peinte ; reparti après.
+  await page.locator('#btnQuickPreview').click();
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(true));
+  await expect.poll(async () =>
+    page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('paused');
+  const seek = (q) => page.evaluate(async (target) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(2000, 0, 1 + target)), q);
+  const headAt = async (q) => {
+    await seek(q);
+    return (await snapshot(page)).head;
+  };
+  for (const q of [Math.ceil(slot.fromQ) + 1, Math.floor(slot.toQ) - 1]) {
+    const head = await headAt(q);
+    expect(head.lon).toBeCloseTo(slot.at[0], 6);
+    expect(head.lat).toBeCloseTo(slot.at[1], 6);
+  }
+  await seek(Math.ceil(slot.fromQ) + 5);
+  await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => c.photoId)).toContain(photo.id);
+  const later = await headAt(Math.floor(slot.toQ) + 4);
+  expect(Math.abs(later.lon - slot.at[0]) + Math.abs(later.lat - slot.at[1])).toBeGreaterThan(1e-5);
+  await page.locator('#btnQuickStop').click();
+  expect(errors).toEqual([]);
+});
+
 test('recalage par une paire : la photo du téléphone prise au même moment donne le décalage', async ({ page, request }) => {
   const errors = collectErrors(page);
   const parcours = await createWeekend(request);

@@ -982,6 +982,7 @@ envoyée entière à chaque changement :
 | `ken_burns` | zoom lent (+ 8 %) pendant l'affichage : `false` |
 | `duration`, `max_per_stop` | 1,5 s par photo (0,5-6), 4 photos au plus en temps cumulé par étape (1-12) |
 | `overflow` | au-delà du plafond : `share` (toutes, chacune plus brève), `first` (les favorites puis les premières prises, à leur durée entière, montrées dans l'ordre de prise de vue ; les suivantes n'ont pas de créneau, donc ni pile, ni vignette, ni repère sur la barre) |
+| `en_route` | photos prises en chemin (voir ci-dessous) : `false` |
 | `caption` | gabarit `{legende}`, `{etape}`, `{heure}`, `{jour}`, `{date}` (120 caractères ; vide : pas de légende) |
 
 - **Chronologie** : `photoSlots` (créneaux : arrivée + 2 quanta, puis une
@@ -1018,6 +1019,32 @@ envoyée entière à chaque changement :
   sur la carte ») : ouvre l'aperçu en pause (`startPausedPreview`) et saute
   au créneau de la photo (`seekAnimationToDate`) — pour régler l'affichage
   sans rejouer le parcours.
+
+### Photos en chemin (option `en_route`)
+
+Choix du § 14 : une photo rattachée à rien n'est pas montrée — l'option,
+coupée par défaut, revient dessus pour celles prises ENTRE deux étapes
+(paysages, belvédères). Sélection (`routePhotos`, parcours_photos.mjs) :
+géolocalisées (EXIF ou trace), à heure de confiance, non masquées, sans
+étape ; chacune va au trajet de sa journée dont la fenêtre [départ de A,
+arrivée en B] contient son heure (45 min de marge ; à égalité, le trajet
+le plus proche) — avant la première étape ou après la dernière : aucune.
+
+Chronologie (`buildParcoursTimeline`, option `photosByLeg`) : chaque
+trajet de jour porte ses photos (`leg.photos` : fraction de distance `f`
+et point du trajet le plus proche, triées par f ; même plafond et même
+dépassement qu'une étape) et s'allonge de leur temps d'écran. Le
+géocacheur s'ARRÊTE au point de chaque photo le temps de la montrer
+(`legPauses` : l'avancement `legTime` exclut les arrêts, l'adoucissement
+du trajet est gardé) ; l'heure affichée passe par celle de la photo
+(`legClock`). En durée imposée, l'arrêt est un plancher, comme les photos
+d'une étape. Créneaux (`photoSlots`) : `route`, `leg`, `at` (point
+d'arrêt), `stop: null`, fusionnés par fromQ ; chacun a sa pile, ancrée au
+point (`view.pointPixel`) — vignette laissée sur la carte, trait, légende
+(`{etape}` vide) comme les autres ; repère « en chemin » sur la barre de
+chronologie. Elles restent proposées comme lieux (le texte de la carte
+« photos hors des étapes » le dit selon l'option). Exemple e2e : « photos
+en chemin » de `parcours-photos.spec.mjs`.
 
 ### Lieux proposés (lot 10)
 

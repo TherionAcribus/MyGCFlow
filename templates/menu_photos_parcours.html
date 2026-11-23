@@ -51,7 +51,7 @@
                         <!-- Photos hors des étapes : lieux proposés (lot 10) -->
                         <div id="parcoursPhotoPlaces" class="mt-3" hidden>
                             <div id="parcoursPhotoPlacesTitle" class="fw-medium small mb-1"></div>
-                            <div class="form-hint text-muted mb-2">
+                            <div id="parcoursPhotoPlacesHint" class="form-hint text-muted mb-2">
                                 {{ _("Prises loin de toute étape, elles ne sont pas montrées dans la vidéo. Faites de chaque endroit un lieu du parcours : ses photos s'y rattacheront.") }}
                             </div>
                             <div id="parcoursPhotoPlaceList" class="d-grid gap-2"></div>
@@ -224,6 +224,11 @@
                         <label class="form-check mb-2">
                             <input type="checkbox" id="parcoursPhotoKenBurns" class="form-check-input">
                             <span class="form-check-label">{{ _("Zoom lent pendant l'affichage") }}</span>
+                        </label>
+                        <label class="form-check mb-2">
+                            <input type="checkbox" id="parcoursPhotoEnRoute" class="form-check-input">
+                            <span class="form-check-label">{{ _("Montrer les photos prises en chemin") }}</span>
+                            <span class="form-hint text-muted">{{ _("Prises entre deux étapes, loin de l'une comme de l'autre (photo géolocalisée, ou située par la trace) : le géocacheur s'arrête à leur position le temps de les montrer.") }}</span>
                         </label>
 
                         <div class="row g-2 mb-2">

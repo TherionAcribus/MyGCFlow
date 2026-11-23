@@ -39,6 +39,7 @@ import {
     photoClock,
     photoTimeTrusted,
     photosByStop,
+    routePhotos,
     withTrackPositions,
 } from './parcours_photos.mjs';
 
@@ -394,8 +395,8 @@ export function trackLegPaths(reconstructed, matches, tracks) {
 }
 
 // Reconstruction complète, traces et photos comprises : { ordered, matches
-// (photos), byStop, trackMatches, legPaths, utcOffset, photoPositions
-// (photos situées par la trace) }. `legHints` : durées des itinéraires
+// (photos), byStop, byLeg (photos en chemin), trackMatches, legPaths,
+// utcOffset, photoPositions (photos situées par la trace) }. `legHints` : durées des itinéraires
 // calculés (lot 6), passées à chaque reconstruction.
 export function reconstructWithEvidence(inputs, options = null, { legHints = null } = {}) {
     const photos = Array.isArray(inputs?.photos) ? inputs.photos : [];
@@ -423,6 +424,8 @@ export function reconstructWithEvidence(inputs, options = null, { legHints = nul
         ordered,
         matches,
         byStop: photosByStop(placed, matches, offsets),
+        // Photos rattachées à rien, prises en chemin (option `en_route`).
+        byLeg: routePhotos(ordered, placed, matches, offsets),
         trackMatches,
         legPaths: trackLegPaths(ordered, trackMatches, tracks),
         utcOffset,

@@ -22,10 +22,12 @@ import {
     photoTimeTrusted,
     photosByStop,
     reconstructWithPhotos,
+    routePhotos,
     suggestPhotoPlaces,
 } from '../../static/js/parcours_photos.mjs';
 import { REASON_PHOTO, reconstructParcours } from '../../static/js/parcours_reconstruct.mjs';
-import { buildParcoursTimeline } from '../../static/js/parcours_timeline.mjs';
+import { buildParcoursTimeline, headAt, legPauses, stateAt } from '../../static/js/parcours_timeline.mjs';
+import { photoSlots } from '../../static/js/parcours_photo_layout.mjs';
 
 const DEG_PER_100M = 0.1 / (111.195 * Math.cos(45 * Math.PI / 180));
 const at = (x) => 5 + x * DEG_PER_100M;
@@ -264,6 +266,56 @@ test('grille : regroupée par journée (heure corrigée), filtres non rattachée
     assert.deepEqual(photoGridGroups(starred, matches, offsets, PHOTO_FILTER_FAVORITE).map((g) => g.ids), [[5], [4]]);
     assert.deepEqual([...favoritePhotoIds(starred)], [4, 5]);
     assert.deepEqual(photoGridGroups([], matches), []);
+});
+
+test('photos en chemin : au trajet de leur heure, arrêt du géocacheur, créneaux à leur place', () => {
+    // A (x=0), B (x=10), C (x=20) : visites estimées dans la journée.
+    const ordered = reconstructParcours({ days: DAYS });
+    const [a, b] = ordered.days[0].stops;
+    const leave = a.arrivalMin + (a.visitMin || 0);
+    const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(Math.round(min % 60)).padStart(2, '0')}`;
+    const mid = (leave + b.arrivalMin) / 2;
+    const photos = [
+        photo(1, { lat: 45.002, lon: at(5), takenAt: `2025-07-12T${hhmm(mid)}:00` }),   // entre A et B, à ~220 m du trajet
+        photo(2, { lat: 45, lon: at(10.3), takenAt: `2025-07-12T${hhmm(mid)}:00` }),    // sur B : rattachée, pas en chemin
+        photo(3, { lat: 45.002, lon: at(5), takenAt: `2025-07-12T${hhmm(mid)}:00`, hidden: true }),
+        photo(4, { lat: 45.002, lon: at(5), takenAt: '2025-07-12T05:00:00' }),           // avant la première étape
+        photo(5, { camera: 'Nikon', takenAt: `2025-07-12T${hhmm(mid)}:00` }),            // sans position
+    ];
+    const matches = matchPhotos(ordered, photos);
+    const byLeg = routePhotos(ordered, photos, matches);
+    assert.deepEqual([...byLeg.keys()], ['A>B']);
+    assert.deepEqual(byLeg.get('A>B').map((r) => r.id), [1]);
+
+    // Chronologie : le trajet A>B s'allonge d'une photo (15 quanta) et le
+    // géocacheur s'arrête à mi-chemin le temps de la montrer.
+    const plain = buildParcoursTimeline(ordered);
+    const tl = buildParcoursTimeline(ordered, { photosByLeg: byLeg });
+    const leg = tl.legs[0];
+    assert.equal((leg.endQ - leg.startQ) - (plain.legs[0].endQ - plain.legs[0].startQ), 15);
+    assert.ok(Math.abs(leg.photos[0].f - 0.5) < 1e-6, String(leg.photos[0].f));
+    assert.ok(Math.abs(leg.photos[0].lon - at(5)) < 1e-9);
+    const [pause] = legPauses(leg);
+    assert.ok(Math.abs(pause.toQ - pause.fromQ - 15) < 1e-9);
+    const during = [pause.fromQ + 1, pause.fromQ + 7, pause.toQ - 0.5].map((q) => headAt(tl, q).lon);
+    assert.ok(during.every((lon) => Math.abs(lon - at(5)) < 1e-9), JSON.stringify(during));
+    assert.ok(headAt(tl, pause.fromQ - 2).lon < at(5) && headAt(tl, pause.toQ + 2).lon > at(5));
+    assert.ok(Math.abs(headAt(tl, leg.endQ - 1e-6).lon - at(10)) < 1e-4);
+    // L'heure affichée passe par celle de la photo pendant l'arrêt.
+    assert.ok(Math.abs(stateAt(tl, pause.fromQ + 7).minutes - Math.round(mid)) < 1e-6,
+        String(stateAt(tl, pause.fromQ + 7).minutes));
+    // Créneau : sur l'arrêt, avant les photos de B, à la position de l'arrêt.
+    const slots = photoSlots(buildParcoursTimeline(ordered, { photosByLeg: byLeg, photosByStop: new Map([['B', [2]]]) }));
+    assert.deepEqual(slots.map((s) => [s.photoId, s.route ?? false, s.order]), [[1, true, 0], [2, false, 1]]);
+    assert.equal(slots[0].stop, null);
+    assert.ok(Math.abs(slots[0].at[0] - at(5)) < 1e-9);
+    // Durée imposée : l'arrêt est un contenu à lire (plancher, comme les
+    // photos d'une étape) — en quanta de 50 ms il en garde plus que ses 15
+    // naturels, le trajet absorbe la compression ; il reste dans le trajet.
+    const squeezed = buildParcoursTimeline(ordered, { photosByLeg: byLeg, timing: { msPerDay: 50, fixedTotal: true } });
+    const [squeezedPause] = legPauses(squeezed.legs[0]);
+    assert.ok(squeezedPause.toQ - squeezedPause.fromQ > 15, String(squeezedPause.toQ - squeezedPause.fromQ));
+    assert.ok(squeezedPause.fromQ >= squeezed.legs[0].startQ && squeezedPause.toQ <= squeezed.legs[0].endQ);
 });
 
 test('lieux proposés : photos géolocalisées hors étapes, groupées par journée et proximité', () => {

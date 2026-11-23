@@ -65,6 +65,7 @@ const PHOTO_DISPLAY_FLAGS = Object.freeze({
     pin: 'parcoursPhotoPin',
     tilt: 'parcoursPhotoTilt',
     ken_burns: 'parcoursPhotoKenBurns',
+    en_route: 'parcoursPhotoEnRoute',
 });
 
 // deps : { getState, uploads, button, fetchJson, reloadAdjustments,
@@ -629,6 +630,12 @@ export function createPhotosPanel(deps) {
         const placed = withTrackPositions(inputs?.photos || [], s().photoPositions);
         const places = suggestPhotoPlaces(placed, photoMatches, cameraOffsets(inputs?.cameras), { dates });
         box.hidden = places.length === 0;
+        const hint = el('parcoursPhotoPlacesHint');
+        if (hint) {
+            hint.textContent = deps.getPhotoDisplay().en_route
+                ? t('Prises loin de toute étape, elles sont montrées en chemin. Faites de chaque endroit un lieu du parcours pour qu’il devienne une étape.')
+                : t("Prises loin de toute étape, elles ne sont pas montrées dans la vidéo. Faites de chaque endroit un lieu du parcours : ses photos s'y rattacheront.");
+        }
         const title = el('parcoursPhotoPlacesTitle');
         if (title) {
             const n = places.reduce((sum, place) => sum + place.photoIds.length, 0);
@@ -967,6 +974,7 @@ export function createPhotosPanel(deps) {
             const timing = before.duration !== next.duration
                 || before.max_per_stop !== next.max_per_stop
                 || before.overflow !== next.overflow
+                || before.en_route !== next.en_route
                 || (before.layout === PHOTO_LAYOUT_NONE) !== (next.layout === PHOTO_LAYOUT_NONE);
             if (timing) {
                 if (deps.clockRunning()) {

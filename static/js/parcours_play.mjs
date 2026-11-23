@@ -1097,6 +1097,12 @@ export function createParcoursPlayDraw(deps) {
                 const [px, py] = projected[i] || [];
                 return Number.isFinite(px) ? [m[0] * px + m[2] * py + m[4], m[1] * px + m[3] * py + m[5]] : null;
             },
+            // Point d'arrêt d'une photo en chemin.
+            pointPixel: (at) => {
+                if (!Array.isArray(at)) return null;
+                const [px, py] = ol.proj.fromLonLat(at);
+                return [m[0] * px + m[2] * py + m[4], m[1] * px + m[3] * py + m[5]];
+            },
             aspectOf: (id) => photoAspect(photoById(id)),
             captionOf: photoCaptionFor,
         };
@@ -1109,8 +1115,9 @@ export function createParcoursPlayDraw(deps) {
         const { photoDisplay, timeline, inputs, playback } = S();
         if (!photoDisplay.caption || !timeline) return '';
         const photo = photoById(slot.photoId);
-        const stop = timeline.stops[slot.stop];
-        const day = timeline.days[stop?.day];
+        // Photo en chemin : pas d'étape ({etape} vide), sa journée.
+        const stop = slot.route ? null : timeline.stops[slot.stop];
+        const day = timeline.days[slot.route ? slot.day : stop?.day];
         const offsets = cameraOffsets(inputs?.cameras);
         const clockValue = photo && photoTimeTrusted(photo, offsets) ? photoClock(photo, offsets) : null;
         const heure = clockValue

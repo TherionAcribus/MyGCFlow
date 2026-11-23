@@ -262,6 +262,57 @@ export function photosByStop(photos, matches, offsets = new Map()) {
     return byKey;
 }
 
+// Photos « en chemin » (option `en_route` de l'affichage) : géolocalisées
+// (EXIF ou trace), à heure de confiance, non masquées et rattachées à
+// aucune étape — prises entre deux étapes, loin de l'une comme de l'autre.
+// Chacune va au trajet de sa journée dont la fenêtre [départ, arrivée]
+// contient son heure (à PHOTO_TIME_WINDOW_MIN près ; à égalité, le trajet le
+// plus proche) ; avant la première étape ou après la dernière, aucune.
+// → Map « from>to » → [{ id, lon, lat, minutes (heure de la photo) }] dans
+// l'ordre de prise de vue.
+export function routePhotos(reconstructed, photos, matches, offsets = new Map(),
+    { windowMin = PHOTO_TIME_WINDOW_MIN } = {}) {
+    const byLeg = new Map();
+    const days = new Map((reconstructed?.days || []).map((day) => [day.date, day.stops || []]));
+    const sorted = (Array.isArray(photos) ? photos : []).filter((photo) => photo && !photo.hidden
+        && hasPosition(photo) && !matches?.get?.(photo.id)?.key && photoTimeTrusted(photo, offsets))
+        .sort(byShot(offsets));
+    for (const photo of sorted) {
+        const clock = photoClock(photo, offsets);
+        const stops = clock ? days.get(clock.date) : null;
+        if (!stops || stops.length < 2) continue;
+        let best = null;
+        for (let i = 1; i < stops.length; i++) {
+            const a = stops[i - 1];
+            const b = stops[i];
+            if (!Number.isFinite(a.arrivalMin) || !Number.isFinite(b.arrivalMin)) continue;
+            const depart = a.arrivalMin + (a.visitMin || 0);
+            const gap = clock.minutes < depart ? depart - clock.minutes
+                : clock.minutes > b.arrivalMin ? clock.minutes - b.arrivalMin : 0;
+            if (gap > windowMin) continue;
+            const km = segmentDistanceKm([photo.lon, photo.lat], [a.lon, a.lat], [b.lon, b.lat]);
+            if (!best || gap < best.gap || (gap === best.gap && km < best.km)) best = { key: `${a.key}>${b.key}`, gap, km };
+        }
+        if (!best) continue;
+        if (!byLeg.has(best.key)) byLeg.set(best.key, []);
+        byLeg.get(best.key).push({ id: photo.id, lon: photo.lon, lat: photo.lat, minutes: clock.minutes });
+    }
+    return byLeg;
+}
+
+// Distance (km) d'un point [lon, lat] au segment [a, b], projection
+// équirectangulaire locale — assez juste à l'échelle d'un trajet.
+function segmentDistanceKm(p, a, b) {
+    const k = Math.cos((p[1] * Math.PI) / 180) * 111.195;
+    const ax = (a[0] - p[0]) * k;
+    const ay = (a[1] - p[1]) * 111.195;
+    const dx = (b[0] - a[0]) * k;
+    const dy = (b[1] - a[1]) * 111.195;
+    const len2 = dx * dx + dy * dy;
+    const u = len2 > 0 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2)) : 0;
+    return Math.hypot(ax + u * dx, ay + u * dy);
+}
+
 // Grille de l'onglet Photos : filtre, puis regroupement par journée (date
 // corrigée de l'appareil).
 export const PHOTO_FILTER_ALL = 'all';

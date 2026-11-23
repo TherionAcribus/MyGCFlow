@@ -132,6 +132,10 @@ function dayNumber(iso) {
 //   `photoQ` (quanta de chaque photo) quand `photosByStop` en donne ;
 //   `photoFavorites` (Set d'ids) : gardées d'abord quand le plafond ne
 //   montre que les premières (`photoOverflow: 'first'`) ;
+//   photos en chemin sur chaque trajet de jour : `photos` ([{ id, f, lon,
+//   lat }], f = fraction de distance, point le plus proche du trajet) et
+//   `photoQ`, quand `photosByLeg` (« from>to » → [{ id, lon, lat }]) en
+//   donne — le trajet s'allonge de leur temps d'écran (`legPauses`) ;
 //   vrai chemin d'un trajet : `path` ([[lon, lat], ...], extrémités
 //   comprises) et `cum` (km cumulés) quand `legPaths` (« from>to ») en donne
 //   — sa longueur remplace la distance à vol d'oiseau.
@@ -156,8 +160,8 @@ function keepFirstPhotos(ids, max, favorites) {
 }
 
 export function buildParcoursTimeline(reconstructed, {
-    pace = PACE_REGULAR, photosByStop = null, photoFavorites = null, legPaths = null, endCard = false, openCard = false,
-    options = null, timing = null,
+    pace = PACE_REGULAR, photosByStop = null, photosByLeg = null, photoFavorites = null, legPaths = null,
+    endCard = false, openCard = false, options = null, timing = null,
 } = {}) {
     const o = { ...TIMELINE_DEFAULTS, ...(options || {}) };
     const proportional = pace === PACE_PROPORTIONAL;
@@ -208,6 +212,24 @@ export function buildParcoursTimeline(reconstructed, {
                     const minutes = scheduled > 0 ? scheduled : (leg?.minutes ?? 0);
                     duration = quanta(minutes * o.propQPerMinute, o.propMinLegQ);
                 } else duration = quanta(clamp(o.legQPerSqrtKm * Math.sqrt(legKm), o.legMinQ, o.legMaxQ));
+                // Photos en chemin : un arrêt à la position de chacune (le
+                // point du trajet le plus proche), le temps de la montrer —
+                // même plafond et même règle de dépassement qu'une étape.
+                let legPhotos = [];
+                let legPhotoQ = 0;
+                const found = night ? null : photosByLeg?.get?.(`${prev.key}>${stop.key}`);
+                if (found?.length) {
+                    const ids = found.map((r) => r.id);
+                    const kept = o.photoOverflow === 'first'
+                        ? new Set(keepFirstPhotos(ids, o.maxPhotosPerStop, photoFavorites)) : null;
+                    const points = path || [[prev.lon, prev.lat], [stop.lon, stop.lat]];
+                    const along = cum || cumulativeKm(points);
+                    legPhotos = found.filter((r) => !kept || kept.has(r.id))
+                        .map((r) => ({ id: r.id, minutes: r.minutes, ...nearestAlong(points, along, [r.lon, r.lat]) }))
+                        .sort((a, b) => a.f - b.f);
+                    legPhotoQ = o.photoQ * Math.min(legPhotos.length, o.maxPhotosPerStop) / legPhotos.length;
+                    duration += legPhotoQ * legPhotos.length;
+                }
                 legs.push({
                     from: stops.length - 1,
                     to: stops.length,
@@ -217,6 +239,8 @@ export function buildParcoursTimeline(reconstructed, {
                     // Chemin d'un itinéraire (lot 6) : son mode ; d'une trace : « track ».
                     mode: night ? 'night' : (leg?.routed ? leg.mode : path ? 'track' : (leg?.mode || 'walk')),
                     night,
+                    photos: legPhotos,
+                    photoQ: legPhotoQ,
                     ...(path ? { path, cum } : {}),
                 });
                 if (night) days[dayIndex].startQ = q;
@@ -283,9 +307,17 @@ function compressTimeline(tl, timing, o) {
         const block = stop.photoQ * stop.photos.length;
         return block > 0 ? { natural: block, floor: true } : null;
     });
-    const legItems = tl.legs.map((leg) => ({ natural: leg.endQ - leg.startQ, floor: leg.night }));
+    // Trajet : son mouvement (élastique, plancher la nuit) et le bloc de ses
+    // arrêts photo (plancher, comme celui d'une étape).
+    const legBlocks = tl.legs.map((leg) => {
+        const block = (leg.photoQ || 0) * (leg.photos?.length || 0);
+        return block > 0 ? { natural: block, floor: true } : null;
+    });
+    const legItems = tl.legs.map((leg, i) => ({
+        natural: leg.endQ - leg.startQ - (legBlocks[i]?.natural || 0), floor: leg.night,
+    }));
     const all = [items.openDescent, items.intro, items.outro, items.endCard,
-        ...baseDwells, ...photoBlocks.filter(Boolean), ...legItems]
+        ...baseDwells, ...photoBlocks.filter(Boolean), ...legItems, ...legBlocks.filter(Boolean)]
         .filter((it) => it.natural > 0);
     let floorTotal = 0;
     let elasticTotal = 0;
@@ -320,8 +352,10 @@ function compressTimeline(tl, timing, o) {
         const stop = tl.stops[i];
         const leg = i > 0 ? tl.legs[i - 1] : null;
         if (leg) {
+            const legBlockQ = legBlocks[i - 1] ? allocOf(legBlocks[i - 1]) : 0;
             leg.startQ = q;
-            leg.endQ = q + allocOf(legItems[i - 1]);
+            leg.endQ = q + allocOf(legItems[i - 1]) + legBlockQ;
+            if (legBlockQ) leg.photoQ = legBlockQ / leg.photos.length;
             q = leg.endQ;
             if (leg.night) tl.days[stop.day].startQ = leg.startQ;
         }
@@ -346,6 +380,88 @@ function distanceKm(a, b) {
 
 function smoothstep(t) {
     return t * t * (3 - 2 * t);
+}
+
+// Inverse de smoothstep sur [0, 1] (forme close).
+function smoothstepInverse(y) {
+    return 0.5 - Math.sin(Math.asin(clamp(1 - 2 * y, -1, 1)) / 3);
+}
+
+// Point d'un trajet le plus proche de `p` ([lon, lat]) : { f (fraction de
+// distance, 0..1), lon, lat }. `points` : le chemin, ou [départ, arrivée] ;
+// `cum` : ses km cumulés.
+function nearestAlong(points, cum, p) {
+    if (points.length < 2) return { f: 0, lon: points[0][0], lat: points[0][1] };
+    const kx = Math.cos(p[1] * DEG) * 111.195;
+    let best = null;
+    for (let i = 0; i + 1 < points.length; i++) {
+        const ax = (points[i][0] - p[0]) * kx;
+        const ay = (points[i][1] - p[1]) * 111.195;
+        const dx = (points[i + 1][0] - points[i][0]) * kx;
+        const dy = (points[i + 1][1] - points[i][1]) * 111.195;
+        const len2 = dx * dx + dy * dy;
+        const u = len2 > 0 ? clamp(-(ax * dx + ay * dy) / len2, 0, 1) : 0;
+        const d = Math.hypot(ax + u * dx, ay + u * dy);
+        if (!best || d < best.d) best = { d, i, u };
+    }
+    const total = cum[cum.length - 1];
+    const a = points[best.i];
+    const b = points[best.i + 1];
+    const along = cum[best.i] + best.u * (cum[best.i + 1] - cum[best.i]);
+    return { f: total > 0 ? clamp(along / total, 0, 1) : 0, lon: a[0] + (b[0] - a[0]) * best.u, lat: a[1] + (b[1] - a[1]) * best.u };
+}
+
+// Arrêts photo d'un trajet (photos en chemin, `leg.photos` triées par f) :
+// [{ id, k, fromQ, toQ }]. Le géocacheur s'arrête à chaque photo — à sa
+// fraction de distance f, le temps `photoQ` — et le reste du trajet garde
+// l'adoucissement d'un trajet sans arrêt. Recalculés quand la chronologie
+// est réallouée (compressTimeline déplace startQ / endQ).
+const pausesMemo = new WeakMap();
+
+export function legPauses(leg) {
+    const photos = leg?.photos;
+    if (!photos?.length || !(leg.photoQ > 0)) return [];
+    const memo = pausesMemo.get(leg);
+    if (memo && memo.startQ === leg.startQ && memo.endQ === leg.endQ && memo.photoQ === leg.photoQ) return memo.pauses;
+    const moving = Math.max(0, leg.endQ - leg.startQ - leg.photoQ * photos.length);
+    const pauses = photos.map((photo, k) => {
+        const fromQ = leg.startQ + smoothstepInverse(photo.f) * moving + k * leg.photoQ;
+        return { id: photo.id, k, fromQ, toQ: fromQ + leg.photoQ };
+    });
+    pausesMemo.set(leg, { startQ: leg.startQ, endQ: leg.endQ, photoQ: leg.photoQ, pauses });
+    return pauses;
+}
+
+// Avancement d'un trajet à `qf` (0..1, avant adoucissement), arrêts photo
+// exclus : pendant un arrêt, il ne bouge pas.
+function legTime(leg, qf) {
+    const span = leg.endQ - leg.startQ;
+    const pauses = legPauses(leg);
+    if (!pauses.length) return clamp((qf - leg.startQ) / Math.max(1e-9, span), 0, 1);
+    let paused = 0;
+    for (const pause of pauses) paused += clamp(qf - pause.fromQ, 0, pause.toQ - pause.fromQ);
+    const moving = span - leg.photoQ * pauses.length;
+    return clamp((qf - leg.startQ - paused) / Math.max(1e-9, moving), 0, 1);
+}
+
+// Heure affichée le long d'un trajet de jour (`t` : avancement de legTime) :
+// interpolée du départ à l'arrivée, en passant par l'heure de chaque photo
+// en chemin à son arrêt (heures de confiance) — gardée entre ses voisines.
+function legClock(leg, t, depart, arrival) {
+    const knots = [[0, depart]];
+    for (const photo of leg.photos || []) {
+        if (!Number.isFinite(photo.minutes)) continue;
+        const prev = knots[knots.length - 1][1];
+        knots.push([smoothstepInverse(photo.f), clamp(photo.minutes, Math.min(prev, arrival), Math.max(prev, arrival))]);
+    }
+    knots.push([1, arrival]);
+    for (let i = 1; i < knots.length; i++) {
+        const [t1, m1] = knots[i];
+        if (t > t1 && i < knots.length - 1) continue;
+        const [t0, m0] = knots[i - 1];
+        return t1 > t0 ? m0 + (m1 - m0) * clamp((t - t0) / (t1 - t0), 0, 1) : m1;
+    }
+    return arrival;
 }
 
 function cumulativeKm(path) {
@@ -444,7 +560,7 @@ export function headAt(timeline, qf) {
     const legIndex = legIndexAt(timeline, qf);
     if (legIndex >= 0) {
         const leg = timeline.legs[legIndex];
-        const progress = smoothstep(clamp((qf - leg.startQ) / Math.max(1e-9, leg.endQ - leg.startQ), 0, 1));
+        const progress = smoothstep(legTime(leg, qf));
         const [lon, lat] = pointOnLeg(timeline, legIndex, progress);
         return { lon, lat, leg: legIndex, progress };
     }
@@ -501,7 +617,7 @@ export function stateAt(timeline, qf) {
         const leg = timeline.legs[legIndex];
         const a = stops[leg.from];
         const b = stops[leg.to];
-        const t = clamp((qf - leg.startQ) / Math.max(1e-9, leg.endQ - leg.startQ), 0, 1);
+        const t = legTime(leg, qf);
         if (leg.night) {
             // La nuit : la nouvelle journée commence, l'heure est celle de la
             // première étape du lendemain.
@@ -511,7 +627,7 @@ export function stateAt(timeline, qf) {
         } else {
             dayIndex = a.day;
             const depart = a.arrivalMin + (a.visitMin ?? 0);
-            minutes = depart + (b.arrivalMin - depart) * t;
+            minutes = legClock(leg, t, depart, b.arrivalMin);
             estimated = a.confidence !== 'anchored' || b.confidence !== 'anchored';
         }
         km = a.km + leg.km * smoothstep(t);
@@ -580,7 +696,7 @@ export function trailAt(timeline, qf) {
         else hi = mid;
     }
     const current = done < legs.length && legs[done].startQ <= qf
-        ? { leg: done, progress: smoothstep(clamp((qf - legs[done].startQ) / Math.max(1e-9, legs[done].endQ - legs[done].startQ), 0, 1)) }
+        ? { leg: done, progress: smoothstep(legTime(legs[done], qf)) }
         : null;
     return { done, current };
 }
