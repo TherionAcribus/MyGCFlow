@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-23 08:37+0100\n"
+"POT-Creation-Date: 2026-11-23 09:17+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1501,7 +1501,7 @@ msgstr ""
 msgid "Date invalide"
 msgstr ""
 
-#: blueprints/parcours.py:35 static/js/parcours_list.mjs:388
+#: blueprints/parcours.py:35 static/js/parcours_list.mjs:399
 msgid "La date de fin précède la date de début"
 msgstr ""
 
@@ -1795,7 +1795,7 @@ msgid "… et 1 autre"
 msgstr ""
 
 #: static/js/bdd.js:694 static/js/gc_logs.js:89 static/js/labs.js:730
-#: static/js/parcours_list.mjs:548
+#: static/js/parcours_list.mjs:559
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr ""
@@ -6297,7 +6297,7 @@ msgstr ""
 msgid "1 trouvaille"
 msgstr ""
 
-#: static/js/parcours_labels.mjs:196 static/js/parcours_list.mjs:536
+#: static/js/parcours_labels.mjs:196 static/js/parcours_list.mjs:547
 #: static/js/stats_page_dashboard.js:252 static/js/zone_layer.js:1273
 #: static/js/zone_layer.js:1308 static/js/zone_report_ui.js:86
 #, python-brace-format
@@ -6392,11 +6392,11 @@ msgstr ""
 msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
 msgstr ""
 
-#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:390
+#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:401
 msgid "Une journée"
 msgstr ""
 
-#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:390
+#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:401
 #: static/js/parcours_stops_panel.mjs:138 static/js/stats_panels.js:1534
 #: static/js/ui.js:8721
 #, python-brace-format
@@ -6486,31 +6486,31 @@ msgstr ""
 msgid "Créer le parcours"
 msgstr ""
 
-#: static/js/parcours_list.mjs:389
+#: static/js/parcours_list.mjs:400
 #, python-brace-format
 msgid "Un parcours couvre ${max} jours au plus"
 msgstr ""
 
-#: static/js/parcours_list.mjs:462
+#: static/js/parcours_list.mjs:473
 #, python-brace-format
 msgid "${n} lieux ou bases seront supprimés"
 msgstr ""
 
-#: static/js/parcours_list.mjs:463
+#: static/js/parcours_list.mjs:474
 #, python-brace-format
 msgid "${n} étapes retrouveront leur journée d’origine"
 msgstr ""
 
-#: static/js/parcours_list.mjs:466
+#: static/js/parcours_list.mjs:477
 #, python-brace-format
 msgid "La nouvelle plage laisse des éléments dehors : ${items}."
 msgstr ""
 
-#: static/js/parcours_list.mjs:467
+#: static/js/parcours_list.mjs:478
 msgid "Raccourcir le parcours"
 msgstr ""
 
-#: static/js/parcours_list.mjs:471
+#: static/js/parcours_list.mjs:482
 msgid "Raccourcir quand même"
 msgstr ""
 
@@ -19316,7 +19316,7 @@ msgid ""
 " Le géocacheur en prend la couleur. Aux couleurs des journées : chaque "
 "journée, nuit d'arrivée comprise, a la couleur de la palette de l'onglet "
 "Points. Les trajets estimés en pointillés se règlent dans l'onglet "
-"Données, carte « Lecture »."
+"Animation & vidéo › Dates & rythme, section « Lecture »."
 msgstr ""
 
 #: templates/menu_trail_parcours.html:47

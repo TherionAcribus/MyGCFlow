@@ -144,7 +144,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_list.mjs` | Liste des parcours (ouvrir, modifier, dupliquer, exporter, supprimer), formulaire de création/modification (import JSON, plages rétrécies avec `drop_orphans`), parcours suggérés, export GPX. Fabrique `createParcoursList` — édition en cours et suggestions y sont internes |
 | `static/js/parcours_routing_ui.mjs` | Carte « Itinéraires » : réglages (activation, fournisseur, clé ORS), calcul des routes en chaîne, cache de page, progression et « Réessayer »/« Arrêter »/« Recalculer ». Fabrique `createParcoursRouting` — `routeCache`/`routeSeq`/`routeState`/`routeRunsNow`/`routeEffectsNow` y sont internes, `computeRuns` sert la reconstruction |
 | `static/js/parcours_camera_ui.mjs` | Caméra de la lecture : suivi du géocacheur (pose pré-rendu de `parcours_camera.mjs`), vue sauvegardée/restituée, suspension quand l'utilisateur reprend la main, tuiles préchargées. Fabrique `createParcoursCamera` |
-| `static/js/parcours_playback_ui.mjs` | Carte « Lecture » : rythme, heures, caméra, tête, cartons, nuit — persiste `parcours_playback` et redessine ou reporte la chronologie. Fabrique `createParcoursPlaybackUI` |
+| `static/js/parcours_playback_ui.mjs` | Section « Lecture » (onglet Animation & vidéo) et sous-onglet « Caméra » : rythme, heures, caméra, tête, cartons, nuit — persiste `parcours_playback` et redessine ou reporte la chronologie. Fabrique `createParcoursPlaybackUI` |
 | `static/js/parcours_plan.mjs` | Plan du parcours au repos : couche `parcours` (z 1060, étapes reliées par journée, traces GPS, point provisoire de la pose), piles et éventail, lien liste ↔ carte (halo, lignes surlignées), glisser des repères (lieu, base, étape → ajustement), bulle d'actions au clic, menu « Poser un lieu / une base » au clic droit, cadrage sur l'emprise. Fabrique `createParcoursPlan` — couche, piles, éventail, survol et glisser y sont internes |
 | `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture |
 | `templates/menu_data_parcours.html` | Onglet Données |
@@ -462,8 +462,9 @@ ms bruts) et `timeline.dayStartQ`.
 
 ### Finitions (lot 7)
 
-Réglages de la carte « Lecture » de l'onglet Données, lus à chaque image :
-ils s'appliquent aussi en pleine lecture.
+Réglages de la section « Lecture » de l'onglet Animation & vidéo (sous-onglet
+« Dates & rythme » ; caméra, cadrage et géocacheur dans le sous-onglet
+« Caméra »), lus à chaque image : ils s'appliquent aussi en pleine lecture.
 
 **Caméra** (`parcours_camera.mjs`, réglage « Caméra », défaut « Suit le
 géocacheur ») :

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-23 08:37+0100\n"
+"POT-Creation-Date: 2026-11-23 09:17+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1530,7 +1530,7 @@ msgstr "The trip name is too long (%(max)s characters at most)"
 msgid "Date invalide"
 msgstr "Invalid date"
 
-#: blueprints/parcours.py:35 static/js/parcours_list.mjs:388
+#: blueprints/parcours.py:35 static/js/parcours_list.mjs:399
 msgid "La date de fin précède la date de début"
 msgstr "The end date is before the start date"
 
@@ -1832,7 +1832,7 @@ msgid "… et 1 autre"
 msgstr "… and 1 more"
 
 #: static/js/bdd.js:694 static/js/gc_logs.js:89 static/js/labs.js:730
-#: static/js/parcours_list.mjs:548
+#: static/js/parcours_list.mjs:559
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr "… and ${n} more"
@@ -6410,7 +6410,7 @@ msgstr "${n} favorites"
 msgid "1 trouvaille"
 msgstr "1 find"
 
-#: static/js/parcours_labels.mjs:196 static/js/parcours_list.mjs:536
+#: static/js/parcours_labels.mjs:196 static/js/parcours_list.mjs:547
 #: static/js/stats_page_dashboard.js:252 static/js/zone_layer.js:1273
 #: static/js/zone_layer.js:1308 static/js/zone_report_ui.js:86
 #, python-brace-format
@@ -6505,11 +6505,11 @@ msgstr "Loading…"
 msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
 msgstr "No trips yet: create one below."
 
-#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:390
+#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:401
 msgid "Une journée"
 msgstr "One day"
 
-#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:390
+#: static/js/parcours_list.mjs:103 static/js/parcours_list.mjs:401
 #: static/js/parcours_stops_panel.mjs:138 static/js/stats_panels.js:1534
 #: static/js/ui.js:8721
 #, python-brace-format
@@ -6599,31 +6599,31 @@ msgstr "New trip"
 msgid "Créer le parcours"
 msgstr "Create trip"
 
-#: static/js/parcours_list.mjs:389
+#: static/js/parcours_list.mjs:400
 #, python-brace-format
 msgid "Un parcours couvre ${max} jours au plus"
 msgstr "A trip covers ${max} days at most"
 
-#: static/js/parcours_list.mjs:462
+#: static/js/parcours_list.mjs:473
 #, python-brace-format
 msgid "${n} lieux ou bases seront supprimés"
 msgstr "${n} places or bases will be deleted"
 
-#: static/js/parcours_list.mjs:463
+#: static/js/parcours_list.mjs:474
 #, python-brace-format
 msgid "${n} étapes retrouveront leur journée d’origine"
 msgstr "${n} stops will return to their original day"
 
-#: static/js/parcours_list.mjs:466
+#: static/js/parcours_list.mjs:477
 #, python-brace-format
 msgid "La nouvelle plage laisse des éléments dehors : ${items}."
 msgstr "The new range leaves some items outside: ${items}."
 
-#: static/js/parcours_list.mjs:467
+#: static/js/parcours_list.mjs:478
 msgid "Raccourcir le parcours"
 msgstr "Shorten the parcours"
 
-#: static/js/parcours_list.mjs:471
+#: static/js/parcours_list.mjs:482
 msgid "Raccourcir quand même"
 msgstr "Shorten anyway"
 
@@ -20431,12 +20431,13 @@ msgid ""
 " Le géocacheur en prend la couleur. Aux couleurs des journées : chaque "
 "journée, nuit d'arrivée comprise, a la couleur de la palette de l'onglet "
 "Points. Les trajets estimés en pointillés se règlent dans l'onglet "
-"Données, carte « Lecture »."
+"Animation & vidéo › Dates & rythme, section « Lecture »."
 msgstr ""
 "Line drawn behind the geocacher during playback and in the video. The "
 "geocacher takes its color. In the colors of the days: each day, including"
 " the night before it, takes its color from the palette of the Points tab."
-" Dashed estimated legs are set in the Data tab, “Playback” card."
+" Dashed estimated legs are set in the Animation & video tab › Dates & "
+"rhythm, “Playback” section."
 
 #: templates/menu_trail_parcours.html:47
 msgid "Ligne du plan"
@@ -28723,4 +28724,25 @@ msgstr "Create the video"
 
 #~ msgid "Exporter le parcours"
 #~ msgstr "Export trip"
+
+#~ msgid ""
+#~ "Trait dessiné derrière le géocacheur "
+#~ "pendant la lecture et dans la "
+#~ "vidéo. Le géocacheur en prend la "
+#~ "couleur. Aux couleurs des journées : "
+#~ "chaque journée, nuit d'arrivée comprise, "
+#~ "a la couleur de la palette de "
+#~ "l'onglet Points. Les trajets estimés en"
+#~ " pointillés se règlent dans l'onglet "
+#~ "Données, carte « Lecture »."
+#~ msgstr ""
+#~ "Line drawn behind the geocacher during"
+#~ " playback and in the video. The "
+#~ "geocacher takes its color. In the "
+#~ "colors of the days: each day, "
+#~ "including the night before it, takes "
+#~ "its color from the palette of the"
+#~ " Points tab. Dashed estimated legs "
+#~ "are set in the Data tab, "
+#~ "“Playback” card."
 
