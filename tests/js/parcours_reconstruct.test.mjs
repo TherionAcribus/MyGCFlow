@@ -144,6 +144,21 @@ test('ancres (Labs) : ordre chronologique, caches insérées, heures calées', (
     assert.equal(day.diagnostics.anchors, 2);
 });
 
+test('insertion entre deux ancres à 2 km : l’étape du milieu y reste (marche puis voiture, sans saut)', () => {
+    // 1 km de chaque côté. Avec le coût de legForKm, marcher 2 × 1 km
+    // (≈ 33 min) dépassait rouler 2 km (≈ 8 min) de plus que revenir à C
+    // (≈ 17 min) : B partait en tête, à contresens.
+    const day = reconstructDay({
+        date: '2025-07-12',
+        stops: [
+            stop('A', 0, { kind: 'lab', type: 'Lab Cache', localTime: '11:00:00' }),
+            stop('B', 10),
+            stop('C', 20, { kind: 'lab', type: 'Lab Cache', localTime: '10:00:00' }),
+        ],
+    });
+    assert.deepEqual(keys(day), ['C', 'B', 'A']);
+});
+
 test('ancres et logs fiables : les deux ordres sont respectés', () => {
     const day = reconstructDay({
         date: '2025-07-12',

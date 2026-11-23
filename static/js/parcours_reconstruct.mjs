@@ -177,6 +177,22 @@ export function legForKm(km, opts = RECONSTRUCT_DEFAULTS, mode = null) {
     return { km, mode: 'car', minutes: opts.parkMin + (km * opts.carDetour / speed) * 60 };
 }
 
+// Durée de trajet servant au coût d'une insertion : à pied jusqu'à
+// walkMaxKm, puis seuls les kilomètres AU-DELÀ vont en voiture, sans
+// stationnement. Pentes décroissantes (concave) : l'inégalité triangulaire
+// tient. Avec legForKm, le saut marche → voiture la cassait (marcher 1 km :
+// 17 min ; rouler 2 km : 8) — passer entre deux étapes proches coûtait plus
+// qu'un retour lointain en voiture, et une journée sans logs semait ses
+// étapes libres à contresens entre ses ancres (vallée entière logée entre
+// deux photos à 15 min d'écart). Mesures : docs/parcours.md (2026-11-23).
+function detourMinutes(km, opts) {
+    const walkKm = Math.min(km, opts.walkMaxKm);
+    const slowKm = Math.max(0, Math.min(km, opts.carFastFromKm) - opts.walkMaxKm);
+    const fastKm = Math.max(0, km - opts.carFastFromKm);
+    return 60 * (walkKm * opts.walkDetour / opts.walkKmh
+        + slowKm * opts.carDetour / opts.carKmh + fastKm * opts.carDetour / opts.carFastKmh);
+}
+
 // Trajet estimé entre deux points [lon, lat].
 export function legEstimate(a, b, opts = RECONSTRUCT_DEFAULTS) {
     return legForKm(groundDistanceKm(a, b), opts);
@@ -237,14 +253,14 @@ function bestInsertion(path, u, dist, minK = 0) {
 
 // Insertion la moins coûteuse d'abord (une chaîne d'étapes libres s'enfile
 // de proche en proche), sans jamais réordonner le chemin existant. Coût = le
-// détour en MINUTES de trajet (à pied ou en voiture, legForKm).
+// détour en minutes de trajet, continu (detourMinutes).
 //
 // Une variante qui pénalisait aussi le dépassement du temps disponible entre
 // deux ancres a été mesurée sur un historique réel (tools/parcours_bench.mjs,
 // heures Lab masquées) : toujours moins bonne que le détour seul, même avec
 // les bornes de la journée en ancres virtuelles — retirée (docs/parcours.md).
 function insertCheapestFirst(path, free, dist, opts) {
-    const leg = (a, b) => legForKm(dist(a, b), opts).minutes;
+    const leg = (a, b) => detourMinutes(dist(a, b), opts);
     const remaining = [...free];
     while (remaining.length > 0) {
         const m = path.length;

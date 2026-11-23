@@ -1255,8 +1255,9 @@ Journée par journée, la dernière étape de la veille orientant la suivante.
 3. **Géographie** : sans ordre des logs retenu ni deux ancres, plus court
    chemin de la journée (plus proche voisin + 2-opt, `orderStops` de
    travel_trail.mjs), orienté depuis la veille. Sinon, toutes les étapes
-   mises de côté s'insèrent au moindre détour en minutes de trajet, sans
-   réordonner l'ossature.
+   mises de côté s'insèrent au moindre détour en minutes de trajet
+   (marche puis voiture, sans saut : `detourMinutes`), sans réordonner
+   l'ossature.
 
 **Heures** :
 - départ à 9 h sans ancre ;
@@ -1309,6 +1310,19 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   entre deux ancres, avec ou sans les bornes de la journée en ancres
   virtuelles) : toujours moins bonne (entre ses ancres : 36 à 43 %, erreur
   p50 6 à 10 min). Retirée.
+- **Coût du détour continu** (2026-11-23, `detourMinutes`) : l'insertion
+  comptait le détour avec `legForKm`, dont le saut marche → voiture à
+  1,5 km casse l'inégalité triangulaire (marcher 1 km : 17 min ; rouler
+  2 km : 8). Constaté sur une journée sans logs ancrée par des photos
+  (col du Vršič) : étapes de la vallée logées entre deux photos à 15 min
+  d'écart, celles du départ au milieu de la montée. Désormais : marche
+  jusqu'à 1,5 km, puis seuls les km au-delà en voiture, sans
+  stationnement (courbe concave). Heures Lab masquées, même historique
+  (199 journées, 2 231 étapes) — avant / km seuls / continu : erreur p50
+  4,4 / 5,1 / 4,2 min, p75 26,2 / 30,4 / 22,5, p90 111,5 / 111,9 / 103,3 ;
+  entre ses ancres 49,2 / 46,9 / 50,9 %. Les km seuls réparaient la
+  journée mais dégradaient les Labs : les minutes portent l'écart de
+  vitesse, seul le saut posait problème.
 - **Labs consécutives** : au même endroit, écart médian 12 s (d'où la
   visite Lab à 1 min) ; 0,2 à 1,5 km, vitesse à vol d'oiseau p50 2,5 km/h,
   visite comprise (modèle : 3,6 km/h hors visite). Au-delà de 5 km, p50
