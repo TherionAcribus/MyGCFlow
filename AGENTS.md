@@ -443,6 +443,13 @@ Autres repères :
   et le carton du jour gagne la ligne `detail` (`scene.cardText.detail`)
   — bilan `dayStats` (étapes comptées, km de la journée hors trajet de
   nuit) ; « n jours plus tard » précède la date quand `gapDays > 1`.
+  Carton d'ouverture (cartons actifs, `openCard` du build) : ~5 s en tête
+  de lecture (`openCardQ` 30 sur la vue d'ensemble + `openDescentQ` 15 de
+  descente caméra + `introQ`) — relevé `scene.openCard`/`openCardText`
+  (titre = nom du parcours), `timeline.openCardQ` borne le carton « Jour 1 »
+  qui suit ; la descente se poursuit dans la première étape à grande
+  échelle. En spec, poller `openCard → null` puis `cardText` tout de
+  suite : la fenêtre « Jour 1 » s'ouvre à `openCardQ` exactement.
   Spec « ellipse » de `parcours-finitions.spec.mjs` : base vidée
   (`POST /clear_database`) + rechargement, sinon la modale « Remplacer
   ma base » rend l'import d'une autre fixture non déterministe.

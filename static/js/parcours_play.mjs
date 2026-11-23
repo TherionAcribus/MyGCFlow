@@ -20,6 +20,7 @@ import { KIND_BASE, KIND_PLACE, CONFIDENCE_ANCHORED, isCountedStop } from './par
 import {
     HEAD_PICTOGRAM,
     dayCardAt,
+    openCardAt,
     dayStats,
     endCardAt,
     formatClock,
@@ -46,7 +47,7 @@ import { PHOTO_FADE_Q, PHOTO_LAYOUT_NONE, photoAspect, photoCaptionText, photoFr
 import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
-import { formatDay, formatKm, stopLabel, stopsCountText } from './parcours_labels.mjs';
+import { formatDay, formatKm, formatRange, stopLabel, stopsCountText } from './parcours_labels.mjs';
 import { slotLabels } from './parcours_tbar.mjs';
 import { t } from './notifications.js';
 import { CONFIG } from './init.js';
@@ -281,6 +282,7 @@ export function createParcoursPlayDraw(deps) {
         }
         // Après le géocacheur : la carte postale passe au-dessus.
         drawPhotoCards(event);
+        drawOpenCard(ctx, ratio);
         drawDayCard(ctx, ratio);
         drawEndCard(ctx, ratio);
         drawRouteCredits(ctx, ratio);
@@ -716,6 +718,23 @@ export function createParcoursPlayDraw(deps) {
         };
     }
 
+    // Carton d'ouverture, sur la vue d'ensemble en début de lecture : nom du
+    // parcours, ses dates (« 13 juil. 2025 → 20 juil. 2025 ») et son bilan —
+    // le miroir du carton final.
+    function openCardText() {
+        const { listing, selectedId, timeline } = S();
+        const item = listing.find((p) => p.id === selectedId);
+        const days = timeline?.days || [];
+        const counted = timeline?.stops?.filter(isCountedStop).length || 0;
+        const parts = [stopsCountText(counted), formatKm(timeline?.totalKm || 0)];
+        if (days.length > 1) parts.push(t('${n} journées', { n: days.length }));
+        return {
+            title: item?.name || t('Le parcours'),
+            subtitle: days.length ? formatRange(days[0].date, days[days.length - 1].date) : '',
+            detail: parts.join(' · '),
+        };
+    }
+
     // Carton final de synthèse : nom du parcours, puis « 5 étapes · 7,9 km »
     // et les journées quand il y en a plusieurs.
     function endCardText() {
@@ -778,6 +797,12 @@ export function createParcoursPlayDraw(deps) {
         const card = playback.day_cards ? dayCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
         const text = card && card.alpha > 0 ? dayCardText(card.day) : null;
         if (text) drawCard(ctx, ratio, text, card.alpha);
+    }
+
+    function drawOpenCard(ctx, ratio) {
+        const { playback, timeline, currentQ, msPerDay } = S();
+        const card = playback.day_cards ? openCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
+        if (card && card.alpha > 0) drawCard(ctx, ratio, openCardText(), card.alpha);
     }
 
     function drawEndCard(ctx, ratio) {
@@ -1042,6 +1067,7 @@ export function createParcoursPlayDraw(deps) {
         previewPhoto,
         trailOptions,
         dayCardText,
+        openCardText,
         endCardText,
     };
 }

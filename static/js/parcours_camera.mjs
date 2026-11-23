@@ -142,10 +142,13 @@ function buildTrack(timeline, size, o) {
     const ey = new Float64Array(n);
     const minLog = new Float64Array(n);
     const floor = resolutionForZoom(o.maxZoom);
+    // Carton d'ouverture : la vue d'ensemble y est visée comme à la fin —
+    // la descente vers le départ suit, à la vitesse de zoom bornée.
+    const openCardQ = timeline.openCardQ || 0;
     for (let i = 0; i < n; i++) {
         const q = i * SAMPLE_Q;
         let lat;
-        if (q > lastDepart) {
+        if (q < openCardQ || q > lastDepart) {
             tx[i] = ocx;
             ty[i] = ocy;
             ex[i] = ohx;

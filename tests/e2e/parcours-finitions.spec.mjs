@@ -89,6 +89,27 @@ test('lecture : caméra qui suit, nuit et carton du jour, pictogramme, vue rendu
   expect(errors).toEqual([]);
 });
 
+test('ouverture : carton du parcours sur la vue d’ensemble puis descente au départ', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+
+  await page.locator('#btnQuickPreview').click();
+  // Nom du parcours, dates et bilan, sur la vue d'ensemble.
+  await expect.poll(async () => (await snapshot(page)).scene.openCard?.alpha ?? 0, FAST).toBeGreaterThan(0);
+  const opening = await snapshot(page);
+  expect(opening.scene.openCardText.title).toBe('Week-end');
+  expect(opening.scene.openCardText.subtitle).toMatch(/juil\. 2025/);
+  expect(opening.scene.openCardText.detail).toMatch(/étape/);
+  const zoomedOut = opening.camera.zoom;
+
+  // Le carton s'efface : « Jour 1 » prend le relais pendant la descente de
+  // la caméra vers le départ (nettement plus serrée que la vue d'ensemble).
+  await expect.poll(async () => (await snapshot(page)).scene.openCard, FAST).toBeNull();
+  await expect.poll(async () => (await snapshot(page)).scene.cardText?.title ?? null, FAST).toBe('Jour 1');
+  await expect.poll(async () => (await snapshot(page)).camera.zoom, FAST).toBeGreaterThan(zoomedOut + 1.5);
+  expect(errors).toEqual([]);
+});
+
 test('carte déplacée pendant la lecture : la caméra la laisse, même à la fin', async ({ page }) => {
   const errors = collectErrors(page);
   await openReady(page);

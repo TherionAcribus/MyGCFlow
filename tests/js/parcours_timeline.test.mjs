@@ -24,6 +24,7 @@ import {
     legTravelMode,
     nightLevelAt,
     normalizePlayback,
+    openCardAt,
     sceneTimingOptions,
     stateAt,
     stopsInRange,
@@ -52,6 +53,33 @@ test('réglages de lecture normalisés', () => {
     assert.deepEqual(normalizePlayback({ pace: 'proportional', hours: 'slots', camera: 'fixed', framing: 'wide', day_cards: false, head: 'dot', estimated_dashed: true }),
         { pace: 'proportional', hours: 'slots', camera: 'fixed', framing: 'wide', day_cards: false, head: 'dot', estimated_dashed: true });
     assert.deepEqual(normalizePlayback({ pace: 'vite', hours: 3, camera: 'drone', framing: 'cinéma', day_cards: 'non', head: 'vélo' }), defaults);
+});
+
+test('carton d’ouverture : temps ajouté en tête, carton puis descente', () => {
+    const tl = buildParcoursTimeline(sample(), { openCard: true, endCard: true });
+    const [a] = tl.stops;
+    assert.equal(a.q, D.openCardQ + D.openDescentQ + D.introQ);
+    assert.equal(tl.openCardQ, D.openCardQ);
+    assert.equal(tl.openDescentQ, D.openDescentQ);
+    assert.equal(tl.quanta, tl.stops[2].q + D.stopQ + D.outroQ + D.endCardQ);
+    // Le carton tient sa fenêtre, en fondu aux bords.
+    assert.equal(openCardAt(tl, -1), null);
+    assert.equal(openCardAt(tl, tl.openCardQ + 1), null);
+    assert.equal(openCardAt(tl, tl.openCardQ / 2).alpha, 1);
+    assert.ok(openCardAt(tl, 0).alpha < 0.5);
+    // « Jour 1 » attend la fin du carton d'ouverture.
+    assert.equal(dayCardAt(tl, tl.openCardQ - 1), null);
+    assert.ok(dayCardAt(tl, tl.openCardQ + 1));
+    // Sans cartons : rien n'est ajouté.
+    const off = buildParcoursTimeline(sample());
+    assert.equal(off.openCardQ, 0);
+    assert.equal(off.stops[0].q, D.introQ);
+    assert.equal(openCardAt(off, 2), null);
+    // Durée imposée : le carton garde son temps écran (plancher), la
+    // descente absorbe la compression avec visites et trajets.
+    const fast = buildParcoursTimeline(sample(), { openCard: true, timing: { msPerDay: 50 } });
+    assert.ok(fast.openCardQ >= 2 * D.openCardQ - 2, `plancher du carton : ${fast.openCardQ}`);
+    assert.ok(fast.stops[0].q > fast.openCardQ);
 });
 
 test('rythme régulier : quanta d’arrivée, trajets bornés, nuit entre deux journées', () => {

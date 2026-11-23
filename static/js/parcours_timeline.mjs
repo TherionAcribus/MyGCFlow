@@ -66,6 +66,8 @@ export const PLAYBACK_DEFAULTS = Object.freeze({
 // Durées en quanta (× 100 ms à la vitesse naturelle).
 export const TIMELINE_DEFAULTS = Object.freeze({
     introQ: 5,            // avant la première étape
+    openCardQ: 30,        // carton d'ouverture sur la vue d'ensemble (cartons activés)
+    openDescentQ: 15,     // descente de la caméra vers le départ, après le carton
     outroQ: 10,           // après la dernière
     stopQ: 12,            // régulier : durée d'une étape à l'écran
     legMinQ: 4,           // régulier : trajet le plus court
@@ -124,6 +126,9 @@ function dayNumber(iso) {
 //   — sa longueur remplace la distance à vol d'oiseau.
 //   endCard : ajoute `endCardQ` quanta de clôture après l'outro, le temps
 //             d'afficher le carton final de synthèse (cartons activés).
+//   openCard : ajoute `openCardQ` + `openDescentQ` quanta d'ouverture avant
+//             l'intro — le carton d'ouverture sur la vue d'ensemble, puis la
+//             descente de la caméra vers le départ (cartons activés).
 //   timing ({ msPerDay, fixedTotal }) : sous le quantum naturel, les contenus
 //             « à lire » — photos, nuits (carton du jour), intro, outro et
 //             carton final — gardent leur durée écran naturelle, le temps
@@ -131,7 +136,7 @@ function dayNumber(iso) {
 //             `fixedTotal` (durée imposée, musique), le total de quanta est
 //             conservé ; sinon la chronologie s'allonge d'autant.
 export function buildParcoursTimeline(reconstructed, {
-    pace = PACE_REGULAR, photosByStop = null, legPaths = null, endCard = false, options = null, timing = null,
+    pace = PACE_REGULAR, photosByStop = null, legPaths = null, endCard = false, openCard = false, options = null, timing = null,
 } = {}) {
     const o = { ...TIMELINE_DEFAULTS, ...(options || {}) };
     const proportional = pace === PACE_PROPORTIONAL;
@@ -140,7 +145,9 @@ export function buildParcoursTimeline(reconstructed, {
     const days = [];
     const rawDays = Array.isArray(reconstructed?.days) ? reconstructed.days : [];
     const origin = rawDays.length ? dayNumber(rawDays[0].date) : NaN;
-    let q = o.introQ;
+    const openCardQ = openCard ? o.openCardQ : 0;
+    const openDescentQ = openCard ? o.openDescentQ : 0;
+    let q = openCardQ + openDescentQ + o.introQ;
     let km = 0;
     for (const rawDay of rawDays) {
         const dayStops = Array.isArray(rawDay?.stops) ? rawDay.stops : [];
@@ -209,7 +216,10 @@ export function buildParcoursTimeline(reconstructed, {
     }
     const quantaCount = stops.length ? q + o.outroQ + (endCard ? o.endCardQ : 0) : 0;
     return compressTimeline(
-        { quanta: quantaCount, endCardQ: endCard ? o.endCardQ : 0, stops, legs, days, totalKm: km },
+        {
+            quanta: quantaCount, endCardQ: endCard ? o.endCardQ : 0,
+            openCardQ, openDescentQ, stops, legs, days, totalKm: km,
+        },
         timing, o,
     );
 }
@@ -228,6 +238,11 @@ function compressTimeline(tl, timing, o) {
     const stretch = QUANTUM_MS / msPerDay;   // > 1 : un quantum vaut moins de 100 ms
     const floorQ = (naturalQ) => Math.max(1, Math.round(naturalQ * stretch));
     const items = {
+        // Ouverture : la descente de caméra absorbe la compression (le zoom
+        // continue simplement plus loin dans l'étape). Le carton, lui, est
+        // un prologue alloué à part — il ne fait pas rétrécir les planchers
+        // des photos, nuits et autres contenus à lire.
+        openDescent: { natural: tl.openDescentQ, elastic: true },
         intro: { natural: o.introQ, floor: true },
         outro: { natural: o.outroQ, floor: true },
         endCard: { natural: tl.endCardQ, floor: true },
@@ -243,7 +258,8 @@ function compressTimeline(tl, timing, o) {
         return block > 0 ? { natural: block, floor: true } : null;
     });
     const legItems = tl.legs.map((leg) => ({ natural: leg.endQ - leg.startQ, floor: leg.night }));
-    const all = [items.intro, items.outro, items.endCard, ...baseDwells, ...photoBlocks.filter(Boolean), ...legItems]
+    const all = [items.openDescent, items.intro, items.outro, items.endCard,
+        ...baseDwells, ...photoBlocks.filter(Boolean), ...legItems]
         .filter((it) => it.natural > 0);
     let floorTotal = 0;
     let elasticTotal = 0;
@@ -253,17 +269,26 @@ function compressTimeline(tl, timing, o) {
     }
     let floorScale = 1;
     let elasticScale = 1;
+    let openAlloc = tl.openCardQ ? Math.max(1, floorQ(tl.openCardQ)) : 0;
     if (timing.fixedTotal) {
         const budget = tl.quanta;
+        // Le prologue garde son temps de lecture, borné au quart de la vidéo
+        // en compression extrême ; il n'entre pas dans les 70 % des contenus
+        // à lire, qui gardent donc leur plancher à elles.
+        if (openAlloc) openAlloc = Math.max(1, Math.min(openAlloc, Math.floor(budget * 0.25)));
         const cap = Math.floor(budget * FLOOR_MAX_SHARE);
         if (floorTotal > cap) floorScale = cap / floorTotal;
-        const pool = Math.max(0, budget - Math.min(floorTotal, cap));
+        const pool = Math.max(0, budget - openAlloc - Math.min(floorTotal, cap));
         elasticScale = elasticTotal > 0 ? pool / elasticTotal : 0;
     }
     const allocOf = (it) => it.floor
         ? Math.max(1, Math.round(floorQ(it.natural) * floorScale))
         : Math.max(1, Math.round(it.natural * elasticScale));
-    let q = allocOf(items.intro);
+    // Le carton alloué est retenu sur la chronologie : la caméra en tient la
+    // vue d'ensemble, puis descend vers le départ (parcours_camera.mjs).
+    tl.openCardQ = openAlloc;
+    tl.openDescentQ = tl.openDescentQ ? allocOf(items.openDescent) : 0;
+    let q = tl.openCardQ + tl.openDescentQ + allocOf(items.intro);
     if (tl.days.length) tl.days[0].startQ = q;
     for (let i = 0; i < tl.stops.length; i++) {
         const stop = tl.stops[i];
@@ -624,14 +649,31 @@ export function dayCardAt(timeline, qf, options = {}) {
     for (let d = 0; d < days.length; d++) {
         const first = timeline.stops[days[d].first];
         const night = nightInto.get(days[d].first);
-        const from = night ? night.startQ + (night.endQ - night.startQ) * o.cardFromShare : 0;
+        // « Jour 1 » attend la fin du carton d'ouverture : il s'affiche
+        // pendant la descente de la caméra.
+        const from = night
+            ? night.startQ + (night.endQ - night.startQ) * o.cardFromShare
+            : (timeline.openCardQ || 0);
         const to = first.q + o.cardHoldQ;
         if (qf < from || qf > to) continue;
-        const fadeIn = night ? clamp((qf - from) / o.cardFadeQ, 0, 1) : 1;
+        const fadeIn = night || timeline.openCardQ ? clamp((qf - from) / o.cardFadeQ, 0, 1) : 1;
         const fadeOut = clamp((to - qf) / o.cardFadeQ, 0, 1);
         return { day: d, alpha: Math.min(fadeIn, fadeOut) };
     }
     return null;
+}
+
+// Carton d'ouverture à `qf` : { alpha } ou null. Il occupe les `openCardQ`
+// premiers quanta — vue d'ensemble du parcours, avant la descente de la
+// caméra — temps ajouté quand la chronologie est construite avec `openCard`
+// (cartons activés).
+export function openCardAt(timeline, qf, options = {}) {
+    const to = timeline?.openCardQ || 0;
+    if (!(to > 0) || qf < 0 || qf > to) return null;
+    const o = { ...SCENE_DEFAULTS, ...options };
+    const fadeIn = clamp(qf / o.cardFadeQ, 0, 1);
+    const fadeOut = clamp((to - qf) / o.cardFadeQ, 0, 1);
+    return { alpha: Math.min(fadeIn, fadeOut) };
 }
 
 // Carton final de synthèse à `qf` : { alpha } ou null. Il occupe les

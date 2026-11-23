@@ -57,6 +57,7 @@ import {
     QUANTUM_MS,
     buildParcoursTimeline,
     dayCardAt,
+    openCardAt,
     endCardAt,
     formatClock,
     headAt,
@@ -396,8 +397,10 @@ function applyTimeline({ fit = false } = {}) {
         pace: playback.pace,
         photosByStop: photoDisplay.layout === PHOTO_LAYOUT_NONE ? null : photoByStop,
         legPaths,
-        // Carton final de synthèse : temps d'écran ajouté avec les cartons.
+        // Cartons d'ouverture (vue d'ensemble puis descente) et final :
+        // temps d'écran ajoutés avec les cartons.
         endCard: playback.day_cards,
+        openCard: playback.day_cards,
         options: photoTimelineOptions(photoDisplay),
         timing: timingMemo,
     }) : null;
@@ -1444,6 +1447,11 @@ export function getParcoursSnapshot() {
             cardText: (() => {
                 const card = playback.day_cards ? dayCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null;
                 return card ? playDraw.dayCardText(card.day) : null;
+            })(),
+            openCard: playback.day_cards ? openCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null,
+            openCardText: (() => {
+                const card = playback.day_cards ? openCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null;
+                return card ? playDraw.openCardText() : null;
             })(),
             endCard: playback.day_cards ? endCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null,
             endCardText: (() => {

@@ -84,6 +84,32 @@ test('pose : serrée à pied, dézoom sur le long trajet et la nuit, vue d’ens
     }
 });
 
+test('carton d’ouverture : vue d’ensemble puis descente vers le départ', () => {
+    const base = reconstructParcours({
+        days: [
+            { date: '2025-07-12', stops: [stop('A', 0, { logId: 1 }), stop('B', 0.3, { logId: 2 }), stop('C', 20.3, { logId: 3 })] },
+            { date: '2025-07-13', stops: [stop('D', 140)] },
+        ],
+    });
+    const tl = buildParcoursTimeline(base, { openCard: true });
+    const opening = cameraPoseAt(tl, tl.openCardQ / 2, SIZE);
+    // Le carton cadre l'ensemble du parcours, comme la vue finale.
+    const box = overviewBox(tl);
+    for (const [x, y] of [[box[0], box[1]], [box[2], box[3]]]) {
+        assert.ok(Math.abs(x - opening.center[0]) / opening.resolution <= SIZE[0] / 2);
+        assert.ok(Math.abs(y - opening.center[1]) / opening.resolution <= SIZE[1] / 2);
+    }
+    // La descente vers le départ est en cours à la première étape — le zoom
+    // borné la poursuit pendant l'arrêt — et s'est resserrée ensuite.
+    const second = cameraPoseAt(tl, tl.stops[1].q, SIZE);
+    assert.ok(second.resolution < opening.resolution / 4, `descente : ${second.resolution} vs ${opening.resolution}`);
+    // Sans carton d'ouverture : la pose initiale reste celle du départ.
+    const off = buildParcoursTimeline(base);
+    const atStart = cameraPoseAt(off, 0, SIZE);
+    const atFirst = cameraPoseAt(off, off.stops[0].q, SIZE);
+    assert.ok(atStart.resolution < atFirst.resolution * 2);
+});
+
 test('pose : le géocacheur reste près du centre, zoom et déplacement doux', () => {
     for (const tl of [sample(), walk()]) {
         let previous = null;

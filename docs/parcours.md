@@ -496,11 +496,20 @@ lecture ou en pause, même saut puis reprise. En enregistrement, refus : la
 vidéo se joue toujours depuis le début.
 
 **Nuit et cartons** (réglage « Nuit et carton », défaut : oui) :
+- le carton d'ouverture (`openCardAt`) lance la lecture : `openCardQ`
+  (30) quanta de carton — nom du parcours, ses dates (`formatRange`) et
+  son bilan (étapes, distance, journées) — posés sur la vue d'ensemble du
+  parcours (la caméra la vise comme à la fin), puis `openDescentQ` (15)
+  quanta de descente vers le départ, à la vitesse de zoom bornée — elle
+  se poursuit dans la première étape si l'échelle du parcours l'exige.
+  « Jour 1 » prend le relais pendant la descente (`dayCardAt` attend la
+  fin de `openCardQ`). Carton en plancher, descente élastique sous durée
+  imposée. Cartons inactifs : rien d'ajouté, l'intro reste `introQ` ;
 - la nuit assombrit la carte en cloche (`nightLevelAt` : 30 % de la nuit
   pour monter, 30 % pour redescendre ; voile bleu nuit à 50 % au cœur) ;
 - le carton « Jour 2 » et la date longue (`dayCardAt`), pour un parcours
   de plusieurs journées :
-  - le premier dès le début ;
+  - le premier dès la fin de l'ouverture ;
   - les suivants du quart de la nuit jusqu'à 6 quanta après la première
     étape du jour, avec un fondu de 3 quanta ;
   - après des journées sautées, « n jours plus tard » précède la date
