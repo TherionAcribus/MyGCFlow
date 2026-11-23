@@ -110,6 +110,84 @@ test('photos : rattachement par position, heure comme ancre, rattachement manuel
   expect(errors).toEqual([]);
 });
 
+test('grille : par journée, filtres, sélection de plusieurs photos et actions groupées', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const parcours = await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(files);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(3);
+  const { photos: listed } = await (await request.get(`/api/parcours/${parcours.id}/inputs`)).json();
+  const id = (name) => listed.find((p) => p.name === name).id;
+  const thumb = (name) => page.locator(`.parcours-photo-thumb[data-photo-id="${id(name)}"]`);
+  const matchOf = async (name) => (await snapshot(page)).photos.find((p) => p.id === id(name));
+  const bulk = page.locator('#parcoursPhotoBulk');
+
+  // Une journée par date de prise de vue, les photos sans heure à la fin.
+  await expect(page.locator('.parcours-photo-day')).toHaveCount(3);
+  await expect(page.locator('.parcours-photo-day').nth(0)).toHaveAttribute('data-date', '2025-07-12');
+  await expect(page.locator('.parcours-photo-day').nth(2)).toContainText('Sans date');
+  await expect(bulk).toBeHidden();
+
+  // Filtre « non rattachées » : l'appareil non recalé et la photo sans EXIF.
+  const filter = (name) => page.locator(`#parcoursPhotoFilters [data-photo-filter="${name}"]`);
+  await expect(filter('unlinked')).toHaveText('Non rattachées (2)');
+  await filter('unlinked').click();
+  await expect(filter('unlinked')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.parcours-photo-thumb')).toHaveCount(2);
+  await expect(thumb('telephone.jpg')).toHaveCount(0);
+
+  // Ctrl + clic sur les deux, puis rattachées d'un coup à GCPAR04.
+  await thumb('appareil.jpg').click({ modifiers: ['Control'] });
+  await thumb('sans-exif.png').click({ modifiers: ['Control'] });
+  await expect(bulk).toBeVisible();
+  await expect(bulk).toContainText('2 photos sélectionnées');
+  await expect(page.locator('#parcoursPhotoDetail')).toBeHidden();
+  await bulk.locator('.parcours-photo-bulk-stop').selectOption('GCPAR04');
+  await expect.poll(async () => (await matchOf('appareil.jpg')).match).toEqual({ key: 'GCPAR04', source: 'manual' });
+  expect((await matchOf('sans-exif.png')).match).toEqual({ key: 'GCPAR04', source: 'manual' });
+  // Rattachées : elles sortent du filtre, la sélection avec elles.
+  await expect(page.locator('.parcours-photo-thumb')).toHaveCount(0);
+  await expect(page.locator('#parcoursPhotos')).toContainText('Aucune photo dans ce filtre.');
+  await expect(bulk).toBeHidden();
+
+  // Toutes : Maj + clic sélectionne la plage depuis le dernier clic.
+  await filter('all').click();
+  await thumb('telephone.jpg').click();
+  await expect(page.locator('#parcoursPhotoDetail')).toBeVisible();
+  await thumb('sans-exif.png').click({ modifiers: ['Shift'] });
+  await expect(page.locator('.parcours-photo-thumb.is-selected')).toHaveCount(3);
+  await expect(page.locator('#parcoursPhotoDetail')).toBeHidden();
+  // Masquées d'un coup (une seule requête), puis « Montrer » seul actif.
+  const patches = [];
+  page.on('request', (req) => { if (req.method() === 'PATCH' && req.url().endsWith('/photos')) patches.push(req.url()); });
+  await bulk.locator('.parcours-photo-bulk-hide').click();
+  await expect.poll(async () => (await snapshot(page)).photos.every((p) => p.hidden)).toBe(true);
+  expect(patches).toHaveLength(1);
+  await expect(bulk.locator('.parcours-photo-bulk-hide')).toBeDisabled();
+  await expect(bulk.locator('.parcours-photo-bulk-show')).toBeEnabled();
+  await expect(filter('hidden')).toHaveText('Masquées (3)');
+
+  // « Tout sélectionner » d'une journée, puis un clic simple vide la sélection.
+  await page.locator('.parcours-photo-bulk-clear').click();
+  await expect(bulk).toBeHidden();
+  await page.locator('.parcours-photo-day').nth(1).locator('.parcours-photo-day-select').click();
+  await expect(page.locator('.parcours-photo-thumb.is-selected')).toHaveCount(1);
+  await expect(thumb('appareil.jpg')).toHaveClass(/is-selected/);
+  await thumb('telephone.jpg').click();
+  await expect(bulk).toBeHidden();
+
+  // Suppression groupée, après confirmation.
+  await thumb('appareil.jpg').click({ modifiers: ['Control'] });
+  await expect(bulk).toContainText('2 photos sélectionnées');
+  await bulk.locator('.parcours-photo-bulk-delete').click();
+  await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
+  await expect.poll(async () => (await snapshot(page)).photos.map((p) => p.id)).toEqual([id('sans-exif.png')]);
+  await expect(bulk).toBeHidden();
+  await expect(page.locator('#parcoursPhotoDetail')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('deux boîtiers du même modèle : une horloge chacun, et le recalage du modèle en repli', async ({ page, request }) => {
   const errors = collectErrors(page);
   await createWeekend(request);

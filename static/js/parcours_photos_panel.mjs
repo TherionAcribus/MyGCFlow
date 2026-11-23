@@ -7,7 +7,7 @@
 // touchent le parcours entier (création de lieu, aperçu de lecture, envois
 // mutualisés, rechargement, verrou des ajustements) sont injectées — pas
 // d'import de parcours_data.js.
-import { showToast, t } from './notifications.js';
+import { showConfirmation, showToast, t } from './notifications.js';
 import { CONFIG } from './init.js';
 import { saveSettingsPatch } from './settings_api.mjs';
 import {
@@ -23,10 +23,13 @@ import {
     minutesToTime,
 } from './parcours_reconstruct.mjs';
 import {
+    PHOTO_FILTERS,
+    PHOTO_FILTER_ALL,
     cameraKey,
     cameraOffsets,
     hasPosition,
     photoClock,
+    photoGridGroups,
     suggestPhotoPlaces,
 } from './parcours_photos.mjs';
 import {
@@ -68,6 +71,13 @@ export function createPhotosPanel(deps) {
     const s = () => deps.getState() || {};
     let photoDetailId = null;    // photo dont le panneau est ouvert
     let photosDirty = false;     // panneau à refaire à l'ouverture de l'onglet Photos
+    // Grille : filtre, et sélection de plusieurs photos (Ctrl / Maj + clic)
+    // pour les rattacher, masquer ou supprimer d'un coup. `gridOrder` : ids
+    // dans l'ordre affiché (plage d'un Maj + clic).
+    let photoFilter = PHOTO_FILTER_ALL;
+    const selectedIds = new Set();
+    let selectAnchor = null;
+    let gridOrder = [];
     // Cadrage montré mais pas encore enregistré (`values` : aspect, focusX,
     // focusY, zoom). Les flèches du clavier déplacent ce brouillon, qui
     // part en une requête quand la frappe s'arrête (un appui maintenu en
@@ -297,46 +307,274 @@ export function createPhotosPanel(deps) {
             }));
         }
 
-        const grid = el('parcoursPhotos');
-        if (grid) {
-            grid.replaceChildren(...photos.map((photo) => {
-                const match = photoMatches.get(photo.id);
-                const cell = document.createElement('button');
-                cell.type = 'button';
-                cell.className = 'parcours-photo-thumb';
-                cell.classList.toggle('is-linked', !!match?.key);
-                cell.classList.toggle('is-active', photoDetailId === photo.id);
-                cell.classList.toggle('is-hidden', !!photo.hidden);
-                cell.dataset.photoId = String(photo.id);
-                const hiddenNote = t('masquée dans la vidéo');
-                const lostNote = t('étape choisie retirée du parcours');
-                cell.title = [
-                    photo.name,
-                    matchLabel(match, deps.stopByKey(match?.key)),
-                    match?.lostKey ? lostNote : '',
-                    photo.hidden ? hiddenNote : '',
-                ].filter(Boolean).join(' — ');
-                const img = document.createElement('img');
-                img.src = photoUrl(photo, true);
-                img.alt = photo.name || '';
-                img.loading = 'lazy';
-                cell.append(img);
-                if (photo.hidden) {
-                    const badge = document.createElement('i');
-                    badge.className = 'ti ti-eye-off parcours-photo-hidden-badge';
-                    badge.setAttribute('aria-hidden', 'true');
-                    cell.append(badge);
-                }
-                cell.addEventListener('click', () => {
-                    photoDetailId = photoDetailId === photo.id ? null : photo.id;
-                    render();
-                });
-                return cell;
-            }));
-        }
+        renderPhotoGrid(photos, offsets);
         renderPhotoPlaces(ordered);
         renderPhotoDetail();
         renderPhotoDisplay();
+    }
+
+    // Grille des vignettes, par journée (heure corrigée de l'appareil), avec
+    // le filtre courant ; la sélection se réduit aux photos affichées.
+    function renderPhotoGrid(photos, offsets) {
+        const { photoMatches } = s();
+        const toolbar = el('parcoursPhotoToolbar');
+        if (toolbar) toolbar.hidden = photos.length === 0;
+        const counts = {
+            all: photos.length,
+            unlinked: photos.filter((photo) => !photoMatches.get(photo.id)?.key).length,
+            hidden: photos.filter((photo) => photo.hidden).length,
+        };
+        const labels = {
+            all: t('Toutes (${n})', { n: counts.all }),
+            unlinked: t('Non rattachées (${n})', { n: counts.unlinked }),
+            hidden: t('Masquées (${n})', { n: counts.hidden }),
+        };
+        for (const btn of el('parcoursPhotoFilters')?.querySelectorAll('[data-photo-filter]') || []) {
+            const active = btn.dataset.photoFilter === photoFilter;
+            btn.textContent = labels[btn.dataset.photoFilter];
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', String(active));
+        }
+
+        const groups = photoGridGroups(photos, photoMatches, offsets, photoFilter);
+        gridOrder = groups.flatMap((group) => group.ids);
+        const shown = new Set(gridOrder);
+        for (const id of [...selectedIds]) if (!shown.has(id)) selectedIds.delete(id);
+
+        const grid = el('parcoursPhotos');
+        if (grid) {
+            const blocks = groups.flatMap((group) => [dayHeader(group), dayGrid(group)]);
+            if (!groups.length && photos.length) {
+                const empty = document.createElement('div');
+                empty.className = 'small text-muted';
+                empty.textContent = t('Aucune photo dans ce filtre.');
+                blocks.push(empty);
+            }
+            grid.replaceChildren(...blocks);
+        }
+        renderBulk();
+    }
+
+    function dayHeader(group) {
+        const header = document.createElement('div');
+        header.className = 'parcours-photo-day';
+        header.dataset.date = group.date || '';
+        const title = document.createElement('span');
+        title.className = 'small fw-medium';
+        title.textContent = group.date
+            ? formatDay(group.date, { weekday: 'long', day: 'numeric', month: 'long' })
+            : t('Sans date');
+        const count = document.createElement('span');
+        count.className = 'small text-muted';
+        count.textContent = group.ids.length === 1 ? t('1 photo') : t('${n} photos', { n: group.ids.length });
+        const all = group.ids.every((id) => selectedIds.has(id));
+        const select = document.createElement('button');
+        select.type = 'button';
+        select.className = 'btn btn-sm btn-link p-0 parcours-photo-day-select';
+        select.textContent = all ? t('Désélectionner') : t('Tout sélectionner');
+        select.setAttribute('aria-label', all
+            ? t('Désélectionner les photos de : ${day}', { day: title.textContent })
+            : t('Sélectionner les photos de : ${day}', { day: title.textContent }));
+        select.addEventListener('click', () => {
+            for (const id of group.ids) {
+                if (all) selectedIds.delete(id);
+                else selectedIds.add(id);
+            }
+            photoDetailId = null;
+            render();
+        });
+        header.append(title, count, select);
+        return header;
+    }
+
+    function dayGrid(group) {
+        const { photoMatches } = s();
+        const grid = document.createElement('div');
+        grid.className = 'parcours-photo-grid';
+        const hiddenNote = t('masquée dans la vidéo');
+        const lostNote = t('étape choisie retirée du parcours');
+        const selectedNote = t('sélectionnée');
+        grid.append(...group.ids.map(photoById).filter(Boolean).map((photo) => {
+            const match = photoMatches.get(photo.id);
+            const selected = selectedIds.has(photo.id);
+            const cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'parcours-photo-thumb';
+            cell.classList.toggle('is-linked', !!match?.key);
+            cell.classList.toggle('is-active', photoDetailId === photo.id);
+            cell.classList.toggle('is-hidden', !!photo.hidden);
+            cell.classList.toggle('is-selected', selected);
+            cell.dataset.photoId = String(photo.id);
+            cell.title = [
+                photo.name,
+                matchLabel(match, deps.stopByKey(match?.key)),
+                match?.lostKey ? lostNote : '',
+                photo.hidden ? hiddenNote : '',
+                selected ? selectedNote : '',
+            ].filter(Boolean).join(' — ');
+            const img = document.createElement('img');
+            img.src = photoUrl(photo, true);
+            img.alt = photo.name || '';
+            img.loading = 'lazy';
+            cell.append(img);
+            if (photo.hidden) {
+                const badge = document.createElement('i');
+                badge.className = 'ti ti-eye-off parcours-photo-hidden-badge';
+                badge.setAttribute('aria-hidden', 'true');
+                cell.append(badge);
+            }
+            if (selected) {
+                const badge = document.createElement('i');
+                badge.className = 'ti ti-check parcours-photo-selected-badge';
+                badge.setAttribute('aria-hidden', 'true');
+                cell.append(badge);
+            }
+            cell.addEventListener('click', (event) => clickThumb(photo.id, event));
+            return cell;
+        }));
+        return grid;
+    }
+
+    // Clic simple : ouvre (ou referme) le détail, sélection vidée. Ctrl /
+    // Cmd + clic : ajoute ou retire la photo — la photo dont le détail était
+    // ouvert entre dans la sélection. Maj + clic : la plage depuis le dernier
+    // clic, ajoutée.
+    function clickThumb(id, event) {
+        if (event.shiftKey && selectAnchor !== null && gridOrder.includes(selectAnchor)) {
+            const a = gridOrder.indexOf(selectAnchor);
+            const b = gridOrder.indexOf(id);
+            for (const i of gridOrder.slice(Math.min(a, b), Math.max(a, b) + 1)) selectedIds.add(i);
+            photoDetailId = null;
+        } else if (event.ctrlKey || event.metaKey || event.shiftKey) {
+            if (!selectedIds.size && photoDetailId !== null && photoDetailId !== id) selectedIds.add(photoDetailId);
+            if (selectedIds.has(id)) selectedIds.delete(id);
+            else selectedIds.add(id);
+            selectAnchor = id;
+            photoDetailId = null;
+        } else {
+            selectedIds.clear();
+            selectAnchor = id;
+            photoDetailId = photoDetailId === id ? null : id;
+        }
+        render();
+    }
+
+    // Barre des photos sélectionnées : rattacher à une étape, masquer,
+    // montrer, supprimer — une requête pour toutes, tout ou rien.
+    function renderBulk() {
+        const box = el('parcoursPhotoBulk');
+        if (!box) return;
+        box.hidden = selectedIds.size === 0;
+        if (box.hidden) {
+            box.replaceChildren();
+            return;
+        }
+        const chosen = [...selectedIds].map(photoById).filter(Boolean);
+        const n = chosen.length;
+        const count = document.createElement('span');
+        count.className = 'small fw-medium';
+        count.textContent = n === 1 ? t('1 photo sélectionnée') : t('${n} photos sélectionnées', { n });
+
+        const select = document.createElement('select');
+        select.className = 'form-select form-select-sm w-auto parcours-photo-bulk-stop';
+        select.setAttribute('aria-label', t('Rattacher les photos sélectionnées à une étape'));
+        const prompt = document.createElement('option');
+        prompt.value = '__';
+        prompt.textContent = t('Rattacher à…');
+        prompt.disabled = true;
+        const auto = document.createElement('option');
+        auto.value = '';
+        auto.textContent = t('Automatique');
+        select.append(prompt, auto);
+        appendStopOptions(select);
+        select.value = '__';
+        select.addEventListener('change', () => {
+            if (select.value !== '__') patchSelection({ stopKey: select.value || null });
+        });
+
+        const hide = deps.button('btn btn-sm btn-outline-secondary parcours-photo-bulk-hide', 'ti-eye-off',
+            t('Masquer les photos sélectionnées dans la vidéo'), { text: t('Masquer') });
+        hide.disabled = chosen.every((photo) => photo.hidden);
+        hide.addEventListener('click', () => patchSelection({ hidden: true }));
+        const show = deps.button('btn btn-sm btn-outline-secondary parcours-photo-bulk-show', 'ti-eye',
+            t('Montrer les photos sélectionnées dans la vidéo'), { text: t('Montrer') });
+        show.disabled = chosen.every((photo) => !photo.hidden);
+        show.addEventListener('click', () => patchSelection({ hidden: false }));
+        const remove = deps.button('btn btn-sm btn-outline-danger parcours-photo-bulk-delete', 'ti-trash',
+            t('Supprimer les photos sélectionnées'), { text: t('Supprimer') });
+        remove.addEventListener('click', () => {
+            showConfirmation(
+                n === 1 ? t('Supprimer la photo sélectionnée du parcours ?') : t('Supprimer les ${n} photos sélectionnées du parcours ?', { n }),
+                t('Supprimer les photos'),
+                () => deleteSelection(),
+                null,
+                { danger: true, confirmText: t('Supprimer') },
+            );
+        });
+        const clear = deps.button('btn btn-sm btn-link parcours-photo-bulk-clear', 'ti-x', t('Désélectionner'),
+            { text: t('Désélectionner') });
+        clear.addEventListener('click', () => {
+            selectedIds.clear();
+            render();
+        });
+        box.replaceChildren(count, select, hide, show, remove, clear);
+    }
+
+    async function patchSelection(changes) {
+        const pid = s().selectedId;
+        if (!pid || !selectedIds.size) return;
+        if (deps.adjustmentsLocked()) {
+            render();
+            return;
+        }
+        try {
+            const payload = await deps.fetchJson(`/api/parcours/${pid}/photos`, {
+                method: 'PATCH', body: JSON.stringify({ ids: [...selectedIds], changes }),
+            });
+            deps.receiveAdjustments(payload, pid);
+        } catch (error) {
+            showToast(error.message, 'error');
+            render();
+        }
+    }
+
+    async function deleteSelection() {
+        const pid = s().selectedId;
+        if (!pid || !selectedIds.size || deps.adjustmentsLocked()) return;
+        const ids = [...selectedIds];
+        try {
+            const payload = await deps.fetchJson(`/api/parcours/${pid}/photos/delete`, {
+                method: 'POST', body: JSON.stringify({ ids }),
+            });
+            for (const id of ids) {
+                deps.evictPhotoImages(id);
+                selectedIds.delete(id);
+            }
+            if (ids.includes(photoDetailId)) photoDetailId = null;
+            if (ids.includes(cropDraft?.id)) {
+                clearTimeout(cropTimer);
+                cropDraft = null;
+            }
+            deps.receiveAdjustments(payload, pid);
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    }
+
+    // Options des étapes (bases exclues), groupées par journée.
+    function appendStopOptions(select) {
+        for (const day of s().ordered?.days || []) {
+            const group = document.createElement('optgroup');
+            group.label = formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' });
+            for (const stop of day.stops) {
+                if (stop.kind === KIND_BASE) continue;
+                const opt = document.createElement('option');
+                opt.value = stop.key;
+                opt.textContent = `${Number.isFinite(stop.index) ? `${stop.index}. ` : ''}${stopLabel(stop)}`;
+                group.append(opt);
+            }
+            if (group.children.length) select.append(group);
+        }
     }
 
     // Photos géolocalisées hors de toute étape (lot 10) : un lieu proposé par
@@ -443,18 +681,7 @@ export function createPhotosPanel(deps) {
             lost.textContent = t('Étape retirée du parcours');
             select.append(lost);
         }
-        for (const day of ordered?.days || []) {
-            const group = document.createElement('optgroup');
-            group.label = formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' });
-            for (const stop of day.stops) {
-                if (stop.kind === KIND_BASE) continue;
-                const opt = document.createElement('option');
-                opt.value = stop.key;
-                opt.textContent = `${Number.isFinite(stop.index) ? `${stop.index}. ` : ''}${stopLabel(stop)}`;
-                group.append(opt);
-            }
-            if (group.children.length) select.append(group);
-        }
+        appendStopOptions(select);
         select.value = photo.stopKey || '';
         select.addEventListener('change', () => linkPhoto(photo.id, select.value || null));
         const linkRow = [label, select];
@@ -733,6 +960,13 @@ export function createPhotosPanel(deps) {
         document.querySelector('#mainTabs a[href="#photos"]')?.addEventListener('shown.bs.tab', () => {
             if (photosDirty) render();
         });
+        for (const btn of el('parcoursPhotoFilters')?.querySelectorAll('[data-photo-filter]') || []) {
+            btn.addEventListener('click', () => {
+                if (!PHOTO_FILTERS.includes(btn.dataset.photoFilter)) return;
+                photoFilter = btn.dataset.photoFilter;
+                render();
+            });
+        }
         el('btnParcoursPhotosStop')?.addEventListener('click', () => deps.uploads.cancel('photo'));
         const input = el('parcoursPhotoInput');
         el('btnParcoursAddPhotos')?.addEventListener('click', () => input?.click());

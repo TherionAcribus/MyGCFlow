@@ -63,6 +63,8 @@ parcours ; les étapes exclues ou sans position n'y figurent pas.
 | `POST /api/parcours/<id>/photos` | Envoi d'une photo (multipart, champ `photo`, 15 Mo au plus) ; la même photo deux fois n'est gardée qu'une fois |
 | `GET /api/parcours/<id>/photos/<ph>/file` / `thumb` | Photo normalisée / vignette 320 px (cache long, nom = empreinte) |
 | `PATCH` / `DELETE /api/parcours/<id>/photos/<ph>` | Rattachement manuel `{stopKey}` (null : automatique), affichage `{hidden, caption, aspect, focusX, focusY, zoom}` (lot 8 ; tout ou rien) ; suppression (fichiers compris) |
+| `PATCH /api/parcours/<id>/photos` | Sélection de l'onglet Photos : `{ids, changes}`, mêmes champs que ci-dessus, appliqués à toutes ou à aucune (un id inconnu ou en double refuse tout) → `{photos, cameras}` |
+| `POST /api/parcours/<id>/photos/delete` | Suppression d'une sélection `{ids}`, tout ou rien, fichiers après le commit → `{photos, cameras}` |
 | `PUT /api/parcours/<id>/cameras` | Décalage d'horloge d'un appareil `{camera, offsetMinutes}` (null : l'oublie ; ±2 jours au plus) |
 | `POST /api/parcours/<id>/tracks` | Envoi d'une trace GPX (multipart, champ `track`, 30 Mo au plus), simplifiée à l'import |
 | `DELETE /api/parcours/<id>/tracks/<tid>` | Suppression d'une trace |
@@ -866,6 +868,19 @@ Les photos ont leur onglet (`#photos`, `templates/menu_photos_parcours.html`),
 appareils, détail d'une photo, lieux proposés, réglages d'affichage. Un
 contrôle d'un onglet fermé n'est pas visible : les specs ouvrent
 `a[href="#photos"]` avant d'y toucher.
+
+**Grille** (`photoGridGroups`, parcours_photos.mjs) : une rubrique par
+journée de prise de vue (date corrigée par le recalage de l'appareil), les
+photos sans heure en dernier ; filtres Toutes / Non rattachées / Masquées,
+avec leurs comptes. Clic simple : détail de la photo. Ctrl (Cmd) + clic
+ajoute ou retire une photo de la sélection — celle dont le détail était
+ouvert y entre aussi —, Maj + clic ajoute la plage depuis le dernier clic,
+et « Tout sélectionner » prend une journée. La barre de la sélection
+rattache à une étape (ou rend l'automatique), masque, montre ou supprime
+(après confirmation), en une requête. La sélection se réduit aux photos
+affichées : une photo qui sort du filtre (rattachée sous « Non
+rattachées ») la quitte. Les conteneurs masqués par `hidden` n'ont pas de
+`d-flex` (AGENTS.md) : leur `display` vient de la feuille de style.
 
 **Glisser-déposer** (`bindFileDrop`, parcours_data.js) : des fichiers déposés
 n'importe où sur la page vont au parcours ouvert — les images aux photos

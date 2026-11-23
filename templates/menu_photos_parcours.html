@@ -32,7 +32,20 @@
                             <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}
                         </div>
                         <div id="parcoursCameras" class="mt-2"></div>
-                        <div id="parcoursPhotos" class="parcours-photo-grid mt-2"></div>
+
+                        <!-- Filtre et sélection de plusieurs photos ; grille par journée -->
+                        <div id="parcoursPhotoToolbar" class="parcours-photo-toolbar mt-2" hidden>
+                            <div id="parcoursPhotoFilters" class="btn-group btn-group-sm" role="group"
+                                 aria-label="{{ _('Photos affichées') }}">
+                                <button type="button" class="btn btn-outline-secondary" data-photo-filter="all"></button>
+                                <button type="button" class="btn btn-outline-secondary" data-photo-filter="unlinked"></button>
+                                <button type="button" class="btn btn-outline-secondary" data-photo-filter="hidden"></button>
+                            </div>
+                            <span class="form-hint text-muted">{{ _("Ctrl+clic ou Maj+clic : sélectionner plusieurs photos.") }}</span>
+                        </div>
+                        <div id="parcoursPhotoBulk" class="parcours-photo-bulk mt-2"
+                             role="region" aria-label="{{ _('Photos sélectionnées') }}" hidden></div>
+                        <div id="parcoursPhotos" class="mt-2"></div>
 
                         <!-- Photos hors des étapes : lieux proposés (lot 10) -->
                         <div id="parcoursPhotoPlaces" class="mt-3" hidden>

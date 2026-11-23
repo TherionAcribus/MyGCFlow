@@ -356,6 +356,30 @@ def delete_photo(parcours_id, photo_id):
     return jsonify({'success': True})
 
 
+# Sélection de plusieurs photos (onglet Photos) : {ids, changes} ou {ids},
+# tout ou rien ; réponse {photos, cameras} comme /inputs.
+@parcours_bp.route('/api/parcours/<int:parcours_id>/photos', methods=['PATCH'])
+def update_photos(parcours_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = parcours_photos.update_photos(db.session, parcours_id, data.get('ids'), data.get('changes'))
+    except store.ParcoursError as exc:
+        db.session.rollback()
+        return _store_error(exc)
+    return jsonify({'success': True, **payload})
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/photos/delete', methods=['POST'])
+def delete_photos(parcours_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = parcours_photos.delete_photos(db.session, parcours_id, data.get('ids'))
+    except store.ParcoursError as exc:
+        db.session.rollback()
+        return _store_error(exc)
+    return jsonify({'success': True, **payload})
+
+
 @parcours_bp.route('/api/parcours/<int:parcours_id>/cameras', methods=['PUT'])
 def set_camera(parcours_id):
     data = request.get_json(silent=True) or {}

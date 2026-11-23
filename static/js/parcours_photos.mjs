@@ -168,18 +168,25 @@ export function photoAnchors(reconstructed, photos, matches, offsets = new Map()
     return anchors;
 }
 
+// Ordre de prise de vue (heure corrigée), sans heure à la fin, puis par id.
+function byShot(offsets) {
+    const key = (photo) => {
+        const c = photoClock(photo, offsets);
+        return c ? `${c.date}${String(Math.round(c.minutes * 60)).padStart(6, '0')}` : '~';
+    };
+    return (a, b) => {
+        const ka = key(a);
+        const kb = key(b);
+        return ka < kb ? -1 : ka > kb ? 1 : a.id - b.id;
+    };
+}
+
 // Photos à montrer par étape (ordre de prise de vue) : Map clé → [id]. Une
 // photo masquée (`hidden`, lot 8) reste un indice (rattachement, ancre)
 // mais n'est pas montrée : elle n'y figure pas.
 export function photosByStop(photos, matches, offsets = new Map()) {
     const byKey = new Map();
-    const sorted = (Array.isArray(photos) ? photos : []).filter((photo) => photo && !photo.hidden).sort((a, b) => {
-        const ca = photoClock(a, offsets);
-        const cb = photoClock(b, offsets);
-        const ka = ca ? `${ca.date}${String(Math.round(ca.minutes * 60)).padStart(6, '0')}` : '~';
-        const kb = cb ? `${cb.date}${String(Math.round(cb.minutes * 60)).padStart(6, '0')}` : '~';
-        return ka < kb ? -1 : ka > kb ? 1 : a.id - b.id;
-    });
+    const sorted = (Array.isArray(photos) ? photos : []).filter((photo) => photo && !photo.hidden).sort(byShot(offsets));
     for (const photo of sorted) {
         const key = matches.get(photo.id)?.key;
         if (!key) continue;
@@ -187,6 +194,36 @@ export function photosByStop(photos, matches, offsets = new Map()) {
         byKey.get(key).push(photo.id);
     }
     return byKey;
+}
+
+// Grille de l'onglet Photos : filtre, puis regroupement par journée (date
+// corrigée de l'appareil).
+export const PHOTO_FILTER_ALL = 'all';
+export const PHOTO_FILTER_UNLINKED = 'unlinked';
+export const PHOTO_FILTER_HIDDEN = 'hidden';
+export const PHOTO_FILTERS = Object.freeze([PHOTO_FILTER_ALL, PHOTO_FILTER_UNLINKED, PHOTO_FILTER_HIDDEN]);
+
+export function photoInFilter(photo, match, filter) {
+    if (filter === PHOTO_FILTER_UNLINKED) return !match?.key;
+    if (filter === PHOTO_FILTER_HIDDEN) return !!photo?.hidden;
+    return true;
+}
+
+// → [{ date: 'AAAA-MM-JJ' | null (sans heure), ids }] : journées dans
+// l'ordre, photos sans heure en dernier ; dans une journée, l'ordre de prise
+// de vue.
+export function photoGridGroups(photos, matches, offsets = new Map(), filter = PHOTO_FILTER_ALL) {
+    const groups = [];
+    const sorted = (Array.isArray(photos) ? photos : [])
+        .filter((photo) => photo && photoInFilter(photo, matches?.get?.(photo.id), filter))
+        .sort(byShot(offsets));
+    for (const photo of sorted) {
+        const date = photoClock(photo, offsets)?.date || null;
+        const last = groups[groups.length - 1];
+        if (last && last.date === date) last.ids.push(photo.id);
+        else groups.push({ date, ids: [photo.id] });
+    }
+    return groups;
 }
 
 // Lieux proposés (lot 10) pour les photos géolocalisées qui ne tombent sur

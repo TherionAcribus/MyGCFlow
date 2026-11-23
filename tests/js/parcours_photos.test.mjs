@@ -6,12 +6,15 @@ import {
     MATCH_GPS,
     MATCH_MANUAL,
     MATCH_TIME,
+    PHOTO_FILTER_HIDDEN,
+    PHOTO_FILTER_UNLINKED,
     cameraKey,
     cameraOffsets,
     photoCameraOffset,
     matchPhotos,
     photoAnchors,
     photoClock,
+    photoGridGroups,
     photoTimeTrusted,
     photosByStop,
     reconstructWithPhotos,
@@ -180,6 +183,26 @@ test('chronologie : chaque photo ajoute son temps d’écran à l’étape', () 
     const few = new Map([['A', [1, 2]]]);
     assert.deepEqual(buildParcoursTimeline(ordered, { photosByStop: few, options: { photoOverflow: 'first' } }).stops[0].photos,
         [1, 2]);
+});
+
+test('grille : regroupée par journée (heure corrigée), filtres non rattachées et masquées', () => {
+    const offsets = cameraOffsets([{ camera: 'Canon', offsetMinutes: 120 }]);
+    const photos = [
+        photo(1, { takenAt: '2025-07-13T09:00:00' }),
+        photo(2, { takenAt: '2025-07-12T23:00:00', camera: 'Canon' }),   // +2 h : le 13 à 01:00
+        photo(3, { takenAt: '2025-07-12T10:00:00', hidden: true }),
+        photo(4),                                                        // sans heure
+        photo(5, { takenAt: '2025-07-12T08:00:00' }),
+    ];
+    const matches = new Map([[1, { key: 'A', source: MATCH_MANUAL }], [3, { key: 'B', source: MATCH_GPS }]]);
+    assert.deepEqual(photoGridGroups(photos, matches, offsets), [
+        { date: '2025-07-12', ids: [5, 3] },
+        { date: '2025-07-13', ids: [2, 1] },
+        { date: null, ids: [4] },
+    ]);
+    assert.deepEqual(photoGridGroups(photos, matches, offsets, PHOTO_FILTER_UNLINKED).map((g) => g.ids), [[5], [2], [4]]);
+    assert.deepEqual(photoGridGroups(photos, matches, offsets, PHOTO_FILTER_HIDDEN), [{ date: '2025-07-12', ids: [3] }]);
+    assert.deepEqual(photoGridGroups([], matches), []);
 });
 
 test('lieux proposés : photos géolocalisées hors étapes, groupées par journée et proximité', () => {

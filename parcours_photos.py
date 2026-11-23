@@ -254,6 +254,43 @@ def update_photo(session, parcours_id: int, photo_id: int, data: dict) -> dict:
     ne laisse rien à moitié appliqué."""
     parcours = parcours_store.get(session, parcours_id)
     row = _get_photo(session, parcours.id, photo_id)
+    for column, value in _photo_changes(data).items():
+        setattr(row, column, value)
+    parcours.updated_at = datetime.now()
+    session.commit()
+    return photo_to_dict(row)
+
+
+def _photo_rows(session, parcours_id: int, ids) -> list[ParcoursPhoto]:
+    """Photos d'une sélection (onglet Photos), toutes du parcours : un id
+    inconnu, en double ou d'un autre parcours refuse toute la sélection."""
+    if (not isinstance(ids, list) or not ids or len(ids) > MAX_PHOTOS
+            or any(isinstance(i, bool) or not isinstance(i, int) for i in ids) or len(set(ids)) != len(ids)):
+        raise ParcoursError('photo-invalid')
+    rows = session.query(ParcoursPhoto).filter(ParcoursPhoto.parcours_id == parcours_id,
+                                               ParcoursPhoto.id.in_(ids)).all()
+    if len(rows) != len(ids):
+        raise ParcoursError('photo-not-found')
+    return rows
+
+
+def update_photos(session, parcours_id: int, ids, data: dict) -> dict:
+    """Même changement pour plusieurs photos (mêmes champs qu'update_photo),
+    tout ou rien → {photos, cameras}."""
+    parcours = parcours_store.get(session, parcours_id)
+    rows = _photo_rows(session, parcours.id, ids)
+    changes = _photo_changes(data)
+    for row in rows:
+        for column, value in changes.items():
+            setattr(row, column, value)
+    parcours.updated_at = datetime.now()
+    session.commit()
+    return list_photos(session, parcours.id)
+
+
+def _photo_changes(data) -> dict:
+    """Colonnes à écrire pour un patch de photo, validé en entier (lève
+    ParcoursError `photo-invalid`)."""
     data = data if isinstance(data, dict) else {}
     changes = {}
     if 'stopKey' in data:
@@ -284,11 +321,7 @@ def update_photo(session, parcours_id: int, photo_id: int, data: dict) -> dict:
                                 ('zoom', 'zoom', ZOOM_RANGE)):
         if key in data:
             changes[column] = _int_in(data[key], bounds)
-    for column, value in changes.items():
-        setattr(row, column, value)
-    parcours.updated_at = datetime.now()
-    session.commit()
-    return photo_to_dict(row)
+    return changes
 
 
 def _unlink(folder: Path, file: str) -> None:
@@ -307,6 +340,22 @@ def delete_photo(session, parcours_id: int, photo_id: int) -> None:
     parcours.updated_at = datetime.now()
     session.commit()
     _unlink(parcours_dir(parcours.id), file)
+
+
+def delete_photos(session, parcours_id: int, ids) -> dict:
+    """Suppression d'une sélection, tout ou rien → {photos, cameras}. Les
+    fichiers partent après le commit."""
+    parcours = parcours_store.get(session, parcours_id)
+    rows = _photo_rows(session, parcours.id, ids)
+    files = [row.file for row in rows]
+    for row in rows:
+        session.delete(row)
+    parcours.updated_at = datetime.now()
+    session.commit()
+    folder = parcours_dir(parcours.id)
+    for file in files:
+        _unlink(folder, file)
+    return list_photos(session, parcours.id)
 
 
 def set_camera_offset(session, parcours_id: int, camera, offset) -> dict:

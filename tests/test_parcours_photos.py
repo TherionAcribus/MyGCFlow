@@ -171,6 +171,36 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.call('DELETE', url).status_code, 404)
         self.assertEqual(self.call('GET', f'{url}/file').status_code, 404)
 
+    def test_selection_link_hide_and_delete(self):
+        ids = [self.upload(photo_bytes((i * 40, 10, 10)), name=f'{i}.jpg').get_json()['photo']['id']
+               for i in range(3)]
+        url = f'/api/parcours/{self.pid}/photos'
+        payload = self.call('PATCH', url, json={'ids': ids[:2], 'changes': {'stopKey': 'GC1', 'hidden': True}}).get_json()
+        by_id = {p['id']: p for p in payload['photos']}
+        self.assertEqual([(by_id[i]['stopKey'], by_id[i]['hidden']) for i in ids],
+                         [('GC1', True), ('GC1', True), (None, False)])
+        self.assertEqual(payload['cameras'], [])
+        # Tout ou rien : un id inconnu, en double ou une valeur refusée
+        # ne change aucune photo.
+        for body, error in (({'ids': [ids[2], 999], 'changes': {'hidden': True}}, 'photo-not-found'),
+                            ({'ids': [ids[2], ids[2]], 'changes': {'hidden': True}}, 'photo-invalid'),
+                            ({'ids': [], 'changes': {'hidden': True}}, 'photo-invalid'),
+                            ({'ids': [ids[2]], 'changes': {'hidden': 'oui'}}, 'photo-invalid')):
+            self.assertEqual(self.call('PATCH', url, json=body).get_json()['error'], error, body)
+        self.assertFalse(db.session.get(ParcoursPhoto, ids[2]).hidden)
+        # Retour au rattachement automatique.
+        payload = self.call('PATCH', url, json={'ids': ids[:1], 'changes': {'stopKey': None}}).get_json()
+        self.assertIsNone({p['id']: p for p in payload['photos']}[ids[0]]['stopKey'])
+
+        files = [db.session.get(ParcoursPhoto, i).file for i in ids[:2]]
+        self.assertEqual(self.call('POST', f'{url}/delete', json={'ids': [ids[0], 999]}).status_code, 404)
+        self.assertEqual(ParcoursPhoto.query.count(), 3)
+        payload = self.call('POST', f'{url}/delete', json={'ids': ids[:2]}).get_json()
+        self.assertEqual([p['id'] for p in payload['photos']], [ids[2]])
+        for file in files:
+            self.assertFalse((self.photos_dir / str(self.pid) / file).exists())
+        self.assertEqual(self.call('POST', f'/api/parcours/999/photos/delete', json={'ids': [ids[2]]}).status_code, 404)
+
     def test_display_settings(self):
         photo = self.upload(photo_bytes()).get_json()['photo']
         self.assertEqual((photo['hidden'], photo['caption'], photo['aspect'], photo['focusX'], photo['focusY'],

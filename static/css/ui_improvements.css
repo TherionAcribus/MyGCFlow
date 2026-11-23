@@ -4489,6 +4489,51 @@ body[data-mode="parcours"] .rhythm-rate-field {
     border-color: var(--tblr-primary, #0072c6);
 }
 
+/* Sélection de plusieurs photos (Ctrl / Maj + clic) : coche dans le coin. */
+.parcours-photo-thumb.is-selected {
+    border-color: var(--tblr-primary, #0072c6);
+    box-shadow: 0 0 0 2px var(--tblr-primary, #0072c6);
+}
+
+.parcours-photo-selected-badge {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    padding: 1px 3px;
+    border-radius: 4px;
+    background: var(--tblr-primary, #0072c6);
+    color: #fff;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.parcours-photo-day {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0.35rem;
+}
+
+.parcours-photo-day:first-child {
+    margin-top: 0;
+}
+
+/* Pas de d-flex sur ces conteneurs masqués par `hidden` (AGENTS.md) : le
+   [hidden] de Bootstrap l'emporte sur ce display. */
+.parcours-photo-toolbar,
+.parcours-photo-bulk {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.parcours-photo-bulk {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    background: var(--tblr-primary-lt, rgba(0, 114, 198, 0.08));
+}
+
 .parcours-photo-thumb img {
     width: 100%;
     height: 100%;
