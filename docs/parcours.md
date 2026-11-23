@@ -370,12 +370,16 @@ Titres) :
 - compteurs animés `{etapes}`, `{caches}`, `{labs}`, `{pf}` (PF donnés sur
   les trouvailles atteintes), et `{total}`.
 
-Trois crochets optionnels ont été ajoutés au contrat du moteur :
+Crochets optionnels ajoutés au contrat du moteur :
 - `infosValues(now)` : valeurs texte qui priment sur les compteurs et sur la
   date du moteur ;
 - `frameActive(now)` : entretient le rendu entre deux quanta ;
 - `camera(leadMs, msPerDay)` : pose la vue avant chaque rendu (lot 7,
-  ci-dessous).
+  ci-dessous) ;
+- `timingUnits()` : tête de la synthèse du minutage de l'onglet Animation
+  (« 5 étapes · 2 jours » au lieu de « 178 jours · 10 jours/s », des
+  quanta) ; les mentions en jours qui suivent (« jours par image », jours
+  regroupés) sont alors omises.
 
 Ouvrir un autre parcours ou changer le rythme pendant une lecture : appliqué
 à la fin (`applyPending`).

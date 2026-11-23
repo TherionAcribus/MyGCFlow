@@ -251,6 +251,13 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   await expect(page.locator('.parcours-stop[data-stop-key="GCPAR04"]')).toContainText('souvent loguée après coup');
   await expect(page.locator('.parcours-stop-index').last()).toHaveText('5');
 
+  // Synthèse du minutage : étapes et journées, pas les quanta du moteur
+  // (« 178 jours · 10 jours/s » pour un week-end).
+  await page.locator('#mainTabs a[href="#animation"]').click();
+  await expect(page.locator('#timingSummary')).toContainText(/^5 étapes · 2 jours · animation \d+:\d\d/);
+  await expect(page.locator('#timingSummary')).not.toContainText('jours/s');
+  await page.locator('#mainTabs a[href="#data"]').click();
+
   // Rechargement : le dernier parcours ouvert revient.
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.mygcflowParcoursLoaded === true, null, { timeout: 30_000 });

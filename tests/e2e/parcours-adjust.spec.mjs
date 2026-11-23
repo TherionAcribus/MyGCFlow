@@ -233,6 +233,8 @@ test('épingler une heure, changer de journée, exclure puis réintégrer', asyn
   expect(state.days[1].excluded).toEqual(['GCPAR05']);
   expect(state.timeline.stopQ).toHaveLength(4);
   await expect(page.locator('#parcoursSummary')).toContainText('4 étapes');
+  // La synthèse du minutage (onglet Animation) suit la reconstruction.
+  await expect(page.locator('#timingSummary')).toContainText(/^4 étapes · /);
   await row(page, 'GCPAR05').locator('.parcours-stop-restore').click();
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[1].keys).toEqual(['GCPAR05']);

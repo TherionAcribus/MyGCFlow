@@ -39,6 +39,7 @@ import {
     stopDetail,
     stopLabel,
     stopTime,
+    stopsCountText,
     suggestionName,
 } from './parcours_labels.mjs';
 import {
@@ -639,6 +640,14 @@ const PARCOURS_TIMELINE_BAR = createParcoursTimelineBar({
     getState: () => ({ timeline, playback, timelineRevision }),
 });
 
+// Synthèse du minutage (onglet Animation) : étapes et journées comme dans la
+// liste des étapes, au lieu des quanta du moteur.
+function parcoursTimingUnits() {
+    if (!ordered) return null;
+    const days = ordered.days.length;
+    return [stopsCountText(ordered.stopCount), days === 1 ? t('Une journée') : t('${n} jours', { n: days })];
+}
+
 const PARCOURS_ENGINE = Object.freeze({
     timelineBar: PARCOURS_TIMELINE_BAR,
     id: 'parcours',
@@ -662,6 +671,7 @@ const PARCOURS_ENGINE = Object.freeze({
     renderPopup: renderParcoursPopup,
     styleChanged: parcoursStyleChanged,
     hidesPoints: () => stopStyle().render === RENDER_STOPS,
+    timingUnits: parcoursTimingUnits,
     popupAt: parcoursPopupAt,
     recordingChapters: parcoursRecordingChapters,
 });

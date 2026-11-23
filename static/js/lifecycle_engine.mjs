@@ -53,6 +53,10 @@
 //                              span), edgeText / positionText / tipLines
 //                              (axisStart, offset), dayOffset(start, offset,
 //                              direction) } ; voir timeline_bar.js
+//   timingUnits()              textes qui remplacent « n jours · n jours/s »
+//                              en tête de la synthèse du minutage (optionnel ;
+//                              Parcours : étapes et journées, ses « jours »
+//                              moteur étant des quanta de 100 ms)
 //   camera(leadMs, msPerDay)   pose la vue avant chaque rendu, après frameVars
 //                              ; leadMs = une image en capture image par image
 //                              (optionnel ; Parcours : caméra qui suit la tête)

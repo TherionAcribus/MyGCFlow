@@ -7185,9 +7185,15 @@ function renderTimingSummary(plan) {
         // du trait » : mouvement continu, pas de trajets à ajouter non plus.
         const cameraAddsTravel = pkg.options.animation?.cameraFollow === true && !cameraTravelKnown
             && !plan.cameraOverlap && !isCameraTrailMode();
+        // Page dont les « jours » moteur ne sont pas des jours (Parcours :
+        // quanta de 100 ms) : ses propres unités, et rien de ce qui suit ne
+        // parle de jours.
+        const units = lifecycleEngine()?.timingUnits?.() || null;
         const parts = [
-            t('${n} jours', { n: plan.dayCount }),
-            t('${n} jours/s', { n: Number(plan.daysPerSecond.toFixed(2)) }),
+            ...(units || [
+                t('${n} jours', { n: plan.dayCount }),
+                t('${n} jours/s', { n: Number(plan.daysPerSecond.toFixed(2)) }),
+            ]),
             cameraAddsTravel
                 ? t('animation minimale ${d}', { d: formatMmSs(plan.animationMs) })
                 : t('animation ${d}', { d: formatMmSs(plan.animationMs) }),
@@ -7220,11 +7226,11 @@ function renderTimingSummary(plan) {
         parts.push(cameraAddsTravel
             ? t('${n} images minimum', { n: plan.totalFrameCount })
             : t('${n} images', { n: plan.totalFrameCount }));
-        if (plan.framesPerDayAverage > 0 && plan.framesPerDayAverage < 1) {
+        if (!units && plan.framesPerDayAverage > 0 && plan.framesPerDayAverage < 1) {
             parts.push(t('≈ ${n} jours par image', { n: Number((1 / plan.framesPerDayAverage).toFixed(1)) }));
         }
         // Durée imposée tenue en regroupant des jours sans trouvaille.
-        if (plan.stepCount < plan.dayCount) {
+        if (!units && plan.stepCount < plan.dayCount) {
             const merged = plan.dayCount - plan.stepCount;
             parts.push(merged > 1
                 ? t('${n} jours sans trouvaille regroupés', { n: merged })
