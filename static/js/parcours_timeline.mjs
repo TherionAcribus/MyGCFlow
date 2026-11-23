@@ -130,6 +130,8 @@ function dayNumber(iso) {
 //            — `dayNumber` : rang de la date dans la plage (1 = premier jour).
 //   photos sur chaque étape : `photos` (ids, dans l'ordre d'affichage), et
 //   `photoQ` (quanta de chaque photo) quand `photosByStop` en donne ;
+//   `photoFavorites` (Set d'ids) : gardées d'abord quand le plafond ne
+//   montre que les premières (`photoOverflow: 'first'`) ;
 //   vrai chemin d'un trajet : `path` ([[lon, lat], ...], extrémités
 //   comprises) et `cum` (km cumulés) quand `legPaths` (« from>to ») en donne
 //   — sa longueur remplace la distance à vol d'oiseau.
@@ -144,8 +146,18 @@ function dayNumber(iso) {
 //             manquant étant pris sur les visites et les trajets. Avec
 //             `fixedTotal` (durée imposée, musique), le total de quanta est
 //             conservé ; sinon la chronologie s'allonge d'autant.
+// Les `max` photos gardées d'une étape : les favorites d'abord, puis les
+// premières prises ; montrées dans leur ordre d'origine.
+function keepFirstPhotos(ids, max, favorites) {
+    if (ids.length <= max) return ids;
+    if (!favorites?.size) return ids.slice(0, max);
+    const kept = new Set([...new Set([...ids.filter((id) => favorites.has(id)), ...ids])].slice(0, max));
+    return ids.filter((id) => kept.has(id));
+}
+
 export function buildParcoursTimeline(reconstructed, {
-    pace = PACE_REGULAR, photosByStop = null, legPaths = null, endCard = false, openCard = false, options = null, timing = null,
+    pace = PACE_REGULAR, photosByStop = null, photoFavorites = null, legPaths = null, endCard = false, openCard = false,
+    options = null, timing = null,
 } = {}) {
     const o = { ...TIMELINE_DEFAULTS, ...(options || {}) };
     const proportional = pace === PACE_PROPORTIONAL;
@@ -217,9 +229,11 @@ export function buildParcoursTimeline(reconstructed, {
             else dwell = o.stopQ;
             // Photos : chacune a son temps d'écran, ajouté à celui de l'étape.
             // Au-delà du plafond, elles se partagent ce temps, ou seules les
-            // premières restent (créneaux, piles, vignettes et repères suivent).
+            // premières restent (créneaux, piles, vignettes et repères suivent)
+            // — les favorites d'abord, montrées dans l'ordre de prise de vue.
             const attached = photosByStop?.get?.(stop.key) || [];
-            const photos = o.photoOverflow === 'first' ? attached.slice(0, o.maxPhotosPerStop) : attached;
+            const photos = o.photoOverflow === 'first' ? keepFirstPhotos(attached, o.maxPhotosPerStop, photoFavorites)
+                : attached;
             const photoQ = photos.length ? o.photoQ * Math.min(photos.length, o.maxPhotosPerStop) / photos.length : 0;
             dwell += photoQ * photos.length;
             stops.push({ ...stop, q, departQ: q + dwell, day: dayIndex, km, photos, photoQ });

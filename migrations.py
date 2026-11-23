@@ -412,6 +412,15 @@ def _v23_numero_serie_appareil_photo(db):
             conn.exec_driver_sql("ALTER TABLE parcours_photo ADD COLUMN camera_serial VARCHAR(40)")
 
 
+def _v24_photo_favorite_parcours(db):
+    # Parcours : photo favorite (cartons d'ouverture, de journée et de fin ;
+    # priorité au-delà du plafond par étape). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_photo)")}
+        if "favorite" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours_photo ADD COLUMN favorite BOOLEAN NOT NULL DEFAULT 0")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -436,6 +445,7 @@ MIGRATIONS = [
     (21, _v21_position_etape_parcours),
     (22, _v22_lecture_parcours),
     (23, _v23_numero_serie_appareil_photo),
+    (24, _v24_photo_favorite_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

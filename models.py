@@ -369,6 +369,8 @@ class ParcoursPhoto(db.Model):
     # Affichage dans la lecture (lot 8) : masquée (reste un indice), légende,
     # cadrage (proportions, point focal en %, zoom en %). Null : défaut.
     hidden = db.Column(db.Boolean, nullable=False, default=False)
+    # Favorite : orne les cartons, passe en premier au-delà du plafond.
+    favorite = db.Column(db.Boolean, nullable=False, default=False)
     caption = db.Column(db.String(200))
     aspect = db.Column(db.String(8))
     focus_x = db.Column(db.Integer)

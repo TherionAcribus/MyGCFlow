@@ -4542,6 +4542,19 @@ body[data-mode="parcours"] .rhythm-rate-field {
     color: var(--tblr-primary, #0072c6);
 }
 
+/* Photo favorite : étoile dans le coin haut droit. */
+.parcours-photo-favorite-badge {
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    padding: 1px 3px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #f59f00;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
 .parcours-photo-day {
     display: flex;
     align-items: center;

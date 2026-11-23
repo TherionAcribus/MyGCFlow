@@ -6,9 +6,11 @@ import {
     MATCH_GPS,
     MATCH_MANUAL,
     MATCH_TIME,
+    PHOTO_FILTER_FAVORITE,
     PHOTO_FILTER_HIDDEN,
     PHOTO_FILTER_UNLINKED,
     cameraKey,
+    favoritePhotoIds,
     cameraOffsets,
     photoCameraOffset,
     matchPhotos,
@@ -226,6 +228,15 @@ test('chronologie : chaque photo ajoute son temps d’écran à l’étape', () 
     assert.deepEqual(first.photos, [1, 2, 3, 4]);
     assert.equal(first.photoQ, 15);
     assert.equal(first.departQ - first.q, 12 + 15 * 4);
+    // Les favorites passent d'abord, montrées dans l'ordre de prise de vue.
+    const fav = buildParcoursTimeline(ordered, {
+        photosByStop: byStop, photoFavorites: new Set([6, 2]), options: { maxPhotosPerStop: 4, photoOverflow: 'first' },
+    }).stops[0];
+    assert.deepEqual(fav.photos, [1, 2, 3, 6]);
+    // Une favorite déjà parmi les premières ne prend pas deux places.
+    assert.deepEqual(buildParcoursTimeline(ordered, {
+        photosByStop: byStop, photoFavorites: new Set([1]), options: { maxPhotosPerStop: 4, photoOverflow: 'first' },
+    }).stops[0].photos, [1, 2, 3, 4]);
     // Sous le plafond, rien ne change.
     const few = new Map([['A', [1, 2]]]);
     assert.deepEqual(buildParcoursTimeline(ordered, { photosByStop: few, options: { photoOverflow: 'first' } }).stops[0].photos,
@@ -249,6 +260,9 @@ test('grille : regroupée par journée (heure corrigée), filtres non rattachée
     ]);
     assert.deepEqual(photoGridGroups(photos, matches, offsets, PHOTO_FILTER_UNLINKED).map((g) => g.ids), [[5], [2], [4]]);
     assert.deepEqual(photoGridGroups(photos, matches, offsets, PHOTO_FILTER_HIDDEN), [{ date: '2025-07-12', ids: [3] }]);
+    const starred = photos.map((p) => (p.id === 4 || p.id === 5 ? { ...p, favorite: true } : p));
+    assert.deepEqual(photoGridGroups(starred, matches, offsets, PHOTO_FILTER_FAVORITE).map((g) => g.ids), [[5], [4]]);
+    assert.deepEqual([...favoritePhotoIds(starred)], [4, 5]);
     assert.deepEqual(photoGridGroups([], matches), []);
 });
 

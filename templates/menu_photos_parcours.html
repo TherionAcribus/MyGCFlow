@@ -39,6 +39,7 @@
                                  aria-label="{{ _('Photos affichées') }}">
                                 <button type="button" class="btn btn-outline-secondary" data-photo-filter="all"></button>
                                 <button type="button" class="btn btn-outline-secondary" data-photo-filter="unlinked"></button>
+                                <button type="button" class="btn btn-outline-secondary" data-photo-filter="favorite"></button>
                                 <button type="button" class="btn btn-outline-secondary" data-photo-filter="hidden"></button>
                             </div>
                             <span class="form-hint text-muted">{{ _("Ctrl+clic ou Maj+clic : sélectionner plusieurs photos.") }}</span>
@@ -73,6 +74,12 @@
                                     <label class="form-check form-switch mb-2">
                                         <input type="checkbox" id="parcoursPhotoShown" class="form-check-input" role="switch">
                                         <span class="form-check-label">{{ _("Montrer dans la lecture et la vidéo") }}</span>
+                                    </label>
+                                    <label class="form-check form-switch mb-2">
+                                        <input type="checkbox" id="parcoursPhotoFavorite" class="form-check-input" role="switch"
+                                               aria-describedby="parcoursPhotoFavoriteHint">
+                                        <span class="form-check-label">{{ _("Photo favorite") }}</span>
+                                        <span id="parcoursPhotoFavoriteHint" class="form-hint text-muted">{{ _("Les favorites ornent les cartons d'ouverture, de journée et de fin, et passent en premier au-delà du plafond par étape.") }}</span>
                                     </label>
                                     <div class="mb-2">
                                         <label class="form-label small mb-1" for="parcoursPhotoCaption">{{ _("Légende") }}</label>

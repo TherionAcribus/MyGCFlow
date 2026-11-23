@@ -83,6 +83,42 @@ export function photoAspect(photo) {
     return photo?.width > 0 && photo?.height > 0 ? photo.width / photo.height : 4 / 3;
 }
 
+// --- Photos des cartons -----------------------------------------------------------
+
+// Photos favorites des cartons, parmi celles que montre la lecture (dans
+// l'ordre de la chronologie) : { open (carton d'ouverture), days (une par
+// journée, ou null), end (mosaïque de fin, au plus `mosaicMax`, réparties
+// sur tout le parcours) }. Le premier carton de journée ne reprend pas la
+// photo d'ouverture qui vient de le précéder. Sans favorite, rien : les
+// cartons restent du texte.
+export const CARD_MOSAIC_MAX = 5;
+
+export function cardPhotos(timeline, favorites, { mosaicMax = CARD_MOSAIC_MAX } = {}) {
+    const days = (timeline?.days || []).map(() => null);
+    const empty = { open: null, days, end: [] };
+    if (!favorites?.size || !timeline?.stops?.length) return empty;
+    const shown = [];
+    const seen = new Set();
+    for (const stop of timeline.stops) {
+        for (const id of stop.photos || []) {
+            if (!favorites.has(id) || seen.has(id)) continue;
+            seen.add(id);
+            shown.push({ id, day: stop.day });
+        }
+    }
+    if (!shown.length) return empty;
+    const open = shown[0].id;
+    for (let d = 0; d < days.length; d++) {
+        days[d] = shown.find((s) => s.day === d && !(d === 0 && s.id === open))?.id ?? null;
+    }
+    let end = shown.map((s) => s.id);
+    const max = Math.max(1, Math.floor(mosaicMax));
+    if (end.length > max) {
+        end = max === 1 ? [end[0]] : Array.from({ length: max }, (_, i) => end[Math.round((i * (end.length - 1)) / (max - 1))]);
+    }
+    return { open, days, end };
+}
+
 // --- Réglages d'affichage (lot 9) ------------------------------------------------
 
 export const PHOTO_LAYOUT_STOP = 'stop';

@@ -175,6 +175,7 @@ def photo_to_dict(row: ParcoursPhoto) -> dict:
         'height': row.height,
         'stopKey': row.stop_key,
         'hidden': bool(row.hidden),
+        'favorite': bool(row.favorite),
         'caption': row.caption or '',
         'aspect': row.aspect or 'original',
         'focusX': 50 if row.focus_x is None else row.focus_x,
@@ -249,8 +250,8 @@ def _int_in(value, bounds) -> int:
 
 def update_photo(session, parcours_id: int, photo_id: int, data: dict) -> dict:
     """Rattachement manuel : `stopKey` (null : retour au rattachement
-    automatique) ; affichage : `hidden`, `caption`, `aspect`, `focusX`,
-    `focusY`, `zoom`. Tout est validé avant d'écrire : une valeur refusée
+    automatique) ; affichage : `hidden`, `favorite`, `caption`, `aspect`,
+    `focusX`, `focusY`, `zoom`. Tout est validé avant d'écrire : une valeur refusée
     ne laisse rien à moitié appliqué."""
     parcours = parcours_store.get(session, parcours_id)
     row = _get_photo(session, parcours.id, photo_id)
@@ -299,10 +300,11 @@ def _photo_changes(data) -> dict:
                                 or len(key) > parcours_store.STOP_KEY_MAX_LENGTH):
             raise ParcoursError('photo-invalid')
         changes['stop_key'] = key
-    if 'hidden' in data:
-        if not isinstance(data['hidden'], bool):
-            raise ParcoursError('photo-invalid')
-        changes['hidden'] = data['hidden']
+    for key in ('hidden', 'favorite'):
+        if key in data:
+            if not isinstance(data[key], bool):
+                raise ParcoursError('photo-invalid')
+            changes[key] = data[key]
     if 'caption' in data:
         caption = data['caption']
         if caption is None:

@@ -3,8 +3,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+    CARD_MOSAIC_MAX,
     PHOTO_DISPLAY_DEFAULTS,
     PHOTO_FADE_Q,
+    cardPhotos,
     isFullFrame,
     normalizePhotoDisplay,
     photoAspect,
@@ -19,6 +21,26 @@ import {
 import { drawPhotoCard, drawPhotoLeader } from '../../static/js/parcours_photo_draw.mjs';
 
 const round = (r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, Math.round(v * 100) / 100]));
+
+test('photos des cartons : favorites montrées, une par journée, mosaïque répartie', () => {
+    // Deux journées : étapes 0-1 le jour 0, 2-3 le jour 1.
+    const timeline = {
+        days: [{}, {}, {}],
+        stops: [
+            { day: 0, photos: [1, 2] }, { day: 0, photos: [3] },
+            { day: 1, photos: [4, 5] }, { day: 1, photos: [6, 7, 8] },
+        ],
+    };
+    assert.deepEqual(cardPhotos(timeline, new Set()), { open: null, days: [null, null, null], end: [] });
+    // Favorite non montrée (absente de la chronologie) : ignorée.
+    assert.deepEqual(cardPhotos(timeline, new Set([99])).open, null);
+    // L'ouverture prend la première ; « Jour 1 » ne la répète pas.
+    assert.deepEqual(cardPhotos(timeline, new Set([2, 3, 5])), { open: 2, days: [3, 5, null], end: [2, 3, 5] });
+    assert.deepEqual(cardPhotos(timeline, new Set([2, 5])).days, [null, 5, null]);
+    // Plus de favorites que la mosaïque n'en tient : réparties du début à la fin.
+    assert.deepEqual(cardPhotos(timeline, new Set([1, 2, 3, 4, 5, 6, 7, 8]), { mosaicMax: 3 }).end, [1, 5, 8]);
+    assert.equal(CARD_MOSAIC_MAX, 5);
+});
 
 test('cadrage : valeurs bornées, défauts', () => {
     assert.deepEqual(photoCrop({}), { aspect: 'original', focusX: 50, focusY: 50, zoom: 100 });

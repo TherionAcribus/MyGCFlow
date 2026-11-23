@@ -175,10 +175,11 @@ class ApiTests(unittest.TestCase):
         ids = [self.upload(photo_bytes((i * 40, 10, 10)), name=f'{i}.jpg').get_json()['photo']['id']
                for i in range(3)]
         url = f'/api/parcours/{self.pid}/photos'
-        payload = self.call('PATCH', url, json={'ids': ids[:2], 'changes': {'stopKey': 'GC1', 'hidden': True}}).get_json()
+        payload = self.call('PATCH', url, json={'ids': ids[:2], 'changes': {'stopKey': 'GC1', 'hidden': True,
+                                                                             'favorite': True}}).get_json()
         by_id = {p['id']: p for p in payload['photos']}
-        self.assertEqual([(by_id[i]['stopKey'], by_id[i]['hidden']) for i in ids],
-                         [('GC1', True), ('GC1', True), (None, False)])
+        self.assertEqual([(by_id[i]['stopKey'], by_id[i]['hidden'], by_id[i]['favorite']) for i in ids],
+                         [('GC1', True, True), ('GC1', True, True), (None, False, False)])
         self.assertEqual(payload['cameras'], [])
         # Tout ou rien : un id inconnu, en double ou une valeur refusée
         # ne change aucune photo.
@@ -210,7 +211,10 @@ class ApiTests(unittest.TestCase):
                                                 'focusX': 20, 'focusY': 80, 'zoom': 150}).get_json()['photo']
         self.assertEqual((changed['hidden'], changed['caption'], changed['aspect'], changed['focusX'],
                           changed['focusY'], changed['zoom']), (True, 'Vue sur le lac', '4:3', 20, 80, 150))
-        for bad in ({'hidden': 1}, {'caption': 'x' * 201}, {'caption': 3}, {'aspect': '2:1'}, {'focusX': 101},
+        self.assertFalse(changed['favorite'])
+        favorite = self.call('PATCH', url, json={'favorite': True}).get_json()['photo']
+        self.assertTrue(favorite['favorite'])
+        for bad in ({'hidden': 1}, {'favorite': 'oui'}, {'caption': 'x' * 201}, {'caption': 3}, {'aspect': '2:1'}, {'focusX': 101},
                     {'zoom': 99}, {'zoom': 1.5}, {'focusY': True}):
             self.assertEqual(self.call('PATCH', url, json=bad).get_json().get('error'), 'photo-invalid', bad)
         # Une valeur refusée ne laisse rien à moitié appliqué.

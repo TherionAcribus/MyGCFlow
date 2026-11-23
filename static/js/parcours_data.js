@@ -114,6 +114,7 @@ import {
     photoSlots,
     photoTimelineOptions,
 } from './parcours_photo_layout.mjs';
+import { favoritePhotoIds } from './parcours_photos.mjs';
 import { reconstructWithEvidence } from './parcours_tracks.mjs';
 import { createParcoursRouting } from './parcours_routing_ui.mjs';
 import { dayColor } from './parcours_style.mjs';
@@ -441,6 +442,7 @@ function applyTimeline({ fit = false } = {}) {
     timeline = ordered ? buildParcoursTimeline(ordered, {
         pace: playback.pace,
         photosByStop: photoDisplay.layout === PHOTO_LAYOUT_NONE ? null : photoByStop,
+        photoFavorites: favoritePhotoIds(inputs?.photos),
         legPaths,
         // Cartons d'ouverture (vue d'ensemble puis descente) et final :
         // temps d'écran ajoutés avec les cartons.
@@ -1398,6 +1400,7 @@ export function getParcoursSnapshot() {
             match: photoMatches.get(photo.id) || null,
             trackPosition: photoPositions.get(photo.id) || null,
             hidden: !!photo.hidden,
+            favorite: !!photo.favorite,
             caption: photo.caption || '',
             crop: photoCrop(photo),
         })),
@@ -1560,6 +1563,10 @@ export function getParcoursSnapshot() {
                 const card = playback.day_cards ? endCardAt(timeline, currentQ, sceneTimingOptions(playMsPerDay)) : null;
                 return card ? playDraw.endCardText() : null;
             })(),
+            // Photos favorites des cartons (choisies) et celles peintes à la
+            // dernière image.
+            cardPhotos: playDraw.cardPhotos(),
+            cardPhotosDrawn: [...playDraw.lastCardPhotos()],
             headMode: headModeAt(timeline, currentQ),
             headGlyph: playback.head === HEAD_PICTOGRAM && !!playDraw.headGlyph(headModeAt(timeline, currentQ)),
         } : null,

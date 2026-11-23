@@ -924,6 +924,20 @@ centre, 100 %).
 - **Masquée** : toujours un indice (rattachement, ancre d'heure), mais
   absente de `photosByStop` — ni dessinée ni comptée dans le temps d'écran.
   La changer reconstruit le parcours (refusé pendant une lecture).
+- **Favorite** (`favorite`, migration v24, aussi en sélection groupée et
+  en filtre de la grille) : orne les cartons — ouverture (la première
+  favorite montrée), journées (la première de chaque journée ; « Jour 1 »
+  ne répète pas celle de l'ouverture), fin (mosaïque carrée de 5 au plus,
+  réparties sur tout le parcours) — et passe en premier au-delà du
+  plafond quand il ne garde que les premières (`photoFavorites` de
+  `buildParcoursTimeline`). Choix : `cardPhotos` (parcours_photo_layout.mjs,
+  parmi les photos que la chronologie montre — aucune avec « Aucune photo
+  dans la vidéo »). Sans favorite, les cartons restent du texte. Peintes
+  au-dessus du texte (pleine taille préchargée dès l'ouverture, attendues
+  avant un enregistrement, comptées dans les photos manquantes). Relevés :
+  `scene.cardPhotos` (choix) et `scene.cardPhotosDrawn` (peintes à la
+  dernière image) de `getParcoursSnapshot()`. La changer reconstruit le
+  parcours (refusé pendant une lecture), comme « Masquée ».
 - **Légende** : la balise `{legende}` du gabarit d'affichage.
 - **Cadrage** (`photoCropRect`, `parcours_photo_layout.mjs`) : la plus
   grande fenêtre aux proportions voulues, réduite de 1/zoom, centrée sur le
@@ -958,7 +972,7 @@ envoyée entière à chaque changement :
 | `effect` | `fade`, `slide`, `zoom` (courbes d'`images_render.mjs`) |
 | `ken_burns` | zoom lent (+ 8 %) pendant l'affichage : `false` |
 | `duration`, `max_per_stop` | 1,5 s par photo (0,5-6), 4 photos au plus en temps cumulé par étape (1-12) |
-| `overflow` | au-delà du plafond : `share` (toutes, chacune plus brève), `first` (seules les premières prises, à leur durée entière ; les suivantes n'ont pas de créneau, donc ni pile, ni vignette, ni repère sur la barre) |
+| `overflow` | au-delà du plafond : `share` (toutes, chacune plus brève), `first` (les favorites puis les premières prises, à leur durée entière, montrées dans l'ordre de prise de vue ; les suivantes n'ont pas de créneau, donc ni pile, ni vignette, ni repère sur la barre) |
 | `caption` | gabarit `{legende}`, `{etape}`, `{heure}`, `{jour}`, `{date}` (120 caractères ; vide : pas de légende) |
 
 - **Chronologie** : `photoSlots` (créneaux : arrivée + 2 quanta, puis une

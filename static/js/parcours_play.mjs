@@ -43,8 +43,17 @@ import {
     trailColorFor,
 } from './parcours_style.mjs';
 import { STACK_DISTANCE, stackLabel, stackStops } from './parcours_stack.mjs';
-import { cameraOffsets, photoClock, photoTimeTrusted } from './parcours_photos.mjs';
-import { PHOTO_FADE_Q, PHOTO_LAYOUT_NONE, photoAspect, photoCaptionText, photoFrameAt, photoSlots } from './parcours_photo_layout.mjs';
+import { cameraOffsets, favoritePhotoIds, photoClock, photoTimeTrusted } from './parcours_photos.mjs';
+import {
+    PHOTO_FADE_Q,
+    PHOTO_LAYOUT_NONE,
+    cardPhotos as pickCardPhotos,
+    photoAspect,
+    photoCaptionText,
+    photoCropRect,
+    photoFrameAt,
+    photoSlots,
+} from './parcours_photo_layout.mjs';
 import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
@@ -301,6 +310,7 @@ export function createParcoursPlayDraw(deps) {
         }
         // Après le géocacheur : la carte postale passe au-dessus.
         drawPhotoCards(event);
+        cardPhotosDrawn = [];
         drawOpenCard(ctx, ratio);
         drawDayCard(ctx, ratio);
         drawEndCard(ctx, ratio);
@@ -767,8 +777,92 @@ export function createParcoursPlayDraw(deps) {
         return { title: item?.name || t('Fin du parcours'), subtitle: parts.join(' · ') };
     }
 
-    // Dessin commun d'un carton {title, subtitle} centré au tiers haut.
-    function drawCard(ctx, ratio, text, alpha) {
+    // Photos favorites des cartons (`cardPhotos` de parcours_photo_layout.mjs),
+    // recalculées quand la chronologie ou les photos changent.
+    let cardMemo = { timeline: null, photos: null, value: null };
+    let cardPhotosDrawn = [];     // ids peints sur les cartons à la dernière image (relevé e2e)
+
+    function currentCardPhotos() {
+        const { timeline, inputs } = S();
+        if (!cardMemo.value || cardMemo.timeline !== timeline || cardMemo.photos !== inputs?.photos) {
+            cardMemo = { timeline, photos: inputs?.photos, value: pickCardPhotos(timeline, favoritePhotoIds(inputs?.photos)) };
+        }
+        return cardMemo.value;
+    }
+
+    // Ids des photos des cartons — seulement quand les cartons sont montrés.
+    function cardPhotoIds() {
+        if (!S().playback?.day_cards) return [];
+        const c = currentCardPhotos();
+        return [...new Set([c.open, ...c.days, ...c.end].filter((id) => id != null))];
+    }
+
+    // Image prête d'une photo : la pleine taille, sinon la vignette.
+    function readyPhotoImage(id) {
+        const full = photoImages.get(id);
+        if (imageReady(full)) return full;
+        const thumb = photoThumbs.get(id);
+        return imageReady(thumb) ? thumb : null;
+    }
+
+    // Photos d'un carton, au-dessus du texte : une photo à son cadrage, ou une
+    // rangée de vignettes carrées (mosaïque de fin), en carte postale. Une
+    // photo encore en chargement n'est pas dessinée. → { tiles, width,
+    // height, gap } en px du canevas.
+    function cardPhotoTiles(ctx, ratio, ids, mosaic) {
+        const W = ctx.canvas.width;
+        const H = ctx.canvas.height;
+        // Entre deux vignettes : leurs deux marges blanches (6 px) et un jour.
+        const gap = 22 * ratio;
+        const tiles = [];
+        for (const id of ids) {
+            const photo = photoById(id);
+            const img = photo ? readyPhotoImage(id) : null;
+            if (!img) continue;
+            const natural = { width: img.naturalWidth, height: img.naturalHeight };
+            const rect = photoCropRect(natural, mosaic ? { ...photo, aspect: '1:1' } : photo);
+            tiles.push({ id, img, rect, aspect: rect.width / rect.height });
+        }
+        if (!tiles.length) return { tiles, width: 0, height: 0 };
+        if (mosaic) {
+            const side = Math.min(H * 0.2, (W * 0.86 - gap * (tiles.length - 1)) / tiles.length);
+            for (const tile of tiles) {
+                tile.w = side;
+                tile.h = side;
+            }
+        } else {
+            const tile = tiles[0];
+            tiles.length = 1;
+            tile.h = Math.min(H * 0.32, (W * 0.5) / tile.aspect);
+            tile.w = tile.h * tile.aspect;
+        }
+        const width = tiles.reduce((sum, tile) => sum + tile.w, 0) + gap * (tiles.length - 1);
+        const height = Math.max(...tiles.map((tile) => tile.h));
+        return { tiles, width, height, gap };
+    }
+
+    function paintCardTiles(ctx, ratio, layout, top) {
+        const border = 6 * ratio;
+        let x = ctx.canvas.width / 2 - layout.width / 2;
+        for (const tile of layout.tiles) {
+            const y = top + (layout.height - tile.h) / 2;
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+            ctx.shadowBlur = 14 * ratio;
+            ctx.shadowOffsetY = 4 * ratio;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x - border, y - border, tile.w + border * 2, tile.h + border * 2);
+            ctx.restore();
+            ctx.drawImage(tile.img, tile.rect.x, tile.rect.y, tile.rect.width, tile.rect.height, x, y, tile.w, tile.h);
+            cardPhotosDrawn.push(tile.id);
+            x += tile.w + layout.gap;
+        }
+    }
+
+    // Dessin commun d'un carton {title, subtitle} centré au tiers haut —
+    // précédé, s'il y en a, de ses photos favorites (`photoIds` ; `mosaic` :
+    // vignettes carrées en rangée).
+    function drawCard(ctx, ratio, text, alpha, photoIds = [], mosaic = false) {
         const font = pageFontFamily();
         const titleSize = 30 * ratio;
         const subtitleSize = 17 * ratio;
@@ -791,7 +885,16 @@ export function createParcoursPlayDraw(deps) {
         const boxH = titleSize + gap + subtitleSize
             + (text.detail ? gap + detailSize : 0) + padY * 2;
         const cx = ctx.canvas.width / 2;
-        const top = ctx.canvas.height * 0.36 - boxH / 2;
+        let top = ctx.canvas.height * 0.36 - boxH / 2;
+        const photos = photoIds.length ? cardPhotoTiles(ctx, ratio, photoIds, mosaic) : null;
+        if (photos?.tiles.length) {
+            // Photos puis texte, le tout centré un peu plus bas que le texte seul.
+            const between = 18 * ratio;
+            const groupH = photos.height + 12 * ratio + between + boxH;
+            const groupTop = Math.max(12 * ratio, ctx.canvas.height * 0.42 - groupH / 2);
+            paintCardTiles(ctx, ratio, photos, groupTop + 6 * ratio);
+            top = groupTop + photos.height + 12 * ratio + between;
+        }
         ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
         ctx.beginPath();
         if (typeof ctx.roundRect === 'function') ctx.roundRect(cx - boxW / 2, top, boxW, boxH, 14 * ratio);
@@ -817,19 +920,22 @@ export function createParcoursPlayDraw(deps) {
         const { playback, timeline, currentQ, msPerDay } = S();
         const card = playback.day_cards ? dayCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
         const text = card && card.alpha > 0 ? dayCardText(card.day) : null;
-        if (text) drawCard(ctx, ratio, text, card.alpha);
+        const photo = text ? currentCardPhotos().days[card.day] : null;
+        if (text) drawCard(ctx, ratio, text, card.alpha, photo != null ? [photo] : []);
     }
 
     function drawOpenCard(ctx, ratio) {
         const { playback, timeline, currentQ, msPerDay } = S();
         const card = playback.day_cards ? openCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
-        if (card && card.alpha > 0) drawCard(ctx, ratio, openCardText(), card.alpha);
+        if (!card || !(card.alpha > 0)) return;
+        const photo = currentCardPhotos().open;
+        drawCard(ctx, ratio, openCardText(), card.alpha, photo != null ? [photo] : []);
     }
 
     function drawEndCard(ctx, ratio) {
         const { playback, timeline, currentQ, msPerDay } = S();
         const card = playback.day_cards ? endCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
-        if (card && card.alpha > 0) drawCard(ctx, ratio, endCardText(), card.alpha);
+        if (card && card.alpha > 0) drawCard(ctx, ratio, endCardText(), card.alpha, currentCardPhotos().end, true);
     }
 
     // Crédits des itinéraires (CGU des fournisseurs), peints en bas à droite
@@ -919,6 +1025,9 @@ export function createParcoursPlayDraw(deps) {
         for (const ids of photoByStop.values()) {
             for (const id of ids) if (byId.has(id)) loadPhotoImage(id, true);
         }
+        // Photos des cartons : quelques-unes, en pleine taille dès l'ouverture
+        // (le carton d'ouverture est la première image de la lecture).
+        for (const id of cardPhotoIds()) if (byId.has(id)) loadPhotoImage(id, false);
         if (all) {
             for (const ids of photoByStop.values()) {
                 for (const id of ids) if (byId.has(id)) loadPhotoImage(id, false);
@@ -960,11 +1069,10 @@ export function createParcoursPlayDraw(deps) {
         if (!timeline || photoDisplay?.layout === PHOTO_LAYOUT_NONE) return 0;
         const seen = new Set();
         let missing = 0;
-        for (const slot of photoSlots(timeline)) {
-            if (seen.has(slot.photoId)) continue;
-            seen.add(slot.photoId);
-            if (!imageReady(photoImages.get(slot.photoId))
-                && !imageReady(photoThumbs.get(slot.photoId))) missing++;
+        for (const id of [...photoSlots(timeline).map((slot) => slot.photoId), ...cardPhotoIds()]) {
+            if (seen.has(id)) continue;
+            seen.add(id);
+            if (!readyPhotoImage(id)) missing++;
         }
         return missing;
     }
@@ -1088,6 +1196,11 @@ export function createParcoursPlayDraw(deps) {
         imageStats,
         lastPhotoView: () => lastPhotoView,
         lastPhotoCards: () => lastPhotoCards,
+        cardPhotos: () => {
+            const c = currentCardPhotos();
+            return { open: c.open, days: [...c.days], end: [...c.end] };
+        },
+        lastCardPhotos: () => cardPhotosDrawn,
         previewPhoto,
         trailOptions,
         dayCardText,

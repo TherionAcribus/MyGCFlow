@@ -137,7 +137,8 @@ export function createPhotosPanel(deps) {
     // ne changent pas. → true si enregistré.
     async function patchPhoto(id, patch, pid = s().selectedId) {
         if (!pid) return false;
-        const rebuilds = 'hidden' in patch;
+        // Favorite : priorité au-delà du plafond, donc chronologie refaite.
+        const rebuilds = 'hidden' in patch || 'favorite' in patch;
         if (rebuilds && deps.adjustmentsLocked()) {
             renderPhotoDetail();
             return false;
@@ -337,11 +338,13 @@ export function createPhotosPanel(deps) {
         const counts = {
             all: photos.length,
             unlinked: photos.filter((photo) => !photoMatches.get(photo.id)?.key).length,
+            favorite: photos.filter((photo) => photo.favorite).length,
             hidden: photos.filter((photo) => photo.hidden).length,
         };
         const labels = {
             all: t('Toutes (${n})', { n: counts.all }),
             unlinked: t('Non rattachées (${n})', { n: counts.unlinked }),
+            favorite: t('Favorites (${n})', { n: counts.favorite }),
             hidden: t('Masquées (${n})', { n: counts.hidden }),
         };
         for (const btn of el('parcoursPhotoFilters')?.querySelectorAll('[data-photo-filter]') || []) {
@@ -409,6 +412,7 @@ export function createPhotosPanel(deps) {
         const hiddenNote = t('masquée dans la vidéo');
         const lostNote = t('étape choisie retirée du parcours');
         const selectedNote = t('sélectionnée');
+        const favoriteNote = t('favorite');
         grid.append(...group.ids.map(photoById).filter(Boolean).map((photo) => {
             const match = photoMatches.get(photo.id);
             const selected = selectedIds.has(photo.id);
@@ -419,11 +423,13 @@ export function createPhotosPanel(deps) {
             cell.classList.toggle('is-active', photoDetailId === photo.id);
             cell.classList.toggle('is-hidden', !!photo.hidden);
             cell.classList.toggle('is-selected', selected);
+            cell.classList.toggle('is-favorite', !!photo.favorite);
             cell.dataset.photoId = String(photo.id);
             cell.title = [
                 photo.name,
                 matchLabel(match, deps.stopByKey(match?.key)),
                 match?.lostKey ? lostNote : '',
+                photo.favorite ? favoriteNote : '',
                 photo.hidden ? hiddenNote : '',
                 selected ? selectedNote : '',
             ].filter(Boolean).join(' — ');
@@ -435,6 +441,12 @@ export function createPhotosPanel(deps) {
             if (photo.hidden) {
                 const badge = document.createElement('i');
                 badge.className = 'ti ti-eye-off parcours-photo-hidden-badge';
+                badge.setAttribute('aria-hidden', 'true');
+                cell.append(badge);
+            }
+            if (photo.favorite) {
+                const badge = document.createElement('i');
+                badge.className = 'ti ti-star-filled parcours-photo-favorite-badge';
                 badge.setAttribute('aria-hidden', 'true');
                 cell.append(badge);
             }
@@ -515,6 +527,13 @@ export function createPhotosPanel(deps) {
             t('Montrer les photos sélectionnées dans la vidéo'), { text: t('Montrer') });
         show.disabled = chosen.every((photo) => !photo.hidden);
         show.addEventListener('click', () => patchSelection({ hidden: false }));
+        // Favorites : retirer si toutes le sont déjà, sinon les y mettre.
+        const allFavorite = chosen.every((photo) => photo.favorite);
+        const favorite = deps.button('btn btn-sm btn-outline-secondary parcours-photo-bulk-favorite',
+            allFavorite ? 'ti-star' : 'ti-star-filled',
+            allFavorite ? t('Retirer les photos sélectionnées des favorites') : t('Mettre les photos sélectionnées en favorites'),
+            { text: allFavorite ? t('Retirer des favorites') : t('Favorites') });
+        favorite.addEventListener('click', () => patchSelection({ favorite: !allFavorite }));
         const remove = deps.button('btn btn-sm btn-outline-danger parcours-photo-bulk-delete', 'ti-trash',
             t('Supprimer les photos sélectionnées'), { text: t('Supprimer') });
         remove.addEventListener('click', () => {
@@ -532,7 +551,7 @@ export function createPhotosPanel(deps) {
             selectedIds.clear();
             render();
         });
-        box.replaceChildren(count, select, hide, show, remove, clear);
+        box.replaceChildren(count, select, favorite, hide, show, remove, clear);
     }
 
     async function patchSelection(changes) {
@@ -721,6 +740,8 @@ export function createPhotosPanel(deps) {
 
         const shown = el('parcoursPhotoShown');
         if (shown) shown.checked = !photo.hidden;
+        const favorite = el('parcoursPhotoFavorite');
+        if (favorite) favorite.checked = !!photo.favorite;
         const caption = el('parcoursPhotoCaption');
         if (caption && document.activeElement !== caption) caption.value = photo.caption || '';
         const crop = cropOf(photo);
@@ -991,6 +1012,10 @@ export function createPhotosPanel(deps) {
         el('parcoursPhotoShown')?.addEventListener('change', (event) => {
             const photo = current();
             if (photo) patchPhoto(photo.id, { hidden: !event.target.checked });
+        });
+        el('parcoursPhotoFavorite')?.addEventListener('change', (event) => {
+            const photo = current();
+            if (photo) patchPhoto(photo.id, { favorite: event.target.checked });
         });
         el('parcoursPhotoCaption')?.addEventListener('change', (event) => {
             const photo = current();

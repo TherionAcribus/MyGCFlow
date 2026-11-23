@@ -142,6 +142,47 @@ test('au-delà du plafond : partager le temps, ou ne montrer que les premières'
   expect(errors).toEqual([]);
 });
 
+test('photos favorites : cartons d’ouverture, de journée et de fin', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const { phone, camera } = await withTwoPhotos(page, request);
+  const cardPhotos = async () => (await snapshot(page)).scene.cardPhotos;
+  // Sans favorite : cartons en texte seul.
+  expect(await cardPhotos()).toEqual({ open: null, days: [null, null], end: [] });
+
+  // Le téléphone (jour 1) par l'interrupteur du détail…
+  await page.locator(`.parcours-photo-thumb[data-photo-id="${phone}"]`).click();
+  await page.locator('#parcoursPhotoFavorite').check();
+  await expect.poll(async () => (await snapshot(page)).photos.find((p) => p.id === phone).favorite).toBe(true);
+  // … l'appareil (jour 2) par la sélection.
+  await page.locator(`.parcours-photo-thumb[data-photo-id="${camera}"]`).click({ modifiers: ['Control'] });
+  await page.locator('#parcoursPhotoBulk .parcours-photo-bulk-favorite').click();
+  await expect.poll(async () => (await snapshot(page)).photos.every((p) => p.favorite)).toBe(true);
+  await expect(page.locator('.parcours-photo-thumb .parcours-photo-favorite-badge')).toHaveCount(2);
+  await expect(page.locator('#parcoursPhotoFilters [data-photo-filter="favorite"]')).toHaveText('Favorites (2)');
+  // Ouverture : la première ; « Jour 1 » ne la répète pas ; « Jour 2 » :
+  // la sienne ; fin : toutes.
+  expect(await cardPhotos()).toEqual({ open: phone, days: [null, camera], end: [phone, camera] });
+
+  // Peintes dans la vidéo : aperçu en pause, saut dans chaque carton.
+  await page.locator('#btnQuickPreview').click();
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(true));
+  await expect.poll(async () =>
+    page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('paused');
+  const seek = (q) => page.evaluate(async (target) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(2000, 0, 1 + target)), q);
+  const drawnAt = async (q) => {
+    await seek(q);
+    return (await snapshot(page)).scene.cardPhotosDrawn;
+  };
+  const { timeline } = await snapshot(page);
+  await expect.poll(() => drawnAt(15)).toEqual([phone]);
+  const day2 = timeline.stopQ.find((q) => q > timeline.dayStartQ[1]);
+  await expect.poll(() => drawnAt(day2)).toEqual([camera]);
+  await expect.poll(() => drawnAt(timeline.quanta - 3)).toEqual([phone, camera]);
+  await page.locator('#btnQuickStop').click();
+  expect(errors).toEqual([]);
+});
+
 test('placements : près de l’étape avec trait, emplacement fixe, bande de vignettes, légende', async ({ page, request }) => {
   const errors = collectErrors(page);
   const { phone, camera } = await withTwoPhotos(page, request);

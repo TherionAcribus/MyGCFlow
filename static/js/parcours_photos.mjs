@@ -267,12 +267,21 @@ export function photosByStop(photos, matches, offsets = new Map()) {
 export const PHOTO_FILTER_ALL = 'all';
 export const PHOTO_FILTER_UNLINKED = 'unlinked';
 export const PHOTO_FILTER_HIDDEN = 'hidden';
-export const PHOTO_FILTERS = Object.freeze([PHOTO_FILTER_ALL, PHOTO_FILTER_UNLINKED, PHOTO_FILTER_HIDDEN]);
+export const PHOTO_FILTER_FAVORITE = 'favorite';
+export const PHOTO_FILTERS = Object.freeze([
+    PHOTO_FILTER_ALL, PHOTO_FILTER_UNLINKED, PHOTO_FILTER_FAVORITE, PHOTO_FILTER_HIDDEN,
+]);
 
 export function photoInFilter(photo, match, filter) {
     if (filter === PHOTO_FILTER_UNLINKED) return !match?.key;
     if (filter === PHOTO_FILTER_HIDDEN) return !!photo?.hidden;
+    if (filter === PHOTO_FILTER_FAVORITE) return !!photo?.favorite;
     return true;
+}
+
+// Ids des photos favorites (cartons, priorité au-delà du plafond).
+export function favoritePhotoIds(photos) {
+    return new Set((Array.isArray(photos) ? photos : []).filter((p) => p?.favorite).map((p) => p.id));
 }
 
 // → [{ date: 'AAAA-MM-JJ' | null (sans heure), ids }] : journées dans
