@@ -392,6 +392,13 @@ test('vignettes : la photo descend près de son étape et y reste', () => {
     // Toujours là à l'étape suivante, sous la photo montrée.
     cards = photoFrameAt(timeline(), 90, display, VIEW).cards;
     assert.deepEqual(cards.map((c) => [c.photoId, !!c.pinned]), [[1, true], [2, true], [3, false]]);
+    // Près du bord : attachée à décalage fixe — rognée plutôt que ramenée
+    // dans l'écran (elle ne glisse pas par rapport à la carte).
+    const edge = { ...VIEW, stopPixel: (i) => (i === 0 ? [975, 300] : [900, 100]) };
+    const edgePin = photoFrameAt(timeline(), 35, display, edge).cards.find((c) => c.photoId === 1);
+    assert.equal(edgePin.pinned, true);
+    assert.ok(Math.abs(edgePin.x - 975 - (pin.x - 500)) < 1e-9);
+    assert.ok(edgePin.x > 1000);
     // Hors de l'écran : pas dessinée.
     const away = { ...VIEW, stopPixel: (i) => (i === 0 ? [-500, 300] : [900, 100]) };
     assert.deepEqual(photoFrameAt(timeline(), 90, display, away).cards.map((c) => c.photoId), [3]);

@@ -494,26 +494,18 @@ export function photoFrameAt(timeline, qf, display, view) {
             };
         };
         // Vignette : grand côté pinPx, sur le côté de l'étape le plus libre
-        // (pinDirection), en petite pile.
+        // (pinDirection), en petite pile. Position strictement relative à
+        // l'étape : rognée par le bord de l'écran plutôt que déplacée, pour
+        // ne jamais glisser par rapport à la carte.
         const pinOf = (k) => {
             const [dx, dy] = first.route ? PIN_DIRECTIONS[0] : pinDirection(timeline, first.stop);
             const half = pinPx * (0.5 + PIN_SPREAD);
             const p = stop || [width / 2, height / 2];
             const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
             const scale = pinPx / Math.max(cards[k].cardW, cards[k].cardH);
-            let x = p[0] + dx * (half + PIN_GAP * ratio) + ox * pinPx;
-            let y = p[1] + dy * (half + PIN_GAP * ratio) + oy * pinPx;
-            // Étape au bord de l'écran : la vignette reste visible (le trait
-            // la relie toujours à son étape).
-            if (insideScreen(stop, width, height)) {
-                const hw = (cards[k].cardW * scale) / 2 + margin / 2;
-                const hh = (cards[k].cardH * scale) / 2 + margin / 2;
-                x = clamp(x, hw, width - hw);
-                y = clamp(y, hh, height - hh);
-            }
             return {
-                x,
-                y,
+                x: p[0] + dx * (half + PIN_GAP * ratio) + ox * pinPx,
+                y: p[1] + dy * (half + PIN_GAP * ratio) + oy * pinPx,
                 rotation: display.tilt ? STACK_TILT_DEG[k % STACK_TILT_DEG.length] * Math.PI / 180 : 0,
                 scale,
             };
@@ -577,7 +569,8 @@ export function photoFrameAt(timeline, qf, display, view) {
 // Vignettes sur la carte (`pin`) : au lieu de s'effacer, chaque photo (ou
 // la pile entière) descend en PIN_LAND_Q quanta vers une petite pile posée
 // à côté de son étape, et y reste jusqu'à la fin, attachée à l'étape (elle
-// suit la carte), avec un trait vers l'étape.
+// suit la carte : rognée au bord de l'écran plutôt que déplacée), avec un
+// trait vers l'étape.
 const STACK_OFFSETS = [[0, 0], [0.07, -0.05], [-0.06, 0.05], [0.05, 0.07], [-0.07, -0.06], [0.03, -0.08]];
 const STACK_TILT_DEG = [-3, 4, -5.5, 2.5, 6, -4];
 const STACK_SPREAD = 0.08;

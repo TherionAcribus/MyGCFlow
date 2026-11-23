@@ -1021,10 +1021,11 @@ envoyée entière à chaque changement :
   réels compris, passé et à venir) et les autres étapes dans un rayon de
   500 m, chaque point pesant d'autant plus qu'il est proche et dans l'axe.
   Calculé en distances au sol, une fois par étape : le côté ne change ni
-  avec le zoom ni quand la caméra suit. Une vignette suit son étape, avec
-  un trait vers elle ; gardée dans l'écran tant que l'étape y est, pas
-  dessinée sinon. Peintes depuis les miniatures (320 px), sous les photos
-  montrées.
+  avec le zoom ni quand la caméra suit. Une vignette suit son étape à
+  décalage fixe, avec un trait vers elle : rognée par le bord de l'écran
+  plutôt que déplacée (elle ne glisse jamais par rapport à la carte), plus
+  dessinée quand elle est hors de l'écran. Peintes depuis les miniatures
+  (320 px), sous les photos montrées.
 - **Légende** (`photoCaptionText`) : une balise vide ne laisse pas de
   séparateur orphelin. `{heure}` : celle de la photo si elle est
   datée, sinon celle de l'étape (« ≈ » selon « Heures affichées »).
