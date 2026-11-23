@@ -567,12 +567,18 @@ function draw() {
     ctx.font = '10px sans-serif';
     ctx.textBaseline = 'bottom';
     ctx.fillStyle = colors.label;
+    // Liseré de la couleur du voile : le texte gris restait illisible sur
+    // une barre (« Jour 2 » sur la première tranche de la journée).
+    ctx.strokeStyle = colors.veil;
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
     const labels = ticksFor(axis).labels;
     const kept = new Set(yearLabelOffsets(labels.map((label) => label.offset), axis.span, w));
     for (const { offset: labelOffset, text: label } of labels) {
         if (!kept.has(labelOffset)) continue;
         const x = Math.round(labelOffset / axis.span * w) + 0.5;
         if (x + 3 + ctx.measureText(label).width > w - 2) continue;
+        ctx.strokeText(label, x + 3, h - 1);
         ctx.fillText(label, x + 3, h - 1);
     }
 

@@ -80,21 +80,29 @@ export function createParcoursTimelineBar({ quantumBase, getState }) {
         return t('Étape ${n} : ${name}', { n: state.stopsReached, name: stopLabel(stop) });
     }
 
+    // Bornes : courtes, la piste a besoin de la place (panneau latéral). La
+    // date seule sur plusieurs journées — l'heure est dans l'étiquette du
+    // curseur et la bulle —, l'heure seule sur une journée (même date aux
+    // deux bouts).
     function barEdgeText(axisStart, offset) {
         const state = barStateAt(axisStart, offset);
         if (!state?.date) return '';
-        const date = formatDay(state.date, { weekday: 'short', day: 'numeric', month: 'short' });
-        return [date, barClockText(state)].filter(Boolean).join(' · ');
+        if ((timeline()?.days?.length || 0) < 2) {
+            return barClockText(state) || formatDay(state.date, { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+        return formatDay(state.date, { weekday: 'short', day: 'numeric', month: 'short' });
     }
 
     // Étiquette au curseur (et valeur du slider) : courte, sa largeur est
     // fixe (ui_improvements.css) — le numéro du jour et la distance sont
-    // dans la bulle.
+    // dans la bulle. Deux lignes (« date · heure », puis les étapes, suivies
+    // de l'instant de la vidéo) : `white-space: pre-line` les sépare, une
+    // barre étroite (nowrap) les remet sur une ligne.
     function barPositionText(axisStart, offset) {
         const state = barStateAt(axisStart, offset);
         if (!state?.date) return '';
         const date = formatDay(state.date, { weekday: 'short', day: 'numeric', month: 'short' });
-        return [date, barClockText(state), stopsCountText(state.stopsReached)].filter(Boolean).join(' · ');
+        return [date, barClockText(state)].filter(Boolean).join(' · ') + '\n' + stopsCountText(state.stopsReached);
     }
 
     function barTipLines(axisStart, offset) {

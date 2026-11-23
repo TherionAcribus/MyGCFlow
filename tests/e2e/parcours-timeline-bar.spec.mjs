@@ -79,9 +79,16 @@ test('barre : vraies journées et heures, saut sur une étape, d’étape en ét
   expect(idle.ticks.bands).toHaveLength(1);
   expect(idle.ticks.labels.map((label) => label.text)).toEqual(['Jour 1', 'Jour 2']);
   expect(idle.ticks.labels[1].offset).toBe(stopQ[3]);
-  await expect(page.locator('#timelineBarStart')).toContainText('12 juil.');
-  await expect(page.locator('#timelineBarEnd')).toContainText('13 juil.');
-  expect(idle.valueText).toMatch(/^dim\. 13 juil\. · .*5 étapes/);
+  // Bornes courtes (la date seule sur plusieurs journées) et étiquette sur
+  // deux lignes : la piste garde la place, même en panneau latéral (défaut
+  // à 1280 px) — elle n'avait plus que ~190 px.
+  await expect(page.locator('#timelineBarStart')).toHaveText('sam. 12 juil.');
+  await expect(page.locator('#timelineBarEnd')).toHaveText('dim. 13 juil.');
+  expect(idle.valueText).toMatch(/^dim\. 13 juil\. · ≈ \d\d:\d\d\n5 étapes/);
+  await expect(page.locator('#mapTabsContainer')).toHaveClass(/layout-sidebar/);
+  const widths = await page.evaluate(() => ['timelineBar', 'timelineBarTrack']
+    .map((id) => document.getElementById(id).getBoundingClientRect().width));
+  expect(widths[1] / widths[0]).toBeGreaterThan(0.4);
 
   // Clic sur l'arrivée à la 2e étape : aperçu ouvert en pause, géocacheur
   // sur l'étape, ligne de la barre en vraie date.

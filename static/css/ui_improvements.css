@@ -1326,13 +1326,17 @@ main.fullscreen-mode ~ .tooltip {
 }
 /* Parcours : l'étiquette (date, heure, étapes, instant de la vidéo) change
    de longueur d'une étape à l'autre — largeur fixe, coupée au besoin, pour
-   que la piste ne bouge pas sous le pointeur. */
+   que la piste ne bouge pas sous le pointeur. Sur deux lignes (saut posé
+   par parcours_tbar.mjs) : 14em au lieu de 22em sur une ligne, rendus à la
+   piste — elle n'avait plus que ~190 px en panneau latéral. */
 body[data-mode="parcours"] .timeline-bar:not(.is-narrow) .timeline-bar-date {
-    flex-basis: 22em;
-    min-width: 22em;
-    max-width: 22em;
+    flex-basis: 14em;
+    min-width: 14em;
+    max-width: 14em;
     overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: pre-line;
+    line-height: 1.2;
+    max-height: 2.4em;
 }
 /* Plein écran : la barre devient une surimpression optionnelle au bas de la
    carte (bouton #btnTimelineBarFs du menu flottant ; timeline_bar.js pose

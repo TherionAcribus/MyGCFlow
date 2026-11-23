@@ -443,7 +443,16 @@ Ctrl+← / → saute d'une arrivée à l'autre ; le saut lui-même est celui de
 toutes les pages (`seekAnimationToDate`, aperçu ouvert en pause). L'étiquette
 au curseur (date, heure, étapes, instant de la vidéo) a une largeur fixe sur
 cette page : sa longueur varie d'une étape à l'autre et la piste se
-décalait sous le pointeur. La série et les repères sont mémoïsés sur
+décalait sous le pointeur. Elle tient sur deux lignes (« date · heure »,
+puis étapes et instant de la vidéo — saut de ligne posé par
+`barPositionText`, `white-space: pre-line`), 14em au lieu de 22em, et les
+bouts sont courts (la date seule sur plusieurs journées, l'heure seule sur
+une journée) : en panneau latéral, la piste n'avait plus que ~190 px sur
+une barre de 890 px (452 px depuis le 2026-11-23). Une barre étroite
+(< 520 px) remet l'étiquette sur une ligne et masque les bouts. Les
+étiquettes de la piste (journées ; années sur la page principale) ont un
+liseré de la couleur du voile, lisibles sur une barre de l'histogramme.
+La série et les repères sont mémoïsés sur
 `timelineRevision` (incrémenté à chaque chronologie) et le réglage des
 heures.
 
