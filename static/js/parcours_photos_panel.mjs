@@ -115,6 +115,12 @@ export function createPhotosPanel(deps) {
             : photo.camera || '';
     }
 
+    // Nom d'appareil d'une ligne de recalage : « Appareil inconnu » sans
+    // marque ni modèle dans l'EXIF.
+    function deviceName(photo) {
+        return cameraName(photo) || t('Appareil inconnu');
+    }
+
     async function upload(files) {
         if (!s().selectedId || deps.adjustmentsLocked() || files.length === 0) return;
         await deps.uploads.run('photo', files);
@@ -273,21 +279,19 @@ export function createPhotosPanel(deps) {
             }
         }
 
-        // Appareils : décalage d'horloge (téléphones géolocalisés : à l'heure).
-        // Une ligne par clé d'appareil (un boîtier, ou un modèle sans numéro
-        // de série) ; un modèle recalé garde sa ligne tant qu'un boîtier de ce
+        // Appareils : décalage d'horloge (téléphones géolocalisés : à l'heure ;
+        // les autres, heure supposée juste tant qu'ils ne sont pas recalés).
+        // Une ligne par clé d'appareil (un boîtier, un modèle sans numéro de
+        // série, ou « appareil inconnu » pour des photos datées sans marque ni
+        // modèle) ; un modèle recalé garde sa ligne tant qu'un boîtier de ce
         // modèle en hérite, pour pouvoir l'oublier.
         const cameras = el('parcoursCameras');
         if (cameras) {
-            const shown = photos.filter((p) => p.camera && !hasPosition(p));
+            const shown = photos.filter((p) => !hasPosition(p) && (p.camera || photoTimeTrusted(p)));
             const keys = new Set(shown.map(cameraKey));
             for (const p of shown) if (offsets.has(p.camera)) keys.add(p.camera);
             const nameOf = new Map();
-            for (const p of shown) {
-                nameOf.set(cameraKey(p), p.cameraSerial
-                    ? t('${camera} (n° ${serial})', { camera: p.camera, serial: p.cameraSerial })
-                    : p.camera);
-            }
+            for (const p of shown) nameOf.set(cameraKey(p), deviceName(p));
             const modelOf = new Map(shown.map((p) => [cameraKey(p), p.camera]));
             cameras.replaceChildren(...[...keys].sort().map((key) => {
                 const name = nameOf.get(key) || key;
@@ -302,7 +306,7 @@ export function createPhotosPanel(deps) {
                     ? t('${camera} : horloge recalée (${offset})', { camera: name, offset: formatOffset(offsets.get(key)) })
                     : inherited
                         ? t('${camera} : horloge recalée comme le modèle (${offset})', { camera: name, offset: formatOffset(offsets.get(model)) })
-                        : t('${camera} : horloge non recalée, heures ignorées', { camera: name });
+                        : t('${camera} : heure de l’appareil, supposée juste', { camera: name });
                 const controls = document.createElement('div');
                 controls.className = 'd-flex align-items-center gap-2 flex-wrap';
                 const input = document.createElement('input');
@@ -745,10 +749,9 @@ export function createPhotosPanel(deps) {
             hint('parcours-photo-lost', t('L’étape choisie pour cette photo a été retirée du parcours : la photo suit le rattachement automatique, et retrouvera son étape si elle revient.'));
         }
         // Sans GPS, avec une trace : ce qui manque pour l'y situer.
-        if (!hasPosition(photo) && !onTrack && clock && photo.camera && (inputs.tracks || []).length) {
-            hint('parcours-photo-track-hint', photoTimeTrusted(photo, offsets)
-                ? t('Prise hors des heures couvertes par les traces GPS du parcours : elle n’y est pas située.')
-                : t('Recalez l’horloge de cet appareil : la trace GPS du parcours situera la photo.'));
+        if (!hasPosition(photo) && !onTrack && clock && (inputs.tracks || []).length) {
+            hint('parcours-photo-track-hint',
+                t('Prise hors des heures couvertes par les traces GPS du parcours : elle n’y est pas située. Si l’horloge de l’appareil est décalée, recalez-la.'));
         }
         el('parcoursPhotoLinkRow')?.replaceChildren(...linkRow);
 
@@ -767,7 +770,7 @@ export function createPhotosPanel(deps) {
 
         const actions = [];
         const stop = match?.key ? deps.stopByKey(match.key) : null;
-        const offset = !hasPosition(photo) && photo.camera ? calibrationOffset(photo, stop, ordered?.days) : null;
+        const offset = !hasPosition(photo) ? calibrationOffset(photo, stop, ordered?.days) : null;
         if (offset !== null) {
             const calibrate = deps.button('btn btn-sm btn-outline-primary parcours-photo-calibrate', 'ti-clock',
                 t('Caler l’horloge de l’appareil sur cette étape'),
@@ -776,7 +779,7 @@ export function createPhotosPanel(deps) {
             actions.push(calibrate);
         }
         // Recalage sur une photo prise au même moment par un autre appareil.
-        const candidates = !hasPosition(photo) && photo.camera && clock
+        const candidates = !hasPosition(photo) && clock
             ? pairCandidates(inputs.photos, photo, offsets) : [];
         if (candidates.length) {
             const pair = deps.button('btn btn-sm btn-outline-primary parcours-photo-pair-open', 'ti-clock',
@@ -852,7 +855,7 @@ export function createPhotosPanel(deps) {
         if (offset !== null) {
             const result = document.createElement('span');
             result.className = 'small fw-medium parcours-photo-pair-result';
-            result.textContent = t('Décalage de ${camera} : ${offset}', { camera: cameraName(photo), offset: formatOffset(offset) });
+            result.textContent = t('Décalage de ${camera} : ${offset}', { camera: deviceName(photo), offset: formatOffset(offset) });
             const apply = deps.button('btn btn-sm btn-primary parcours-photo-pair-apply', 'ti-check',
                 t('Recaler l’horloge'), { text: t('Recaler l’horloge') });
             apply.addEventListener('click', () => {

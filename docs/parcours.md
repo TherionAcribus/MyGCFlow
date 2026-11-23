@@ -791,12 +791,12 @@ Table `parcours_photo`, décalages d'horloge dans `parcours_camera`
 |---|---|
 | choisie à la main (`stopKey`) | celle-là |
 | géolocalisée | la plus proche à moins de 150 m, le jour de la photo (bases exclues) |
-| sans GPS, appareil recalé, prise pendant une trace | comme géolocalisée, à la position lue sur la trace (source `track`) |
-| heure de confiance, sans position | celle dont la visite estimée (± 10 min) contient l'heure, sinon l'arrivée la plus proche à 45 min au plus ; deux visites voisines dont les marges contiennent l'heure : celle dont la visite elle-même est la plus proche (une photo prise à l'arrivée n'est pas donnée à l'étape d'avant — défaut corrigé le 2026-11-23) |
+| sans GPS, datée, prise pendant une trace | comme géolocalisée, à la position lue sur la trace (source `track`) |
+| datée, sans position | celle dont la visite estimée (± 10 min) contient l'heure, sinon l'arrivée la plus proche à 45 min au plus ; deux visites voisines dont les marges contiennent l'heure : celle dont la visite elle-même est la plus proche (une photo prise à l'arrivée n'est pas donnée à l'étape d'avant — défaut corrigé le 2026-11-23) |
 | sinon | aucune (vignette estompée) |
 
 **Situées par la trace** (`locatePhotosOnTracks`, parcours_tracks.mjs) :
-une photo sans GPS dont l'appareil est recalé a une heure de confiance ;
+une photo sans GPS datée (heure de l'appareil, recalée s'il y a lieu) ;
 convertie en UTC (décalage du parcours), elle donne une position sur les
 traces, interpolée entre les deux points qui l'encadrent — la
 simplification à l'import (distance synchronisée) garantit que cette
@@ -808,8 +808,9 @@ le jour même, source `track`, « (trace) » dans l'onglet) et peut devenir
 un lieu proposé, mais n'est jamais une ancre : la trace cale déjà l'étape,
 et ne sert pas non plus à déduire le fuseau (calculé sur les seules
 positions EXIF, avant). Relevé : `photos[].trackPosition` de
-`getParcoursSnapshot()`. Le détail dit ce qui manque (« Recalez
-l'horloge… », ou prise hors des heures des traces). Exemple e2e :
+`getParcoursSnapshot()`. Le détail dit pourquoi une photo n'est pas
+située (prise hors des heures des traces) et propose de recaler une
+horloge décalée. Exemple e2e :
 « appareil sans GPS recalé » de `parcours-photos.spec.mjs`.
 
 Une étape choisie à la main qui disparaît du parcours (cache exclue, lieu
@@ -821,13 +822,23 @@ caler son étape, ou être proposée comme lieu) et son rattachement porte
 explication ; « Automatique » l'oublie. Avant le 2026-11-23, une telle photo
 restait « non rattachée » sans retour possible et la liste s'affichait vide.
 
-**Heure de confiance** : celle d'un téléphone (photo géolocalisée : son
-horloge suit le réseau), ou d'un appareil recalé. Un recalage à 0 compte
-aussi : c'est l'utilisateur qui dit l'horloge juste. Une photo rattachée à
-la main ou par position, à heure de confiance et le jour même, devient une
-**ancre** de son étape : raison `photo`, heure exacte. Une heure épinglée
-ou une heure Lab primeraient. Le rattachement par l'heure découle de
-l'horaire : il ne peut pas le caler.
+**Heure d'une photo** : celle de l'appareil, **supposée juste** — corrigée
+de son décalage quand l'utilisateur l'a recalé (`photoTimeTrusted` : toute
+photo datée). Une photo rattachée à la main ou par position, datée du jour
+même de son étape, devient une **ancre** de cette étape : raison `photo`,
+heure exacte. Une heure épinglée ou une heure Lab primeraient. Le
+rattachement par l'heure découle de l'horaire : il ne peut pas le caler.
+Une horloge très fausse s'écarte d'elle-même (une ancre ne vaut que le jour
+de l'étape) ; une horloge décalée de quelques heures (fuseau d'un appareil
+photo) se corrige par un recalage.
+
+Avant le 2026-11-23, seule une photo géolocalisée ou d'un appareil recalé
+avait une heure utilisable — c'est désormais l'heure **vérifiée**
+(`photoTimeVerified`), qui ne sert plus qu'aux références d'un recalage par
+une paire. Une journée sans logs (collecte antérieure au voyage) et sans
+base, photographiée au téléphone sans GPS ni marque/modèle dans l'EXIF,
+n'avait ainsi aucune ancre : le plus court chemin, parcouru dans les deux
+sens, sortait à l'envers.
 
 `reconstructWithPhotos` fait donc deux passes :
 1. reconstruction sans photo ;
@@ -840,7 +851,8 @@ rattachée à une étape à heure sûre (épinglée, Lab) : décalage = heure de
 l'étape − heure de la photo. Ou « Caler sur une autre photo » (détail d'une
 photo sans position d'un appareil) : on choisit une photo de RÉFÉRENCE
 prise au même moment — téléphone géolocalisé, ou autre appareil déjà
-recalé (`pairCandidates`, les plus proches en heure d'abord) — et le
+recalé (`pairCandidates`, heure vérifiée, les plus proches en heure
+d'abord) — et le
 décalage vaut heure de la référence (corrigée) − heure brute de la photo
 (`pairOffset`, absolu : celui déjà posé n'y entre pas ; ±2 jours au plus,
 comme le serveur). Avec une trace GPS, c'est le chemin le plus court pour
@@ -857,7 +869,9 @@ heures. La carte Appareils montre une ligne par clé, et garde celle du
 modèle tant qu'un boîtier en hérite (« recalée comme le modèle »). Tous
 les appareils n'écrivent pas ce champ (beaucoup de Sony et de Fujifilm le
 rangent dans leurs notes de fabricant, illisibles ici ; les téléphones,
-jamais) : ceux-là restent regroupés par modèle.
+jamais) : ceux-là restent regroupés par modèle. Les photos datées sans
+marque ni modèle partagent la clé `UNKNOWN_CAMERA` (« ? », ligne
+« Appareil inconnu »), recalable comme les autres.
 
 **Lecture et vidéo** :
 - chaque photo ajoute 15 quanta (1,5 s) au temps d'écran de son étape (4
@@ -1012,8 +1026,8 @@ envoyée entière à chaque changement :
   dessinée sinon. Peintes depuis les miniatures (320 px), sous les photos
   montrées.
 - **Légende** (`photoCaptionText`) : une balise vide ne laisse pas de
-  séparateur orphelin. `{heure}` : celle de la photo si elle est de
-  confiance, sinon celle de l'étape (« ≈ » selon « Heures affichées »).
+  séparateur orphelin. `{heure}` : celle de la photo si elle est
+  datée, sinon celle de l'étape (« ≈ » selon « Heures affichées »).
   Écrite dans la marge (carte postale, polaroid) ou sur un bandeau dégradé
   (coins arrondis, sans cadre), tronquée (…).
 - **« Voir sur la carte »** (détail d'une photo, et « Voir la première photo
@@ -1026,7 +1040,7 @@ envoyée entière à chaque changement :
 Choix du § 14 : une photo rattachée à rien n'est pas montrée — l'option,
 coupée par défaut, revient dessus pour celles prises ENTRE deux étapes
 (paysages, belvédères). Sélection (`routePhotos`, parcours_photos.mjs) :
-géolocalisées (EXIF ou trace), à heure de confiance, non masquées, sans
+géolocalisées (EXIF ou trace), datées, non masquées, sans
 étape ; chacune va au trajet de sa journée dont la fenêtre [départ de A,
 arrivée en B] contient son heure (45 min de marge ; à égalité, le trajet
 le plus proche) — avant la première étape ou après la dernière : aucune.

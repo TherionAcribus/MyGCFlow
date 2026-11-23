@@ -1121,7 +1121,7 @@ export function createParcoursPlayDraw(deps) {
         const stop = slot.route ? null : timeline.stops[slot.stop];
         const day = timeline.days[slot.route ? slot.day : stop?.day];
         const offsets = cameraOffsets(inputs?.cameras);
-        const clockValue = photo && photoTimeTrusted(photo, offsets) ? photoClock(photo, offsets) : null;
+        const clockValue = photo && photoTimeTrusted(photo) ? photoClock(photo, offsets) : null;
         const heure = clockValue
             ? formatClock(clockValue.minutes, false, playback.hours, slotLabels())
             : formatClock(stop?.arrivalMin, stop?.confidence !== CONFIDENCE_ANCHORED, playback.hours, slotLabels());

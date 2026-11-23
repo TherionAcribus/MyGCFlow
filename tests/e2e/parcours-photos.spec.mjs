@@ -81,7 +81,7 @@ test('photos : rattachement par position, heure comme ancre, rattachement manuel
   // Appareil sans GPS, horloge non recalée : rien ; sans EXIF : rien.
   expect(state.photos.find((p) => p.id === id('appareil.jpg')).match).toEqual({ key: null, source: null });
   expect(state.photos.find((p) => p.id === id('sans-exif.png')).match).toEqual({ key: null, source: null });
-  await expect(page.locator('.parcours-camera[data-camera="Canon EOS 80D"]')).toContainText('non recalée');
+  await expect(page.locator('.parcours-camera[data-camera="Canon EOS 80D"]')).toContainText('supposée juste');
 
   // Rattachement manuel de la photo de l'appareil à GCPAR04.
   await page.locator(`.parcours-photo-thumb[data-photo-id="${id('appareil.jpg')}"]`).click();
@@ -207,10 +207,11 @@ test('appareil sans GPS recalé : situé par la trace, rattaché à l’étape o
   const { id } = await photoState();
   const thumb = page.locator(`.parcours-photo-thumb[data-photo-id="${id}"]`);
 
-  // Horloge non recalée : pas située, le détail dit quoi faire.
+  // Horloge non recalée, heure supposée juste (13/07, hors de la trace du
+  // samedi) : pas située, le détail dit pourquoi et propose de la recaler.
   expect(await photoState()).toMatchObject({ match: { key: null, source: null }, trackPosition: null });
   await thumb.click();
-  await expect(page.locator('.parcours-photo-track-hint')).toContainText('Recalez l’horloge');
+  await expect(page.locator('.parcours-photo-track-hint')).toContainText('recalez-la');
 
   // Recalée sur 09:10 UTC (11:10 locale) : située à GCPAR01 par la trace.
   const camera = page.locator('.parcours-camera[data-camera="Canon EOS 80D"]');
@@ -358,14 +359,14 @@ test('deux boîtiers du même modèle : une horloge chacun, et le recalage du mo
   const B = `${MODEL}#083021000222`;
   const row = (key) => page.locator(`.parcours-camera[data-camera="${key}"]`);
   await expect(page.locator('.parcours-camera')).toHaveCount(3);
-  await expect(row(A)).toContainText('Canon EOS 80D (n° 083021000111) : horloge non recalée');
+  await expect(row(A)).toContainText('Canon EOS 80D (n° 083021000111) : heure de l’appareil, supposée juste');
 
   // Boîtier A recalé : B n'en hérite pas.
   await row(A).locator('.parcours-camera-offset').fill('150');
   await row(A).locator('.parcours-camera-apply').click();
   await expect.poll(async () => (await snapshot(page)).cameras).toEqual([{ camera: A, offsetMinutes: 150 }]);
   await expect(row(A)).toContainText('recalée (+2 h 30)');
-  await expect(row(B)).toContainText('non recalée');
+  await expect(row(B)).toContainText('supposée juste');
 
   // Le modèle (photo sans numéro de série) recalé : B en hérite, A garde le sien.
   await row(MODEL).locator('.parcours-camera-offset').fill('60');

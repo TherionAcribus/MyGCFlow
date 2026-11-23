@@ -348,14 +348,14 @@ export function trackPositionAt(tracks, t) {
     return at;
 }
 
-// Photos sans GPS à heure de confiance (appareil recalé) situées sur les
+// Photos sans GPS datées (heure de l'appareil, recalée s'il y a lieu) situées sur les
 // traces : Map id → { lon, lat, trackId, segment }. `offsetMin` : décalage
 // UTC du parcours (les heures des photos sont murales).
 export function locatePhotosOnTracks(photos, tracks, offsets, offsetMin) {
     const located = new Map();
     if (!tracks?.length) return located;
     for (const photo of Array.isArray(photos) ? photos : []) {
-        if (!photo || hasPosition(photo) || !photoTimeTrusted(photo, offsets)) continue;
+        if (!photo || hasPosition(photo) || !photoTimeTrusted(photo)) continue;
         const clock = photoClock(photo, offsets);
         if (!clock) continue;
         const at = trackPositionAt(tracks, wallSeconds(clock.date, clock.minutes) - offsetMin * 60);

@@ -9,6 +9,7 @@ import {
     PHOTO_FILTER_FAVORITE,
     PHOTO_FILTER_HIDDEN,
     PHOTO_FILTER_UNLINKED,
+    UNKNOWN_CAMERA,
     cameraKey,
     favoritePhotoIds,
     cameraOffsets,
@@ -20,6 +21,7 @@ import {
     photoClock,
     photoGridGroups,
     photoTimeTrusted,
+    photoTimeVerified,
     photosByStop,
     reconstructWithPhotos,
     routePhotos,
@@ -47,12 +49,27 @@ test('heure corrigée : décalage de l’appareil, passage de minuit', () => {
     assert.equal(photoClock(photo(1, { takenAt: '12/07/2025' })), null);
 });
 
-test('heure de confiance : téléphone géolocalisé ou appareil recalé', () => {
+test('heure d’une photo : supposée juste dès qu’elle est datée, vérifiée si géolocalisée ou recalée', () => {
     const offsets = cameraOffsets([{ camera: 'Canon', offsetMinutes: 0 }]);
-    assert.equal(photoTimeTrusted(photo(1, { takenAt: '2025-07-12T10:00:00', lat: 45, lon: 5 })), true);
-    assert.equal(photoTimeTrusted(photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Canon' }), offsets), true);
-    assert.equal(photoTimeTrusted(photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Nikon' }), offsets), false);
+    assert.equal(photoTimeTrusted(photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Nikon' })), true);
+    assert.equal(photoTimeTrusted(photo(1, { takenAt: '2025-07-12T10:00:00' })), true);
     assert.equal(photoTimeTrusted(photo(1, { lat: 45, lon: 5 })), false);
+    assert.equal(photoTimeVerified(photo(1, { takenAt: '2025-07-12T10:00:00', lat: 45, lon: 5 })), true);
+    assert.equal(photoTimeVerified(photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Canon' }), offsets), true);
+    assert.equal(photoTimeVerified(photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Nikon' }), offsets), false);
+    assert.equal(photoTimeVerified(photo(1, { lat: 45, lon: 5 })), false);
+});
+
+test('appareil inconnu (ni marque ni modèle) : une horloge commune, recalable', () => {
+    const p = photo(1, { takenAt: '2025-07-12T10:00:00' });
+    assert.equal(cameraKey(p), UNKNOWN_CAMERA);
+    assert.equal(photoTimeVerified(p), false);
+    const offsets = cameraOffsets([{ camera: UNKNOWN_CAMERA, offsetMinutes: -60 }]);
+    assert.equal(photoCameraOffset(p, offsets), -60);
+    assert.equal(photoClock(p, offsets).minutes, 9 * 60);
+    assert.equal(photoTimeVerified(p, offsets), true);
+    // Un appareil nommé n'en hérite pas.
+    assert.equal(photoCameraOffset(photo(2, { takenAt: '2025-07-12T10:00:00', camera: 'Nikon' }), offsets), undefined);
 });
 
 test('deux boîtiers du même modèle : une horloge chacun, repli sur le modèle', () => {
@@ -61,20 +78,20 @@ test('deux boîtiers du même modèle : une horloge chacun, repli sur le modèle
     const old = photo(3, { takenAt: '2025-07-12T10:00:00', camera: 'Canon EOS 80D' });  // sans numéro
     assert.equal(cameraKey(a), 'Canon EOS 80D#111');
     assert.equal(cameraKey(old), 'Canon EOS 80D');
-    assert.equal(cameraKey(photo(4)), null);
+    assert.equal(cameraKey(photo(4)), UNKNOWN_CAMERA);
     // Boîtier A recalé seul : B reste non recalé.
     let offsets = cameraOffsets([{ camera: 'Canon EOS 80D#111', offsetMinutes: 30 }]);
     assert.equal(photoClock(a, offsets).minutes, 10 * 60 + 30);
     assert.equal(photoClock(b, offsets).minutes, 10 * 60);
-    assert.equal(photoTimeTrusted(b, offsets), false);
-    assert.equal(photoTimeTrusted(old, offsets), false);
+    assert.equal(photoTimeVerified(b, offsets), false);
+    assert.equal(photoTimeVerified(old, offsets), false);
     // Recalage du modèle (photos d'avant le numéro de série) : hérité par
     // les boîtiers qui n'en ont pas à eux.
     offsets = cameraOffsets([{ camera: 'Canon EOS 80D#111', offsetMinutes: 30 }, { camera: 'Canon EOS 80D', offsetMinutes: -60 }]);
     assert.equal(photoCameraOffset(a, offsets), 30);
     assert.equal(photoCameraOffset(b, offsets), -60);
     assert.equal(photoCameraOffset(old, offsets), -60);
-    assert.equal(photoTimeTrusted(b, offsets), true);
+    assert.equal(photoTimeVerified(b, offsets), true);
     assert.equal(photoCameraOffset(photo(4), offsets), undefined);
 });
 
@@ -115,7 +132,8 @@ test('rattachement : manuel, par position (même jour), par l’heure, ou rien',
         photo(4, { lat: 45, lon: at(10.5), takenAt: '2025-07-13T11:00:00' }),      // autre jour
         photo(5, { lat: 45, lon: at(15) }),                                       // 500 m de tout
         photo(6, { camera: 'Canon', takenAt: `2025-07-12T${String(Math.floor(b.arrivalMin / 60)).padStart(2, '0')}:${String(Math.round(b.arrivalMin % 60)).padStart(2, '0')}:00` }),
-        photo(7, { camera: 'Nikon', takenAt: '2025-07-12T10:00:00' }),             // heure non recalée
+        photo(7, { camera: 'Nikon', takenAt: '2025-07-12T09:55:00' }),             // non recalé : heure supposée juste
+        photo(8, { camera: 'Nikon' }),                                            // sans heure ni position
     ];
     const matches = matchPhotos(ordered, photos, offsets);
     assert.deepEqual(matches.get(1), { key: 'C', source: MATCH_MANUAL });
@@ -126,7 +144,8 @@ test('rattachement : manuel, par position (même jour), par l’heure, ou rien',
     assert.deepEqual(matches.get(4), { key: null, source: null });
     assert.deepEqual(matches.get(5), { key: null, source: null });
     assert.deepEqual(matches.get(6), { key: 'B', source: MATCH_TIME });
-    assert.deepEqual(matches.get(7), { key: null, source: null });
+    assert.deepEqual(matches.get(7), { key: 'C', source: MATCH_TIME });
+    assert.deepEqual(matches.get(8), { key: null, source: null });
 });
 
 test('étape choisie à la main puis retirée : rattachement automatique en attendant son retour', () => {
@@ -173,21 +192,39 @@ test('rattachement par l’heure : à égalité dans les marges, la visite la pl
     assert.equal(at('10:15'), 'B');
 });
 
-test('ancres : position ou manuel, heure de confiance, la plus tôt par étape', () => {
+test('ancres : position ou manuel, photo datée du jour de l’étape, la plus tôt par étape', () => {
     const ordered = reconstructParcours({ days: DAYS });
     const photos = [
         photo(1, { lat: 45, lon: at(10), takenAt: '2025-07-12T14:20:00' }),
         photo(2, { lat: 45, lon: at(10.2), takenAt: '2025-07-12T14:10:00' }),
-        photo(3, { stopKey: 'C', takenAt: '2025-07-12T16:00:00', camera: 'Nikon' }),  // non recalé : pas d'ancre
+        photo(3, { stopKey: 'C', takenAt: '2025-07-12T16:00:00', camera: 'Nikon' }),  // non recalé : heure supposée juste
+        photo(4, { stopKey: 'A', camera: 'Nikon' }),                                  // sans heure : pas d'ancre
+        photo(5, { stopKey: 'A', takenAt: '2025-07-14T09:00:00', camera: 'Sony' }),   // horloge fausse d'un jour : pas d'ancre
     ];
     const matches = matchPhotos(ordered, photos);
     const anchors = photoAnchors(ordered, photos, matches);
-    assert.deepEqual([...anchors], [['B', 14 * 60 + 10]]);
-    assert.deepEqual([...photosByStop(photos, matches)], [['B', [2, 1]], ['C', [3]]]);
+    assert.deepEqual([...anchors], [['B', 14 * 60 + 10], ['C', 16 * 60]]);
+    assert.deepEqual([...photosByStop(photos, matches)], [['B', [2, 1]], ['C', [3]], ['A', [5, 4]]]);
     // Masquée (lot 8) : toujours une ancre, mais pas montrée.
     const hidden = photos.map((p) => (p.id === 2 ? { ...p, hidden: true } : p));
-    assert.deepEqual([...photoAnchors(ordered, hidden, matches)], [['B', 14 * 60 + 10]]);
-    assert.deepEqual([...photosByStop(hidden, matches)], [['B', [1]], ['C', [3]]]);
+    assert.deepEqual([...photoAnchors(ordered, hidden, matches)], [['B', 14 * 60 + 10], ['C', 16 * 60]]);
+    assert.deepEqual([...photosByStop(hidden, matches)], [['B', [1]], ['C', [3]], ['A', [5, 4]]]);
+});
+
+test('reconstruction : photos sans GPS ni appareil, rattachées à la main, donnent le sens de la journée', () => {
+    // Sans logs ni veille, le plus court chemin se parcourt dans les deux
+    // sens ; les heures des photos (supposées justes) tranchent : C puis A.
+    const days = [{ date: '2025-07-12', stops: [stop('A', 0), stop('C', 20)] }];
+    const result = reconstructWithPhotos({
+        days,
+        photos: [
+            photo(1, { stopKey: 'C', takenAt: '2025-07-12T10:00:00' }),
+            photo(2, { stopKey: 'A', takenAt: '2025-07-12T11:00:00' }),
+        ],
+        cameras: [],
+    });
+    assert.deepEqual(result.ordered.days[0].stops.map((s) => s.key), ['C', 'A']);
+    assert.equal(result.ordered.days[0].stops[0].reason, REASON_PHOTO);
 });
 
 test('reconstruction avec photos : l’heure d’une photo cale son étape', () => {

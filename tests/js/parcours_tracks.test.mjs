@@ -134,8 +134,8 @@ test('photos d’appareil situées par la trace : rattachées à l’étape, pro
         { id: 1, takenAt: '2025-07-12T09:55:00', camera: 'Canon', lat: null, lon: null },
         // 08:05 UTC entre A et B, loin de toute étape : lieu proposé.
         { id: 2, takenAt: '2025-07-12T09:35:00', camera: 'Canon', lat: null, lon: null },
-        // Appareil non recalé : heure de confiance absente, pas située.
-        { id: 3, takenAt: '2025-07-12T10:25:00', camera: 'Nikon', lat: null, lon: null },
+        // Sans heure : pas située.
+        { id: 3, takenAt: null, camera: 'Nikon', lat: null, lon: null },
         // Hors de la trace (12:00 UTC) : pas située.
         { id: 4, takenAt: '2025-07-12T13:30:00', camera: 'Canon', lat: null, lon: null },
     ];

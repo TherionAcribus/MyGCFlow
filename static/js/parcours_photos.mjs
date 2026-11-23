@@ -9,14 +9,18 @@
 // 2. POSITION : l'étape la plus proche à moins de PHOTO_MATCH_RADIUS_M, le
 //    même jour quand la photo a une heure — position de l'EXIF, ou lue sur
 //    une trace GPS à l'heure recalée d'un appareil sans GPS ;
-// 3. HEURE : sans position, une photo à heure de confiance va à l'étape dont
+// 3. HEURE : sans position, une photo datée va à l'étape dont
 //    la visite (± marge) contient son heure, sinon à l'arrivée la plus proche
 //    dans PHOTO_TIME_WINDOW_MIN.
 //
-// Heure de confiance : celle d'un téléphone (photo géolocalisée : l'horloge
-// suit le réseau) ou d'un appareil dont l'utilisateur a recalé l'horloge
-// (`cameras[].offsetMinutes`, même 0 ; clé : `cameraKey`). Une photo rattachée par position ou à
-// la main, à heure de confiance, devient une ANCRE de son étape (raison
+// Heure de la photo : celle de l'appareil, supposée juste (un téléphone suit
+// le réseau), corrigée du décalage de son horloge quand l'utilisateur l'a
+// recalée (`cameras[].offsetMinutes` ; clé : `cameraKey`, « appareil
+// inconnu » sans marque ni modèle). Une horloge très fausse s'écarte
+// d'elle-même : une ancre ne vaut que le jour même de l'étape. Heure
+// VÉRIFIÉE (`photoTimeVerified`) : photo géolocalisée ou appareil recalé —
+// seules références d'un recalage par une paire. Une photo rattachée par
+// position ou à la main, datée, devient une ANCRE de son étape (raison
 // `photo`) — sauf si l'étape a déjà une heure sûre (épinglée, Lab).
 //
 // Les ancres changent l'horaire, et l'horaire sert au rattachement par
@@ -56,10 +60,13 @@ export function cameraOffsets(cameras) {
 
 // Clé d'appareil d'une photo (celle d'un recalage) : « marque modèle »,
 // suivie de « #numéro » quand l'EXIF donne le numéro de série du boîtier —
-// deux appareils du même modèle ont ainsi chacun leur horloge. null sans
-// appareil.
+// deux appareils du même modèle ont ainsi chacun leur horloge.
+// UNKNOWN_CAMERA sans marque ni modèle dans l'EXIF : ces photos partagent
+// une horloge, recalable comme les autres.
+export const UNKNOWN_CAMERA = '?';
+
 export function cameraKey(photo) {
-    if (!photo?.camera) return null;
+    if (!photo?.camera) return UNKNOWN_CAMERA;
     return photo.cameraSerial ? `${photo.camera}#${photo.cameraSerial}` : photo.camera;
 }
 
@@ -68,8 +75,7 @@ export function cameraKey(photo) {
 // boîtier recalé ainsi le reste) ; undefined si aucun.
 export function photoCameraOffset(photo, offsets = new Map()) {
     const key = cameraKey(photo);
-    if (!key) return undefined;
-    return offsets.has(key) ? offsets.get(key) : offsets.get(photo.camera);
+    return offsets.has(key) ? offsets.get(key) : offsets.get(photo?.camera);
 }
 
 // Heure corrigée d'une photo : { date: 'AAAA-MM-JJ', minutes } (décalage de
@@ -124,7 +130,7 @@ export function pairOffset(photo, reference, offsets = new Map()) {
 }
 
 // Références possibles pour recaler l'appareil de `photo` : les photos à
-// heure de confiance d'un AUTRE appareil (position EXIF, ou appareil recalé),
+// heure vérifiée d'un AUTRE appareil (position EXIF, ou appareil recalé),
 // les plus proches de l'heure actuelle de `photo` d'abord (son horloge est
 // fausse, mais rarement de beaucoup).
 export function pairCandidates(photos, photo, offsets = new Map()) {
@@ -132,15 +138,23 @@ export function pairCandidates(photos, photo, offsets = new Map()) {
     const at = photoClock(photo, offsets);
     const instant = (c) => Date.parse(`${c.date}T00:00:00Z`) / 60000 + c.minutes;
     return (Array.isArray(photos) ? photos : [])
-        .filter((p) => p && p.id !== photo?.id && cameraKey(p) !== own && photoTimeTrusted(p, offsets)
+        .filter((p) => p && p.id !== photo?.id && cameraKey(p) !== own && photoTimeVerified(p, offsets)
             && pairOffset(photo, p, offsets) !== null)
         .map((p) => ({ photo: p, gap: at ? Math.abs(instant(photoClock(p, offsets)) - instant(at)) : 0 }))
         .sort((a, b) => a.gap - b.gap || a.photo.id - b.photo.id)
         .map((c) => c.photo);
 }
 
-export function photoTimeTrusted(photo, offsets = new Map()) {
-    if (!TAKEN_RE.test(String(photo?.takenAt || ''))) return false;
+// Heure utilisable (ancre, rattachement par l'heure, trace) : toute photo
+// datée — l'horloge de l'appareil est supposée juste, sauf recalage.
+export function photoTimeTrusted(photo) {
+    return TAKEN_RE.test(String(photo?.takenAt || ''));
+}
+
+// Heure vérifiée : photo géolocalisée (l'horloge suit le réseau) ou appareil
+// recalé par l'utilisateur (même à 0).
+export function photoTimeVerified(photo, offsets = new Map()) {
+    if (!photoTimeTrusted(photo)) return false;
     return hasPosition(photo) || photoCameraOffset(photo, offsets) !== undefined;
 }
 
@@ -188,7 +202,7 @@ export function matchPhotos(reconstructed, photos, offsets = new Map(),
             result.set(photo.id, { ...(best || { key: null, source: null }), ...lost });
             continue;
         }
-        if (clock && photoTimeTrusted(photo, offsets)) {
+        if (clock && photoTimeTrusted(photo)) {
             // Écart à la visite élargie de la marge, puis, à égalité (deux
             // visites voisines dont les marges se chevauchent), écart à la
             // visite elle-même : une photo prise à l'arrivée sur une étape
@@ -216,8 +230,8 @@ export function matchPhotos(reconstructed, photos, offsets = new Map(),
 
 // Ancres tirées des photos : Map clé d'étape → minutes (la plus tôt des
 // photos de l'étape). Seulement les rattachements manuels ou par position
-// (celui par l'heure découle de l'horaire : il ne peut pas le caler), à
-// heure de confiance, le jour même de l'étape.
+// (celui par l'heure découle de l'horaire : il ne peut pas le caler),
+// de photos datées, le jour même de l'étape.
 export function photoAnchors(reconstructed, photos, matches, offsets = new Map()) {
     const dateOf = new Map();
     for (const day of reconstructed?.days || []) for (const stop of day.stops) dateOf.set(stop.key, day.date);
@@ -225,7 +239,7 @@ export function photoAnchors(reconstructed, photos, matches, offsets = new Map()
     for (const photo of Array.isArray(photos) ? photos : []) {
         const match = matches.get(photo?.id);
         if (!match?.key || (match.source !== MATCH_MANUAL && match.source !== MATCH_GPS)) continue;
-        if (!photoTimeTrusted(photo, offsets)) continue;
+        if (!photoTimeTrusted(photo)) continue;
         const clock = photoClock(photo, offsets);
         if (!clock || clock.date !== dateOf.get(match.key)) continue;
         const current = anchors.get(match.key);
@@ -263,7 +277,7 @@ export function photosByStop(photos, matches, offsets = new Map()) {
 }
 
 // Photos « en chemin » (option `en_route` de l'affichage) : géolocalisées
-// (EXIF ou trace), à heure de confiance, non masquées et rattachées à
+// (EXIF ou trace), datées, non masquées et rattachées à
 // aucune étape — prises entre deux étapes, loin de l'une comme de l'autre.
 // Chacune va au trajet de sa journée dont la fenêtre [départ, arrivée]
 // contient son heure (à PHOTO_TIME_WINDOW_MIN près ; à égalité, le trajet le
@@ -275,7 +289,7 @@ export function routePhotos(reconstructed, photos, matches, offsets = new Map(),
     const byLeg = new Map();
     const days = new Map((reconstructed?.days || []).map((day) => [day.date, day.stops || []]));
     const sorted = (Array.isArray(photos) ? photos : []).filter((photo) => photo && !photo.hidden
-        && hasPosition(photo) && !matches?.get?.(photo.id)?.key && photoTimeTrusted(photo, offsets))
+        && hasPosition(photo) && !matches?.get?.(photo.id)?.key && photoTimeTrusted(photo))
         .sort(byShot(offsets));
     for (const photo of sorted) {
         const clock = photoClock(photo, offsets);
