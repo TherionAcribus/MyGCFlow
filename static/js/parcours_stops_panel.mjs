@@ -58,6 +58,7 @@ export function createStopsPanel(deps) {
 
     let editKey = null;            // étape dont le panneau d'ajustement est ouvert
     let collapsedDays = new Set(); // journées repliées dans la liste (dates ISO)
+    let playingKey = null;         // étape en cours pendant la lecture
 
     // Glisser-déposer par Pointer Events depuis la poignée de la ligne :
     // un seul chemin pour souris, tactile et stylet (le drag & drop HTML5 ne
@@ -441,6 +442,7 @@ export function createStopsPanel(deps) {
         const item = document.createElement('li');
         item.className = 'parcours-stop d-flex align-items-start gap-2 py-1';
         item.dataset.stopKey = stop.key;
+        if (stop.key === playingKey) item.classList.add('is-playing');
         item.dataset.kind = stop.kind;
         item.dataset.confidence = stop.confidence;
         item.dataset.reason = stop.reason;
@@ -843,9 +845,27 @@ export function createStopsPanel(deps) {
             ?.scrollIntoView({ block: 'nearest' });
     }
 
+    // Étape en cours de lecture (null : lecture finie) : sa ligne est marquée
+    // et amenée en vue — sans reconstruire la liste, appelé à chaque
+    // changement d'étape. Une journée repliée reste repliée (ligne masquée,
+    // rien à faire défiler).
+    function markPlaying(key) {
+        if (key === playingKey) return;
+        playingKey = key;
+        const box = el('parcoursStops');
+        if (!box) return;
+        for (const row of box.querySelectorAll('.parcours-stop.is-playing')) row.classList.remove('is-playing');
+        if (key === null) return;
+        const row = box.querySelector(`.parcours-stop[data-stop-key="${CSS.escape(key)}"]`);
+        if (!row) return;
+        row.classList.add('is-playing');
+        row.scrollIntoView({ block: 'nearest' });
+    }
+
     // Parcours changé ou fermé : rien de la liste précédente ne se reporte.
     function reset() {
         editKey = null;
+        playingKey = null;
         collapsedDays.clear();
         cancelDrag();
     }
@@ -863,6 +883,8 @@ export function createStopsPanel(deps) {
         openDetails,
         reset,
         toggleCollapseAll,
+        markPlaying,
+        playingKey: () => playingKey,
         setEditKey: (key) => { editKey = key; },
         getEditKey: () => editKey,
         parkingsByDate: dayParkings,

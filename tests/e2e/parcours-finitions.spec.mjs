@@ -140,6 +140,39 @@ test('carte déplacée pendant la lecture : la caméra la laisse, même à la fi
   expect(errors).toEqual([]);
 });
 
+test('lecture : la liste des étapes marque l’étape en cours et la garde en vue', async ({ page }) => {
+  const errors = collectErrors(page);
+  const rest = await openReady(page);
+  const { stopQ } = rest.timeline;
+  const keys = rest.days.flatMap((day) => day.keys);
+  const playing = page.locator('#parcoursStops .parcours-stop.is-playing');
+  expect(rest.listPlaying).toBeNull();
+  await expect(playing).toHaveCount(0);
+
+  await page.locator('#btnQuickPreview').click();
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(true));
+  await expect.poll(async () =>
+    page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState())).toBe('paused');
+  const seek = (q) => page.evaluate(async (target) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(2000, 0, 1 + target)), q);
+
+  // Entre deux étapes, la dernière atteinte reste « en cours ».
+  expect(await seek(stopQ[1] + 1)).toBe(true);
+  expect((await snapshot(page)).listPlaying).toBe(keys[1]);
+  await expect(playing).toHaveCount(1);
+  await expect(playing).toHaveAttribute('data-stop-key', keys[1]);
+  // Étape de la seconde journée, plus bas dans la liste : amenée en vue.
+  expect(await seek(stopQ[3])).toBe(true);
+  await expect(playing).toHaveAttribute('data-stop-key', keys[3]);
+  await expect(playing).toBeInViewport();
+
+  // Fin de lecture : plus d'étape en cours.
+  await page.locator('#btnQuickStop').click();
+  await expect.poll(async () => (await snapshot(page)).listPlaying).toBeNull();
+  await expect(playing).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('saut en pause : la caméra recadre sur la pose du saut, vue rendue à la fin', async ({ page }) => {
   const errors = collectErrors(page);
   const rest = await openReady(page);

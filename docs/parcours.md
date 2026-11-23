@@ -553,6 +553,14 @@ d'étape sur la carte. Depuis le repos, l'aperçu démarre en pause
 lecture ou en pause, même saut puis reprise. En enregistrement, refus : la
 vidéo se joue toujours depuis le début.
 
+Pendant la lecture, la liste suit : la dernière étape atteinte
+(`lastStopReached`, dichotomie sur les quanta) porte la classe
+`is-playing` et est amenée en vue (`markPlaying` de
+parcours_stops_panel.mjs, appelé par `step` et par `begin` — un saut en
+pause ne rappelle que `begin`, état de la veille). La marque reste en
+pause, disparaît à la fin de la lecture ; une journée repliée le reste.
+Relevé : `listPlaying` de `getParcoursSnapshot()`.
+
 **Nuit et cartons** (réglage « Nuit et carton », défaut : oui) :
 - le carton d'ouverture (`openCardAt`) lance la lecture : `openCardQ`
   (30) quanta de carton — nom du parcours, ses dates (`formatRange`) et

@@ -4288,6 +4288,14 @@ body[data-mode="parcours"] .rhythm-rate-field {
     border-radius: 4px;
 }
 
+/* Étape en cours pendant la lecture (markPlaying) : plus marquée que le
+   survol, avec un liseré d'accent. */
+.parcours-stop.is-playing {
+    background: rgba(var(--color-accent-rgb, 0, 114, 198), 0.14);
+    box-shadow: inset 3px 0 0 var(--color-accent, #0072c6);
+    border-radius: 4px;
+}
+
 /* Pose d'un lieu : en attente d'un clic sur la carte. */
 .parcours-picking,
 .parcours-picking canvas {

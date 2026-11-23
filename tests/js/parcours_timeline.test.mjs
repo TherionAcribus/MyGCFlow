@@ -21,6 +21,7 @@ import {
     formatClock,
     headAt,
     headModeAt,
+    lastStopReached,
     legTravelMode,
     nightLevelAt,
     normalizePlayback,
@@ -224,6 +225,18 @@ test('étapes d’une plage de quanta', () => {
     assert.deepEqual(stopsInRange(tl, 0, a.q), [0]);
     assert.deepEqual(stopsInRange(tl, a.q + 1, c.q), [1, 2]);
     assert.deepEqual(stopsInRange(tl, b.q + 1, c.q - 1), []);
+});
+
+test('dernière étape atteinte (étape en cours de la liste)', () => {
+    const tl = buildParcoursTimeline(sample());
+    const [a, b, c] = tl.stops;
+    assert.equal(lastStopReached(tl, a.q - 1), -1);
+    assert.equal(lastStopReached(tl, a.q), 0);
+    assert.equal(lastStopReached(tl, (a.q + b.q) / 2), 0);
+    assert.equal(lastStopReached(tl, b.q), 1);
+    assert.equal(lastStopReached(tl, c.q), 2);
+    assert.equal(lastStopReached(tl, tl.quanta), 2);
+    assert.equal(lastStopReached(null, 10), -1);
 });
 
 test('format de l’heure selon le réglage', () => {

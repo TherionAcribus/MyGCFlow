@@ -575,6 +575,20 @@ export function stopsInRange(timeline, first, last) {
     return out;
 }
 
+// Dernière étape apparue au quantum `q` (index dans `stops`, -1 avant la
+// première) : l'étape en cours de la liste pendant la lecture.
+export function lastStopReached(timeline, q) {
+    const stops = timeline?.stops || [];
+    let lo = 0;
+    let hi = stops.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (stops[mid].q <= q) lo = mid + 1;
+        else hi = mid;
+    }
+    return lo - 1;
+}
+
 // --- Nuit, cartons de jour, tête (lot 7) ---------------------------------------
 
 export const SCENE_DEFAULTS = Object.freeze({

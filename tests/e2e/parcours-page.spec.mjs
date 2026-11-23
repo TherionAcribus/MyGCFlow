@@ -104,6 +104,8 @@ test('lecture : étapes qui apparaissent, géocacheur, heure et distance, puis r
   expect(during.head).not.toBeNull();
   expect(during.infos.date).toMatch(/2025/);
   expect(during.infos.heure).toMatch(/^≈ \d\d:\d\d$/);
+  // Liste des étapes : une étape atteinte est marquée « en cours ».
+  expect(during.listPlaying).toMatch(/^GCPAR0\d$/);
   await expect(page.locator('#spanInfosTemplate')).toContainText('/ 5');
   await expect(page.locator('#spanInfosTemplate')).toContainText('km');
 
@@ -112,6 +114,7 @@ test('lecture : étapes qui apparaissent, géocacheur, heure et distance, puis r
   const after = await snapshot(page);
   expect(after.layer.visible).toBe(true);
   expect(after.playLayers).toBe(false);
+  expect(after.listPlaying).toBeNull();
   expect(after.infos.date).toMatch(/13/);
   await expect(page.locator('#spanInfosTemplate')).toContainText('5 / 5');
   expect(errors).toEqual([]);

@@ -63,6 +63,7 @@ import {
     formatClock,
     headAt,
     headModeAt,
+    lastStopReached,
     nightLevelAt,
     normalizePlayback,
     sceneTimingOptions,
@@ -522,6 +523,12 @@ function parcoursInfosValues() {
     };
 }
 
+// Liste des étapes : la dernière atteinte au quantum `q` est marquée « en
+// cours » et amenée en vue (aucune avant la première).
+function markPlayingAt(q) {
+    stopsPanel.markPlaying(timeline?.stops[lastStopReached(timeline, q)]?.key ?? null);
+}
+
 function parcoursBegin(startDate, endDate, at) {
     const startDay = Math.max(0, dayIndexOf(quantumBase, startDate));
     endDay = endDate instanceof Date ? dayIndexOf(quantumBase, endDate) : (timeline?.quanta || 1) - 1;
@@ -538,6 +545,8 @@ function parcoursBegin(startDate, endDate, at) {
     setPlanVisible(false);
     playDraw.ensureLayers();
     if (!wasRunning) beginCamera();
+    // Départ, ou saut en pause (seul `begin` est rappelé) : état de la veille.
+    markPlayingAt(startDay - 1);
     return countersAt(startDay - 1);
 }
 
@@ -548,6 +557,7 @@ function parcoursStep(dates, at) {
     const placed = stopsInRange(timeline, first, last).map((i) => olFeatures[i]).filter(Boolean);
     stepEvolution(clock, last, at, last >= endDay);
     chapterLog.note(last, pkg.recordingVideoTimeMs?.());
+    markPlayingAt(last);
     return { placed, archived: [], values: countersAt(last) };
 }
 
@@ -577,6 +587,7 @@ function parcoursRecordingChapters(speed) {
 
 function parcoursEnd() {
     endEvolution(clock);
+    stopsPanel.markPlaying(null);
     setPlanVisible(true);
     playDraw.hideLayers();
     endCamera();
@@ -1434,6 +1445,8 @@ export function getParcoursSnapshot() {
             .filter((f) => f.get('role') === 'fan')
             .map((f) => [f.get('key'), pkg.getMap?.()?.getPixelFromCoordinate(f.getGeometry().getCoordinates())])),
         playStops: { ...playDraw.stopsDrawn() },
+        // Ligne de la liste marquée « en cours » pendant la lecture.
+        listPlaying: stopsPanel.playingKey(),
         planLine: (() => {
             const style = lineStyle();
             const stroke = style?.getStroke();
