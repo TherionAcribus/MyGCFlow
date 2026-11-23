@@ -130,6 +130,16 @@ test('journées repliables : chevron, tout plier, dépôt qui déplie', async ({
   await openReady(page);
   const sat = page.locator('.parcours-day[data-date="2025-07-12"]');
   const sun = page.locator('.parcours-day[data-date="2025-07-13"]');
+  // En-tête : majuscule au seul premier mot (le mois restait capitalisé).
+  await expect(sat.locator('.parcours-day-title')).toHaveText('Samedi 12 juillet 2025');
+
+  // Actions d'une étape : effacées au repos, montrées au survol de la ligne.
+  const opacity = (locator) => locator.evaluate((node) => Number(getComputedStyle(node).opacity));
+  const play = row(page, 'GCPAR01').locator('.parcours-stop-play');
+  await page.mouse.move(0, 0);
+  await expect.poll(() => opacity(play)).toBe(0);
+  await row(page, 'GCPAR01').hover();
+  await expect.poll(() => opacity(play)).toBeGreaterThan(0.5);
 
   // Chevron : la journée se replie, son nombre d'étapes reste lisible.
   await sat.locator('.parcours-day-toggle').click();
@@ -224,6 +234,8 @@ test('épingler une heure, changer de journée, exclure puis réintégrer', asyn
   expect(state.days[0].keys).toContain('GCPAR04');
   expect(state.days[1].keys).toEqual(['GCPAR05']);
   await expect(row(page, 'GCPAR04')).toContainText('déplacée du');
+  // Une seule étape le dimanche : compte au singulier.
+  await expect(page.locator('.parcours-day[data-date="2025-07-13"] .parcours-day-count')).toHaveText('1 étape');
 
   // Exclusion : hors du parcours et de la chronologie, réintégrable.
   await row(page, 'GCPAR05').locator('.parcours-stop-text').click();

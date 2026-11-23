@@ -17,6 +17,7 @@ import {
     stopDetail,
     stopLabel,
     stopTime,
+    stopsCountText,
 } from './parcours_labels.mjs';
 import {
     CONFIDENCE_ANCHORED,
@@ -175,8 +176,11 @@ export function createStopsPanel(deps) {
             updateCollapseAll();
         });
         const title = document.createElement('h6');
-        title.className = 'parcours-day-title mb-1';
-        title.textContent = formatDay(day.date);
+        title.className = 'parcours-day-title mb-0';
+        // Majuscule au premier mot seulement (« Samedi 12 juillet 2025 ») :
+        // `text-transform: capitalize` en mettait une au mois.
+        const dayText = formatDay(day.date);
+        title.textContent = dayText.charAt(0).toLocaleUpperCase() + dayText.slice(1);
         // Couleur de la journée, quand les étapes ou le trait la prennent.
         const { color_by: colorBy, trail_by_day: trailByDay } = deps.stopStyle();
         if (colorBy === 'day' || trailByDay) {
@@ -189,7 +193,7 @@ export function createStopsPanel(deps) {
         // Le nombre d'étapes reste lisible quand la journée est repliée.
         const count = document.createElement('span');
         count.className = 'small text-muted parcours-day-count';
-        count.textContent = t('${n} étapes', { n: day.stops.length });
+        count.textContent = stopsCountText(day.stops.length);
         header.append(toggle, title, count);
         if (deps.playFromDay && day.stops.length > 0) {
             const play = button('btn btn-link btn-sm p-0 parcours-day-play', 'ti-player-play',
@@ -443,6 +447,8 @@ export function createStopsPanel(deps) {
         item.className = 'parcours-stop d-flex align-items-start gap-2 py-1';
         item.dataset.stopKey = stop.key;
         if (stop.key === playingKey) item.classList.add('is-playing');
+        // Panneau d'ajustement ouvert : ses actions restent affichées.
+        if (stop.key === editKey) item.classList.add('is-editing');
         item.dataset.kind = stop.kind;
         item.dataset.confidence = stop.confidence;
         item.dataset.reason = stop.reason;

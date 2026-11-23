@@ -151,7 +151,13 @@ un voyage), chacun avec ses étapes :
 
 Dans l'onglet Données, chaque étape porte son heure d'arrivée (exacte pour
 une ancre, « ≈ » sinon) et la raison de sa place ; chaque journée, sa
-distance et le verdict sur l'ordre des logs.
+distance et le verdict sur l'ordre des logs. L'en-tête de journée
+(« Samedi 12 juillet 2025 », majuscule au premier mot seulement, compte
+d'étapes au singulier comme au pluriel) est plus grand que les étapes et
+souligné. Les actions d'une ligne (lire depuis ici, monter, descendre,
+poignée) sont effacées au repos et apparaissent au survol, au focus clavier,
+au survol du point sur la carte (`is-map-hover`) et pendant l'ajustement
+(`is-editing`) — opacité, pas `display` : la ligne ne bouge pas.
 
 Disposition de l'onglet (grille `.parcours-data-grid`, trois zones) :
 « Mes parcours », « Étapes », « Enrichir le parcours ». Large : étapes à
