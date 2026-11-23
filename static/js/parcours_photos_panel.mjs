@@ -30,7 +30,9 @@ import {
     hasPosition,
     photoClock,
     photoGridGroups,
+    photoTimeTrusted,
     suggestPhotoPlaces,
+    withTrackPositions,
 } from './parcours_photos.mjs';
 import {
     PHOTO_LAYOUT_NONE,
@@ -585,7 +587,9 @@ export function createPhotosPanel(deps) {
         const list = el('parcoursPhotoPlaceList');
         if (!box || !list) return;
         const dates = new Set((ordered?.days || []).map((day) => day.date));
-        const places = suggestPhotoPlaces(inputs?.photos || [], photoMatches, cameraOffsets(inputs?.cameras), { dates });
+        // Photos d'appareil situées par la trace comprises.
+        const placed = withTrackPositions(inputs?.photos || [], s().photoPositions);
+        const places = suggestPhotoPlaces(placed, photoMatches, cameraOffsets(inputs?.cameras), { dates });
         box.hidden = places.length === 0;
         const title = el('parcoursPhotoPlacesTitle');
         if (title) {
@@ -648,13 +652,15 @@ export function createPhotosPanel(deps) {
         box.hidden = !photo;
         if (!photo) return;
         const match = photoMatches.get(photo.id);
-        const clock = photoClock(photo, cameraOffsets(inputs.cameras));
+        const offsets = cameraOffsets(inputs.cameras);
+        const clock = photoClock(photo, offsets);
+        const onTrack = s().photoPositions?.has(photo.id);
         const info = el('parcoursPhotoInfo');
         if (info) {
             info.textContent = [
                 photo.name,
                 clock ? `${formatDay(clock.date, { day: 'numeric', month: 'short' })} ${minutesToTime(clock.minutes)}` : t('sans heure'),
-                hasPosition(photo) ? t('géolocalisée') : t('sans position'),
+                hasPosition(photo) ? t('géolocalisée') : onTrack ? t('située par la trace GPS') : t('sans position'),
                 photo.camera && photo.cameraSerial
                     ? t('${camera} (n° ${serial})', { camera: photo.camera, serial: photo.cameraSerial })
                     : photo.camera || '',
@@ -685,11 +691,20 @@ export function createPhotosPanel(deps) {
         select.value = photo.stopKey || '';
         select.addEventListener('change', () => linkPhoto(photo.id, select.value || null));
         const linkRow = [label, select];
+        const hint = (className, text) => {
+            const node = document.createElement('div');
+            node.className = `form-hint text-muted w-100 ${className}`;
+            node.textContent = text;
+            linkRow.push(node);
+        };
         if (match?.lostKey) {
-            const hint = document.createElement('div');
-            hint.className = 'form-hint text-muted w-100 parcours-photo-lost';
-            hint.textContent = t('L’étape choisie pour cette photo a été retirée du parcours : la photo suit le rattachement automatique, et retrouvera son étape si elle revient.');
-            linkRow.push(hint);
+            hint('parcours-photo-lost', t('L’étape choisie pour cette photo a été retirée du parcours : la photo suit le rattachement automatique, et retrouvera son étape si elle revient.'));
+        }
+        // Sans GPS, avec une trace : ce qui manque pour l'y situer.
+        if (!hasPosition(photo) && !onTrack && clock && photo.camera && (inputs.tracks || []).length) {
+            hint('parcours-photo-track-hint', photoTimeTrusted(photo, offsets)
+                ? t('Prise hors des heures couvertes par les traces GPS du parcours : elle n’y est pas située.')
+                : t('Recalez l’horloge de cet appareil : la trace GPS du parcours situera la photo.'));
         }
         el('parcoursPhotoLinkRow')?.replaceChildren(...linkRow);
 

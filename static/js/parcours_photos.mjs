@@ -7,7 +7,8 @@
 //
 // 1. MANUEL (`stopKey`) : choisi par l'utilisateur ;
 // 2. POSITION : l'étape la plus proche à moins de PHOTO_MATCH_RADIUS_M, le
-//    même jour quand la photo a une heure ;
+//    même jour quand la photo a une heure — position de l'EXIF, ou lue sur
+//    une trace GPS à l'heure recalée d'un appareil sans GPS ;
 // 3. HEURE : sans position, une photo à heure de confiance va à l'étape dont
 //    la visite (± marge) contient son heure, sinon à l'arrivée la plus proche
 //    dans PHOTO_TIME_WINDOW_MIN.
@@ -35,7 +36,12 @@ const VISIT_MARGIN_MIN = 10;
 
 export const MATCH_MANUAL = 'manual';
 export const MATCH_GPS = 'gps';
+// Position lue sur une trace GPS du parcours à l'heure (recalée) de la photo
+// (`locatePhotosOnTracks`, parcours_tracks.mjs) : rattachée comme une photo
+// géolocalisée, mais jamais ancre — la trace cale déjà ses étapes.
+export const MATCH_TRACK = 'track';
 export const MATCH_TIME = 'time';
+export const POSITION_TRACK = 'track';
 
 const TAKEN_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
 
@@ -83,6 +89,18 @@ export function hasPosition(photo) {
     return Number.isFinite(photo?.lat) && Number.isFinite(photo?.lon);
 }
 
+// Photos complétées des positions lues sur la trace (Map id → { lon, lat }) :
+// `posSource` les distingue d'une position EXIF. Les autres sont rendues
+// telles quelles.
+export function withTrackPositions(photos, positions) {
+    const list = Array.isArray(photos) ? photos : [];
+    if (!positions?.size) return list;
+    return list.map((photo) => {
+        const at = positions.get(photo?.id);
+        return at && !hasPosition(photo) ? { ...photo, lat: at.lat, lon: at.lon, posSource: POSITION_TRACK } : photo;
+    });
+}
+
 export function photoTimeTrusted(photo, offsets = new Map()) {
     if (!TAKEN_RE.test(String(photo?.takenAt || ''))) return false;
     return hasPosition(photo) || photoCameraOffset(photo, offsets) !== undefined;
@@ -122,11 +140,12 @@ export function matchPhotos(reconstructed, photos, offsets = new Map(),
         const lost = photo.stopKey ? { lostKey: photo.stopKey } : null;
         const clock = photoClock(photo, offsets);
         if (hasPosition(photo)) {
+            const source = photo.posSource === POSITION_TRACK ? MATCH_TRACK : MATCH_GPS;
             let best = null;
             for (const c of all) {
                 if (clock && c.date !== clock.date) continue;
                 const m = groundDistanceKm([photo.lon, photo.lat], [c.stop.lon, c.stop.lat]) * 1000;
-                if (m <= radiusM && (!best || m < best.distanceM)) best = { key: c.stop.key, source: MATCH_GPS, distanceM: m };
+                if (m <= radiusM && (!best || m < best.distanceM)) best = { key: c.stop.key, source, distanceM: m };
             }
             result.set(photo.id, { ...(best || { key: null, source: null }), ...lost });
             continue;

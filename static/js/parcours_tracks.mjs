@@ -24,11 +24,23 @@
 // Vrai chemin : entre deux étapes consécutives rattachées au même segment de
 // la même trace, dans l'ordre, le trajet suit la trace (`trackLegPaths`).
 //
+// Photos d'un appareil sans GPS, horloge recalée : la trace donne leur
+// position à leur heure (`locatePhotosOnTracks`).
+//
 // Aucune dépendance au DOM ni à OpenLayers : testé sous Node
 // (tests/js/parcours_tracks.test.mjs).
 
 import { KIND_BASE, reconstructParcours } from './parcours_reconstruct.mjs';
-import { cameraOffsets, matchPhotos, photoAnchors, photosByStop } from './parcours_photos.mjs';
+import {
+    cameraOffsets,
+    hasPosition,
+    matchPhotos,
+    photoAnchors,
+    photoClock,
+    photoTimeTrusted,
+    photosByStop,
+    withTrackPositions,
+} from './parcours_photos.mjs';
 
 export const TRACK_MATCH_RADIUS_M = 100;
 export const TRACK_ARRIVAL_RADIUS_M = 30;
@@ -270,6 +282,87 @@ export function matchStopsToTracks(reconstructed, tracks, offsetMin,
     return matches;
 }
 
+// --- Photos d'appareil situées par la trace ---------------------------------
+//
+// Un appareil sans GPS dont l'horloge est recalée donne l'heure de ses
+// photos ; la trace donne où l'on était à cette heure. La position est
+// interpolée entre les deux points qui encadrent l'instant : la
+// simplification à l'import (distance synchronisée, 10 m) garantit justement
+// que cette interpolation reste juste, même entre deux points gardés loin
+// l'un de l'autre (une ligne droite à vitesse constante). Un vrai trou
+// d'enregistrement s'en distingue mal une fois simplifié : seul l'évident
+// (plus de PHOTO_TRACK_GAP_S sans point ET plus de PHOTO_TRACK_GAP_M
+// parcourus) ne situe rien. Hors d'un segment, seule une marge de
+// PHOTO_TRACK_EDGE_S est tolérée (horloge recalée à la minute).
+export const PHOTO_TRACK_EDGE_S = 120;
+export const PHOTO_TRACK_GAP_S = 30 * 60;
+export const PHOTO_TRACK_GAP_M = 500;
+
+function metersBetween(a, b) {
+    const k = Math.cos(((a[1] + b[1]) / 2) * DEG);
+    return Math.hypot((b[0] - a[0]) * DEG * EARTH_M * k, (b[1] - a[1]) * DEG * EARTH_M);
+}
+
+// Position sur les traces à l'instant `t` (secondes UTC) : { lon, lat,
+// trackId, segment } ou null. Plusieurs traces au même instant : celle qui
+// l'encadre au plus près.
+export function trackPositionAt(tracks, t) {
+    if (!Number.isFinite(t)) return null;
+    let best = null;
+    for (const track of Array.isArray(tracks) ? tracks : []) {
+        (track.segments || []).forEach((segment, s) => {
+            if (!segment.length) return;
+            const first = segment[0];
+            const last = segment[segment.length - 1];
+            if (t < first[2] - PHOTO_TRACK_EDGE_S || t > last[2] + PHOTO_TRACK_EDGE_S) return;
+            let point;
+            let miss;
+            if (t <= first[2]) {
+                point = first;
+                miss = first[2] - t;
+            } else if (t >= last[2]) {
+                point = last;
+                miss = t - last[2];
+            } else {
+                let lo = 0;
+                let hi = segment.length - 1;
+                while (hi - lo > 1) {
+                    const mid = (lo + hi) >> 1;
+                    if (segment[mid][2] <= t) lo = mid;
+                    else hi = mid;
+                }
+                const a = segment[lo];
+                const b = segment[hi];
+                const span = b[2] - a[2];
+                if (span > PHOTO_TRACK_GAP_S && metersBetween(a, b) > PHOTO_TRACK_GAP_M) return;
+                const u = span > 0 ? (t - a[2]) / span : 0;
+                point = [a[0] + u * (b[0] - a[0]), a[1] + u * (b[1] - a[1])];
+                miss = 0;
+            }
+            if (!best || miss < best.miss) best = { lon: point[0], lat: point[1], trackId: track.id, segment: s, miss };
+        });
+    }
+    if (!best) return null;
+    const { miss, ...at } = best;
+    return at;
+}
+
+// Photos sans GPS à heure de confiance (appareil recalé) situées sur les
+// traces : Map id → { lon, lat, trackId, segment }. `offsetMin` : décalage
+// UTC du parcours (les heures des photos sont murales).
+export function locatePhotosOnTracks(photos, tracks, offsets, offsetMin) {
+    const located = new Map();
+    if (!tracks?.length) return located;
+    for (const photo of Array.isArray(photos) ? photos : []) {
+        if (!photo || hasPosition(photo) || !photoTimeTrusted(photo, offsets)) continue;
+        const clock = photoClock(photo, offsets);
+        if (!clock) continue;
+        const at = trackPositionAt(tracks, wallSeconds(clock.date, clock.minutes) - offsetMin * 60);
+        if (at) located.set(photo.id, at);
+    }
+    return located;
+}
+
 export function trackAnchors(matches) {
     const anchors = new Map();
     for (const [key, match] of matches) anchors.set(key, match.minutes);
@@ -301,32 +394,38 @@ export function trackLegPaths(reconstructed, matches, tracks) {
 }
 
 // Reconstruction complète, traces et photos comprises : { ordered, matches
-// (photos), byStop, trackMatches, legPaths, utcOffset }. `legHints` : durées
-// des itinéraires calculés (lot 6), passées à chaque reconstruction.
+// (photos), byStop, trackMatches, legPaths, utcOffset, photoPositions
+// (photos situées par la trace) }. `legHints` : durées des itinéraires
+// calculés (lot 6), passées à chaque reconstruction.
 export function reconstructWithEvidence(inputs, options = null, { legHints = null } = {}) {
     const photos = Array.isArray(inputs?.photos) ? inputs.photos : [];
     const tracks = Array.isArray(inputs?.tracks) ? inputs.tracks : [];
+    const offsets = cameraOffsets(inputs?.cameras);
     let ordered = reconstructParcours(inputs, { options, legHints });
+    // Fuseau : sur les positions de l'EXIF seulement (une position lue sur la
+    // trace en découle).
     const utcOffset = resolveUtcOffset({ parcours: inputs?.parcours, photos, tracks, reconstructed: ordered });
     const trackMatches = matchStopsToTracks(ordered, tracks, utcOffset.minutes);
     const fromTracks = trackAnchors(trackMatches);
     if (fromTracks.size > 0) ordered = reconstructParcours(inputs, { options, trackAnchors: fromTracks, legHints });
+    const photoPositions = locatePhotosOnTracks(photos, tracks, offsets, utcOffset.minutes);
+    const placed = withTrackPositions(photos, photoPositions);
     let matches = new Map();
-    if (photos.length > 0) {
-        const offsets = cameraOffsets(inputs?.cameras);
-        matches = matchPhotos(ordered, photos, offsets);
-        const fromPhotos = photoAnchors(ordered, photos, matches, offsets);
+    if (placed.length > 0) {
+        matches = matchPhotos(ordered, placed, offsets);
+        const fromPhotos = photoAnchors(ordered, placed, matches, offsets);
         if (fromPhotos.size > 0) {
             ordered = reconstructParcours(inputs, { options, trackAnchors: fromTracks, photoAnchors: fromPhotos, legHints });
-            matches = matchPhotos(ordered, photos, offsets);
+            matches = matchPhotos(ordered, placed, offsets);
         }
     }
     return {
         ordered,
         matches,
-        byStop: photosByStop(photos, matches, cameraOffsets(inputs?.cameras)),
+        byStop: photosByStop(placed, matches, offsets),
         trackMatches,
         legPaths: trackLegPaths(ordered, trackMatches, tracks),
         utcOffset,
+        photoPositions,
     };
 }

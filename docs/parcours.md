@@ -791,8 +791,26 @@ Table `parcours_photo`, décalages d'horloge dans `parcours_camera`
 |---|---|
 | choisie à la main (`stopKey`) | celle-là |
 | géolocalisée | la plus proche à moins de 150 m, le jour de la photo (bases exclues) |
+| sans GPS, appareil recalé, prise pendant une trace | comme géolocalisée, à la position lue sur la trace (source `track`) |
 | heure de confiance, sans position | celle dont la visite estimée (± 10 min) contient l'heure, sinon l'arrivée la plus proche à 45 min au plus |
 | sinon | aucune (vignette estompée) |
+
+**Situées par la trace** (`locatePhotosOnTracks`, parcours_tracks.mjs) :
+une photo sans GPS dont l'appareil est recalé a une heure de confiance ;
+convertie en UTC (décalage du parcours), elle donne une position sur les
+traces, interpolée entre les deux points qui l'encadrent — la
+simplification à l'import (distance synchronisée) garantit que cette
+interpolation reste à 10 m près. Marge de 2 min hors d'un segment ; un
+trou évident (plus de 30 min sans point et plus de 500 m parcourus) ne
+situe rien — un trou plus court reste interpolé en ligne droite, limite
+connue. La photo se rattache alors comme une photo géolocalisée (150 m,
+le jour même, source `track`, « (trace) » dans l'onglet) et peut devenir
+un lieu proposé, mais n'est jamais une ancre : la trace cale déjà l'étape,
+et ne sert pas non plus à déduire le fuseau (calculé sur les seules
+positions EXIF, avant). Relevé : `photos[].trackPosition` de
+`getParcoursSnapshot()`. Le détail dit ce qui manque (« Recalez
+l'horloge… », ou prise hors des heures des traces). Exemple e2e :
+« appareil sans GPS recalé » de `parcours-photos.spec.mjs`.
 
 Une étape choisie à la main qui disparaît du parcours (cache exclue, lieu
 supprimé) n'est pas oubliée : `stopKey` reste stocké, pour que la photo la

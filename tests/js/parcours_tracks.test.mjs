@@ -10,12 +10,20 @@ import {
     OFFSET_MANUAL,
     OFFSET_PHOTOS,
     localClock,
+    locatePhotosOnTracks,
     matchStopsToTracks,
     passesNear,
     reconstructWithEvidence,
     resolveUtcOffset,
     trackLegPaths,
+    trackPositionAt,
 } from '../../static/js/parcours_tracks.mjs';
+import {
+    MATCH_TRACK,
+    cameraOffsets,
+    suggestPhotoPlaces,
+    withTrackPositions,
+} from '../../static/js/parcours_photos.mjs';
 
 // Repère : x en centaines de mètres vers l'est, y vers le nord, autour de
 // (5°, 45°).
@@ -98,6 +106,60 @@ test('vrai chemin entre deux étapes rattachées, dans l’ordre', () => {
     const ab = paths.get('B>C') || paths.get('A>B');
     assert.ok(ab && ab.length >= 2);
     for (const [x] of ab) assert.ok(Number.isFinite(x));
+});
+
+test('position sur la trace à un instant : interpolée, marges, trous d’enregistrement', () => {
+    const at = (minutes) => trackPositionAt([TRACK], T0 + minutes * 60);
+    // Entre A (0 min) et B (20 min) : au quart du chemin.
+    const quarter = at(5);
+    assert.ok(Math.abs(quarter.lon - lon(2.5)) < 1e-9 && Math.abs(quarter.lat - lat(0)) < 1e-9, JSON.stringify(quarter));
+    assert.equal(quarter.trackId, 7);
+    // Marge de 2 min hors du segment : le bout ; au-delà, rien.
+    assert.ok(Math.abs(at(-1.5).lon - lon(0)) < 1e-9);
+    assert.equal(at(-3), null);
+    assert.equal(at(93), null);
+    // Trou : 45 min sans point entre deux positions à 1 km — rien ; une
+    // longue pause au même endroit, si.
+    const gap = { id: 1, segments: [[pt(0, 0, 0), pt(10, 0, 45)], [pt(20, 0, 50), pt(20.01, 0, 100)]] };
+    assert.equal(trackPositionAt([gap], T0 + 20 * 60), null);
+    assert.ok(trackPositionAt([gap], T0 + 75 * 60));
+    assert.equal(trackPositionAt([TRACK], NaN), null);
+});
+
+test('photos d’appareil situées par la trace : rattachées à l’étape, proposées en lieu, jamais ancre', () => {
+    // Appareil sans GPS, horloge en retard de 30 min, recalé : la photo
+    // « 09:55 » est prise à 10:25 heure locale (08:25 UTC), pendant la pause à B.
+    const cameras = [{ camera: 'Canon', offsetMinutes: 30 }];
+    const photos = [
+        { id: 1, takenAt: '2025-07-12T09:55:00', camera: 'Canon', lat: null, lon: null },
+        // 08:05 UTC entre A et B, loin de toute étape : lieu proposé.
+        { id: 2, takenAt: '2025-07-12T09:35:00', camera: 'Canon', lat: null, lon: null },
+        // Appareil non recalé : heure de confiance absente, pas située.
+        { id: 3, takenAt: '2025-07-12T10:25:00', camera: 'Nikon', lat: null, lon: null },
+        // Hors de la trace (12:00 UTC) : pas située.
+        { id: 4, takenAt: '2025-07-12T13:30:00', camera: 'Canon', lat: null, lon: null },
+    ];
+    const inputs = { parcours: { utc_offset_minutes: 120 }, days: DAYS, tracks: [TRACK], photos, cameras };
+    const result = reconstructWithEvidence(inputs);
+    assert.deepEqual([...result.photoPositions.keys()], [1, 2]);
+    assert.equal(result.matches.get(1).key, 'B');
+    assert.equal(result.matches.get(1).source, MATCH_TRACK);
+    assert.deepEqual(result.matches.get(2), { key: null, source: null });
+    assert.deepEqual(result.matches.get(3), { key: null, source: null });
+    assert.deepEqual([...result.byStop], [['B', [1]]]);
+    // L'heure de B reste celle de la trace (08:20 UTC = 10:20), pas celle de
+    // la photo (10:25).
+    const b = result.ordered.days[0].stops.find((s) => s.key === 'B');
+    assert.equal(b.reason, REASON_TRACK);
+    assert.equal(Math.round(b.arrivalMin), 10 * 60 + 20);
+    // La photo 2 devient un lieu proposé, à sa position lue sur la trace.
+    const placed = withTrackPositions(photos, result.photoPositions);
+    const [place] = suggestPhotoPlaces(placed, result.matches, cameraOffsets(cameras), { dates: new Set(['2025-07-12']) });
+    assert.deepEqual(place.photoIds, [2]);
+    assert.ok(Math.abs(place.lon - lon(2.5)) < 1e-9);
+    // Une position EXIF n'est jamais remplacée par celle de la trace.
+    assert.equal(withTrackPositions([{ id: 1, lat: 1, lon: 2 }], result.photoPositions)[0].lat, 1);
+    assert.equal(locatePhotosOnTracks(photos, [], cameraOffsets(cameras), 120).size, 0);
 });
 
 test('reconstruction : heures de la trace comme ancres, trajets sur la trace', () => {

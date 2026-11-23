@@ -24,6 +24,7 @@ import {
 import {
     MATCH_GPS,
     MATCH_MANUAL,
+    MATCH_TRACK,
     photoClock,
 } from './parcours_photos.mjs';
 import {
@@ -253,6 +254,7 @@ export function matchLabel(match, stop) {
     const name = stop ? stopLabel(stop) : match.key;
     if (match.source === MATCH_MANUAL) return t('${name} (à la main)', { name });
     if (match.source === MATCH_GPS) return t('${name} (position)', { name });
+    if (match.source === MATCH_TRACK) return t('${name} (trace)', { name });
     return t('${name} (heure)', { name });
 }
 

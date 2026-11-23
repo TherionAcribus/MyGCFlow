@@ -188,6 +188,60 @@ test('grille : par journée, filtres, sélection de plusieurs photos et actions 
   expect(errors).toEqual([]);
 });
 
+test('appareil sans GPS recalé : situé par la trace, rattaché à l’étape ou proposé en lieu', async ({ page, request }) => {
+  // Trace du samedi (parcours-trace.gpx) : pause à GCPAR01 de 09:05 à
+  // 09:17 UTC ; à 09:50 UTC, en chemin à ~350 m de toute étape. Fuseau
+  // fixé à UTC+2.
+  const errors = collectErrors(page);
+  const parcours = await createWeekend(request);
+  expect((await request.patch(`/api/parcours/${parcours.id}`, { data: { utc_offset_minutes: 120 } })).ok()).toBeTruthy();
+  const trace = path.join(HERE, 'fixtures', 'parcours-trace.gpx');
+  expect((await request.post(`/api/parcours/${parcours.id}/tracks`, {
+    multipart: { track: { name: 'trace.gpx', mimeType: 'application/gpx+xml', buffer: readFileSync(trace) } },
+  })).ok()).toBeTruthy();
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(files[1]);   // Canon, 13/07 08:00, sans GPS
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+  const photoState = async () => (await snapshot(page)).photos[0];
+  const { id } = await photoState();
+  const thumb = page.locator(`.parcours-photo-thumb[data-photo-id="${id}"]`);
+
+  // Horloge non recalée : pas située, le détail dit quoi faire.
+  expect(await photoState()).toMatchObject({ match: { key: null, source: null }, trackPosition: null });
+  await thumb.click();
+  await expect(page.locator('.parcours-photo-track-hint')).toContainText('Recalez l’horloge');
+
+  // Recalée sur 09:10 UTC (11:10 locale) : située à GCPAR01 par la trace.
+  const camera = page.locator('.parcours-camera[data-camera="Canon EOS 80D"]');
+  const recaler = async (minutes) => {
+    await camera.locator('.parcours-camera-offset').fill(String(minutes));
+    await camera.locator('.parcours-camera-apply').click();
+  };
+  await recaler(-1250);
+  await expect.poll(async () => (await photoState()).match).toMatchObject({ key: 'GCPAR01', source: 'track' });
+  expect((await photoState()).trackPosition).not.toBeNull();
+  expect((await snapshot(page)).photoStops).toEqual({ GCPAR01: [id] });
+  await expect(thumb).toHaveAttribute('title', /\(trace\)/);
+  await thumb.click();
+  await expect(page.locator('#parcoursPhotoInfo')).toContainText('située par la trace GPS');
+  await expect(page.locator('.parcours-photo-track-hint')).toHaveCount(0);
+  await expect(page.locator('#parcoursPhotoPlaces')).toBeHidden();
+
+  // 09:50 UTC : en chemin, loin des étapes — proposée comme lieu.
+  await recaler(-1210);
+  await expect.poll(async () => (await photoState()).match).toEqual({ key: null, source: null });
+  await expect(page.locator('#parcoursPhotoPlaces')).toBeVisible();
+  await expect(page.locator(`.parcours-photo-place[data-photo-ids="${id}"]`)).toBeVisible();
+
+  // Hors des heures de la trace (13/07) : plus située, le détail le dit.
+  await recaler(0);
+  await expect.poll(async () => (await photoState()).trackPosition).toBeNull();
+  await thumb.click();
+  await expect(page.locator('.parcours-photo-track-hint')).toContainText('hors des heures');
+  expect(errors).toEqual([]);
+});
+
 test('deux boîtiers du même modèle : une horloge chacun, et le recalage du modèle en repli', async ({ page, request }) => {
   const errors = collectErrors(page);
   await createWeekend(request);

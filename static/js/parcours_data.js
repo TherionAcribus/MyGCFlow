@@ -137,6 +137,7 @@ let selectedId = null;
 let inputs = null;            // entrées du parcours ouvert, ajustements compris
 let ordered = null;           // reconstruction du parcours ouvert (photos comprises)
 let photoMatches = new Map(); // rattachement de chaque photo (parcours_photos.mjs)
+let photoPositions = new Map(); // photos sans GPS situées par la trace : id → { lon, lat }
 let photoByStop = new Map();  // clé d'étape → photos, dans l'ordre d'affichage
 let trackMatches = new Map(); // clé d'étape → passage d'une trace (parcours_tracks.mjs)
 let legPaths = new Map();     // « from>to » → vrai chemin [[lon, lat], ...]
@@ -1061,6 +1062,7 @@ function rebuild() {
     // Trace GPS d'abord, itinéraire ensuite.
     legPaths = new Map([...routing.effects().paths, ...result.legPaths]);
     utcOffset = result.utcOffset;
+    photoPositions = result.photoPositions;
 }
 
 
@@ -1107,7 +1109,7 @@ const uploads = createParcoursUploads({
 });
 
 const photosPanel = createPhotosPanel({
-    getState: () => ({ inputs, ordered, photoMatches, timeline, selectedId }),
+    getState: () => ({ inputs, ordered, photoMatches, photoPositions, timeline, selectedId }),
     uploads,
     button,
     fetchJson,
@@ -1394,6 +1396,7 @@ export function getParcoursSnapshot() {
             id: photo.id,
             stopKey: photo.stopKey,
             match: photoMatches.get(photo.id) || null,
+            trackPosition: photoPositions.get(photo.id) || null,
             hidden: !!photo.hidden,
             caption: photo.caption || '',
             crop: photoCrop(photo),
