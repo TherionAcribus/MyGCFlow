@@ -1254,7 +1254,17 @@ Journée par journée, la dernière étape de la veille orientant la suivante.
      moindre détour.
 3. **Géographie** : sans ordre des logs retenu ni deux ancres, plus court
    chemin de la journée (plus proche voisin + 2-opt, `orderStops` de
-   travel_trail.mjs), orienté depuis la veille. Sinon, toutes les étapes
+   travel_trail.mjs). Il se parcourt dans les deux sens : le sens vient du
+   premier indice disponible (`reversedIsBetter`) — départ (base de
+   départ, ou dernière étape de la veille), arrivée (base de retour), heure
+   d'une ancre seule (le sens où son arrivée estimée depuis 9 h tombe le
+   plus près), tendance des logs (corrélation des rangs position / saisie :
+   un ordre de saisie écarté garde un sens). Sans aucun indice — journée
+   sans logs, ancre, base ni veille —, le sens d'`orderStops` (départ à
+   l'extrémité du nuage) reste arbitraire. Avant le 2026-11-23, seule la
+   veille orientait. Banc : indicateurs inchangés (les Labs masquées
+   gardent deux ancres), 7 journées de l'historique retournées sur 746
+   ordonnées par la géographie, temps de calcul identique. Sinon, toutes les étapes
    mises de côté s'insèrent au moindre détour en minutes de trajet
    (marche puis voiture, sans saut : `detourMinutes`), sans réordonner
    l'ossature.

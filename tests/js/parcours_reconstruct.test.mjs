@@ -159,6 +159,38 @@ test('insertion entre deux ancres à 2 km : l’étape du milieu y reste (marche
     assert.deepEqual(keys(day), ['C', 'B', 'A']);
 });
 
+test('sens du chemin sans veille : base de retour, ancre seule, tendance des logs', () => {
+    const line = () => [stop('A', 0), stop('B', 10), stop('C', 20)];
+    const finds = (day) => keys(day).filter((key) => !key.startsWith('place:'));
+    // Base de retour seule : la journée finit près d'elle.
+    for (const [x, expected] of [[25, ['A', 'B', 'C']], [-5, ['C', 'B', 'A']]]) {
+        const day = reconstructDay({ date: '2025-07-12', stops: line() },
+            { baseEnd: { key: 'place:1', lon: at(x), lat: 45, name: 'Camping' } });
+        assert.deepEqual(finds(day), expected);
+    }
+    // Ancre seule : le sens où son heure estimée (départ à 9 h) tombe juste.
+    for (const [time, expected] of [['09:05:00', ['L', 'B', 'A']], ['16:00:00', ['A', 'B', 'L']]]) {
+        const day = reconstructDay({
+            date: '2025-07-12',
+            stops: [stop('A', 0), stop('B', 10), stop('L', 20, { kind: 'lab', type: 'Lab Cache', localTime: time })],
+        });
+        assert.deepEqual(keys(day), expected);
+    }
+    // Ordre de saisie écarté (même après retrait d'un intrus) mais plutôt à
+    // rebours, de l'est vers l'ouest : le chemin part de l'est ; et
+    // inversement.
+    const logged = (ids) => reconstructDay({
+        date: '2025-07-12',
+        stops: [0, 10, 20, 30, 40].map((x, k) => stop(`S${x}`, x, { logId: ids[k] })),
+    });
+    let day = logged([4, 5, 2, 1, 3]);
+    assert.equal(day.diagnostics.logOrder, LOG_ORDER_REJECTED);
+    assert.deepEqual(keys(day), ['S40', 'S30', 'S20', 'S10', 'S0']);
+    day = logged([2, 1, 4, 5, 3]);
+    assert.equal(day.diagnostics.logOrder, LOG_ORDER_REJECTED);
+    assert.deepEqual(keys(day), ['S0', 'S10', 'S20', 'S30', 'S40']);
+});
+
 test('ancres et logs fiables : les deux ordres sont respectés', () => {
     const day = reconstructDay({
         date: '2025-07-12',

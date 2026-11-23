@@ -324,11 +324,59 @@ function extractIntruders(chain, dist, opts) {
 
 // --- Une journée --------------------------------------------------------------
 
+// Le plus court chemin se parcourt dans les deux sens : faut-il retourner
+// `path` ? Premier indice disponible, du plus sûr au plus faible :
+// 1. départ (`start` : base de départ, ou dernière étape de la veille) ;
+// 2. arrivée (`end` : base de retour) ;
+// 3. heure d'une ancre seule : le sens où son arrivée estimée, en partant
+//    à dayStartMin, tombe le plus près de son heure ;
+// 4. tendance des identifiants de logs (paires dans l'ordre de saisie
+//    contre paires à rebours) : un ordre de saisie écarté — pas assez
+//    géographique — garde un sens. Types logables après coup exclus.
+// Sans indice, le sens de orderStops (départ à l'extrémité du nuage),
+// arbitraire : une journée sans logs, ni ancre, ni base, ni veille.
+function reversedIsBetter(path, stops, anchorMin, start, end, opts) {
+    const first = point(stops[path[0]]);
+    const last = point(stops[path[path.length - 1]]);
+    for (const [at, nearFirst] of [[start, true], [end, false]]) {
+        if (!at) continue;
+        const dFirst = groundDistanceKm(at, first);
+        const dLast = groundDistanceKm(at, last);
+        if (Math.abs(dFirst - dLast) > EPS) return nearFirst ? dLast < dFirst : dFirst < dLast;
+    }
+    const anchors = path.filter((i) => Number.isFinite(anchorMin[i]));
+    if (anchors.length === 1) {
+        const target = anchorMin[anchors[0]];
+        const arrival = (order) => {
+            let t = opts.dayStartMin;
+            for (let k = 0; order[k] !== anchors[0]; k++) {
+                t += visitMinutes(stops[order[k]], opts) + legEstimate(point(stops[order[k]]), point(stops[order[k + 1]]), opts).minutes;
+            }
+            return t;
+        };
+        const forward = Math.abs(arrival(path) - target);
+        const backward = Math.abs(arrival([...path].reverse()) - target);
+        if (Math.abs(forward - backward) > EPS) return backward < forward;
+    }
+    // Corrélation des rangs (Spearman, au signe près) : position sur le
+    // chemin contre rang de saisie — O(n log n), une journée a parfois des
+    // centaines d'étapes.
+    const late = new Set(opts.lateTypes);
+    const ids = path.map((i) => stops[i]).filter((s) => Number.isFinite(s.logId) && !late.has(s.type)).map((s) => s.logId);
+    const rank = new Array(ids.length);
+    ids.map((id, k) => [id, k]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([, k], r) => { rank[k] = r; });
+    const mid = (ids.length - 1) / 2;
+    let trend = 0;
+    for (let k = 0; k < ids.length; k++) trend += (k - mid) * (rank[k] - mid);
+    return trend < -EPS;
+}
+
 // Ordre de passage d'une journée. `stops` : étapes valides de la journée ;
-// `anchorMin[i]` : heure sûre (minutes) ou null ; `prevEnd` : [lon, lat] de
-// la dernière étape de la veille (oriente l'ordre géographique), ou null.
+// `anchorMin[i]` : heure sûre (minutes) ou null ; `start` / `end` : [lon,
+// lat] du départ (base, ou dernière étape de la veille) et de l'arrivée
+// (base de retour), qui orientent l'ordre géographique, ou null.
 // Retourne { order, reasons, confidence, diagnostics }.
-function orderDay(stops, anchorMin, prevEnd, opts) {
+function orderDay(stops, anchorMin, start, end, opts) {
     const n = stops.length;
     const dist = makeDistance(stops);
     const reasons = new Array(n).fill(REASON_INSERTED);
@@ -411,15 +459,10 @@ function orderDay(stops, anchorMin, prevEnd, opts) {
         path = [...anchors];
     } else {
         // Ni logs fiables ni deux ancres : ordre géographique de toute la
-        // journée (une ancre seule ne contraint pas l'ordre), orienté depuis
-        // la veille.
+        // journée (une ancre seule ne contraint pas l'ordre, elle l'oriente).
         for (const u of chain) reasons[u] = REASON_GEO;
         path = geoOrder(stops.map((_, i) => i), stops);
-        if (prevEnd && path.length > 1) {
-            const dFirst = groundDistanceKm(prevEnd, point(stops[path[0]]));
-            const dLast = groundDistanceKm(prevEnd, point(stops[path[path.length - 1]]));
-            if (dLast < dFirst - EPS) path.reverse();
-        }
+        if (path.length > 1 && reversedIsBetter(path, stops, anchorMin, start, end, opts)) path.reverse();
         for (const i of path) if (reasons[i] === REASON_INSERTED) reasons[i] = REASON_GEO;
         return { order: path, reasons, confidence, diagnostics };
     }
@@ -582,7 +625,8 @@ export function reconstructDay(day, {
     const hasStart = !!baseStart && Number.isFinite(baseStart.lon) && Number.isFinite(baseStart.lat);
     const hasEnd = !!baseEnd && Number.isFinite(baseEnd.lon) && Number.isFinite(baseEnd.lat);
     const start = hasStart ? [baseStart.lon, baseStart.lat] : prevEnd;
-    const ordered = orderDay(stops, anchorMin, start, opts);
+    const end = hasEnd ? [baseEnd.lon, baseEnd.lat] : null;
+    const ordered = orderDay(stops, anchorMin, start, end, opts);
     const { reasons, confidence, diagnostics } = ordered;
     for (let i = 0; i < stops.length; i++) {
         // Heure épinglée, ou lieu posé à son heure : un choix de l'utilisateur.
