@@ -287,6 +287,9 @@ class Parcours(db.Model):
     # explicitement réglées ; les autres suivent la préférence globale
     # `parcours_playback` (le défaut). NULL : aucune surcharge.
     playback = db.Column(db.Text)
+    # Affichage des photos propre au parcours : même principe, défaut global
+    # `parcours_photo_display`. NULL : aucune surcharge.
+    photo_display = db.Column(db.Text)
     created_at = db.Column(db.DateTime)
     updated_at = db.Column(db.DateTime)
 

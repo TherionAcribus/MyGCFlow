@@ -226,6 +226,37 @@ export function normalizePhotoDisplay(raw) {
     };
 }
 
+// Styles tout faits de l'onglet Photos : des combinaisons des réglages
+// d'apparence et de placement — jamais la durée, le plafond, les photos en
+// chemin ni la légende, qui tiennent au contenu du parcours. Un style ne
+// pose que ses clés ; il est « actif » quand toutes valent la sienne.
+export const PHOTO_DISPLAY_PRESETS = Object.freeze({
+    postcard: Object.freeze({
+        layout: PHOTO_LAYOUT_STOP, side: 'auto', frame: 'postcard', tilt: true, effect: 'fade',
+        stack: false, pin: false, leader: false, ken_burns: false,
+    }),
+    scrapbook: Object.freeze({
+        layout: PHOTO_LAYOUT_STOP, side: 'auto', frame: 'polaroid', tilt: true, effect: 'zoom',
+        stack: true, pin: true, leader: false, ken_burns: false,
+    }),
+    sober: Object.freeze({
+        layout: PHOTO_LAYOUT_FIXED, anchor: 'top-right', frame: 'rounded', tilt: false, effect: 'fade',
+        stack: false, pin: false, leader: false, ken_burns: true,
+    }),
+    film: Object.freeze({
+        layout: PHOTO_LAYOUT_STRIP, strip_edge: 'bottom', strip_reset: true, frame: 'plain', tilt: false,
+        effect: 'fade', ken_burns: false,
+    }),
+});
+
+// Nom du style tout fait que les réglages reproduisent, ou null.
+export function photoDisplayPreset(display) {
+    for (const [name, preset] of Object.entries(PHOTO_DISPLAY_PRESETS)) {
+        if (Object.entries(preset).every(([key, value]) => display?.[key] === value)) return name;
+    }
+    return null;
+}
+
 // Options de buildParcoursTimeline (parcours_timeline.mjs) tirées des
 // réglages : temps d'écran de chaque photo (quanta de 100 ms), plafond par
 // étape et sort des photos au-delà. Sans photos dans la vidéo, la page ne lui

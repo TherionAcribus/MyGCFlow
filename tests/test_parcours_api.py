@@ -121,6 +121,34 @@ class CrudTests(_Base):
             body = self.patch(f"/api/parcours/{pid}", payload)
             self.assertEqual(body.get_json()["parcours"]["playback"], {})
 
+    def test_photo_display_overrides(self):
+        # Affichage des photos propre au parcours : comme `playback`, JSON
+        # épars validé avec les domaines de la préférence globale.
+        pid = self.create()["id"]
+        self.assertEqual(self.get(f"/api/parcours/{pid}").get_json()["parcours"]["photo_display"], {})
+
+        body = self.patch(f"/api/parcours/{pid}", {"photo_display": {
+            "layout": "strip", "frame": "cadre", "size": 9999, "duration": 2.04,
+            "pin": True, "stack": "oui", "caption": "  {etape}   · {heure} ", "unknown": 1}})
+        self.assertEqual(body.status_code, 200)
+        self.assertEqual(body.get_json()["parcours"]["photo_display"], {
+            "layout": "strip", "size": 600, "duration": 2.0, "pin": True, "caption": "{etape} · {heure}"})
+        # Les réglages de lecture n'en sont pas touchés, et inversement.
+        self.assertEqual(body.get_json()["parcours"]["playback"], {})
+        body = self.patch(f"/api/parcours/{pid}", {"playback": {"camera": "fixed"}})
+        self.assertEqual(body.get_json()["parcours"]["photo_display"]["layout"], "strip")
+
+        copy = self.post(f"/api/parcours/{pid}/duplicate", {}).get_json()["parcours"]
+        self.assertEqual(copy["photo_display"]["size"], 600)
+        exported = self.get(f"/api/parcours/{pid}/export").get_json()
+        self.assertTrue(exported["parcours"]["photo_display"]["pin"])
+        imported = self.post("/api/parcours/import", exported).get_json()["parcours"]
+        self.assertEqual(imported["photo_display"]["layout"], "strip")
+
+        for payload in ({"photo_display": {}}, {"photo_display": None}):
+            body = self.patch(f"/api/parcours/{pid}", payload)
+            self.assertEqual(body.get_json()["parcours"]["photo_display"], {})
+
     def test_listing_counts(self):
         """Pastilles de la liste : étapes (trouvailles + Labs + DNF, sources
         du parcours comprises) et objets rattachés."""

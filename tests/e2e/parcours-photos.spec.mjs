@@ -271,8 +271,8 @@ test('photos en chemin : le géocacheur s’arrête à la position de la photo l
 
   // Option cochée : un créneau en chemin, sur le trajet GCPAR01 → GCPAR02.
   await page.locator('#parcoursPhotoEnRoute').check();
-  await expect.poll(async () => (await page.request.get('/api/settings').then((r) => r.json()))
-    .parcours_photo_display.en_route).toBe(true);
+  await expect.poll(async () => (await page.request.get(`/api/parcours/${parcours.id}`).then((r) => r.json()))
+    .parcours.photo_display.en_route).toBe(true);
   await expect.poll(async () => (await snapshot(page)).photoSlots.length).toBe(1);
   const after = await snapshot(page);
   const [slot] = after.photoSlots;

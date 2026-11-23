@@ -1,7 +1,8 @@
 // Page Parcours, lot 9 : affichage des photos dans la lecture ; lot 10 :
 // lieux proposés pour les photos hors étapes (MyGCFlow_Plan_Parcours.md
-// § 14, docs/parcours.md). Préférence globale `parcours_photo_display`,
-// remise par cleanUp (parcours-helpers.mjs). Fixtures de
+// § 14, docs/parcours.md). Préférence globale `parcours_photo_display`
+// (défaut, remise par cleanUp de parcours-helpers.mjs), surchargée par le
+// parcours ouvert (`photo_display`, supprimé avec lui). Fixtures de
 // tests/e2e/fixtures/parcours-photos/ : telephone.jpg se rattache seule à
 // GCPAR01 ; appareil.jpg est rattachée à la main à GCPAR04 (jour 2) ;
 // belvedere.jpg et belvedere-2.jpg, à 30 m l'une de l'autre et à ~1,5 km de
@@ -39,9 +40,20 @@ async function openReady(page) {
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
 }
 
+// Affichage enregistré du parcours ouvert (le seul du spec) : le défaut
+// global, surchargé par le parcours.
 async function savedDisplay(request) {
+  const global = await globalDisplay(request);
+  const { parcours } = await (await request.get('/api/parcours')).json();
+  return { ...global, ...(parcours[0]?.photo_display || {}) };
+}
+
+async function globalDisplay(request) {
   return (await (await request.get('/api/settings')).json()).parcours_photo_display;
 }
+
+const playbackState = (page) =>
+  page.evaluate(async () => (await import('/static/js/index.js')).previewPlaybackState());
 
 // Deux photos : téléphone sur GCPAR01 (jour 1), appareil sur GCPAR04 (jour 2).
 async function withTwoPhotos(page, request) {
@@ -107,6 +119,65 @@ test('réglages : enregistrés, champs selon le placement, durée et « aucune �
   await page.locator('a[href="#photos"]').click();
   await expect(page.locator('#parcoursPhotoLayout')).toHaveValue('none');
   await expect(page.locator('#parcoursPhotoDuration')).toHaveValue('2.5');
+  expect(errors).toEqual([]);
+});
+
+test('réglages propres au parcours, styles tout faits, aperçu automatique', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const { parcours, phone } = await withTwoPhotos(page, request);
+  const base = (await snapshot(page)).timeline.quanta;
+  const scope = page.locator('#parcoursPhotoDisplayScopeText');
+  await expect(scope).toContainText('suit les réglages par défaut');
+  await expect(page.locator('#btnParcoursPhotoDisplayReset')).toBeHidden();
+  await expect(page.locator('[data-photo-preset="postcard"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#parcoursPhotoAutoPreview')).toBeChecked();
+
+  // Style « Carnet de voyage » : écrit dans le parcours, pas dans le défaut.
+  await page.locator('[data-photo-preset="scrapbook"]').click();
+  await expect(page.locator('[data-photo-preset="scrapbook"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-photo-preset="postcard"]')).toHaveAttribute('aria-pressed', 'false');
+  await expect.poll(async () => (await (await request.get(`/api/parcours/${parcours.id}`)).json()).parcours.photo_display)
+    .toMatchObject({ frame: 'polaroid', stack: true, pin: true, effect: 'zoom' });
+  expect((await globalDisplay(request)).frame).toBe('postcard');
+  await expect(scope).toContainText('propres à ce parcours');
+  await expect(page.locator('#btnParcoursPhotoDisplayReset')).toBeVisible();
+  await expect(page.locator('#btnParcoursPhotoDisplayDefault')).toBeVisible();
+
+  // Aperçu automatique : ouvert en pause sur la première photo, au cadre choisi.
+  await expect.poll(() => playbackState(page)).toBe('paused');
+  await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => [c.photoId, c.frame]))
+    .toContainEqual([phone, 'polaroid']);
+
+  // Durée changée en pause : appliquée tout de suite, rouvert sur la photo.
+  await page.locator('#parcoursPhotoDuration').fill('2.5');
+  await page.locator('#parcoursPhotoDuration').press('Tab');
+  await expect.poll(async () => (await snapshot(page)).timeline.quanta).toBe(base + 20);
+  await expect.poll(() => playbackState(page)).toBe('paused');
+  await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => c.photoId)).toContain(phone);
+
+  // Revenir aux réglages par défaut : le parcours n'a plus de surcharge.
+  await page.locator('#btnQuickStop').click();
+  await page.locator('#parcoursPhotoAutoPreview').uncheck();
+  await page.locator('#btnParcoursPhotoDisplayReset').click();
+  await expect.poll(async () => (await (await request.get(`/api/parcours/${parcours.id}`)).json()).parcours.photo_display)
+    .toEqual({});
+  await expect.poll(async () => (await snapshot(page)).timeline.quanta).toBe(base);
+  expect((await snapshot(page)).photoDisplay).toEqual(PHOTO_DISPLAY_DEFAULTS);
+  await expect(scope).toContainText('suit les réglages par défaut');
+  // Aperçu automatique coupé : rien ne s'ouvre.
+  expect(await playbackState(page)).toBe('idle');
+
+  // En faire le défaut : le défaut global prend les réglages du parcours.
+  await page.locator('[data-photo-preset="sober"]').click();
+  expect(await playbackState(page)).toBe('idle');
+  await page.locator('#btnParcoursPhotoDisplayDefault').click();
+  await expect.poll(async () => globalDisplay(request))
+    .toMatchObject({ layout: 'fixed', frame: 'rounded', ken_burns: true });
+  await expect.poll(async () => (await (await request.get(`/api/parcours/${parcours.id}`)).json()).parcours.photo_display)
+    .toEqual({});
+  await expect(scope).toContainText('suit les réglages par défaut');
+  await expect(page.locator('#btnParcoursPhotoDisplayDefault')).toBeHidden();
+  await expect(page.locator('[data-photo-preset="sober"]')).toHaveAttribute('aria-pressed', 'true');
   expect(errors).toEqual([]);
 });
 
@@ -209,8 +280,7 @@ test('panorama : fenêtre 16:9 qui le parcourt pendant son affichage', async ({ 
 
   // Option coupée : la photo entière, en bande.
   await page.locator('#parcoursPhotoPanoPan').uncheck();
-  await expect.poll(async () => (await page.request.get('/api/settings').then((r) => r.json()))
-    .parcours_photo_display.pano_pan).toBe(false);
+  await expect.poll(async () => (await savedDisplay(request)).pano_pan).toBe(false);
   await expect.poll(async () => {
     const flat = (await snapshot(page)).photoCards.find((c) => c.photoId === id);
     return flat ? [flat.pan, flat.width / flat.height > 2.5] : null;

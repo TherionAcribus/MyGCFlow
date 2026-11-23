@@ -4712,3 +4712,77 @@ body[data-mode="parcours"] .rhythm-rate-field {
 .parcours-camera-offset {
     width: 6rem;
 }
+
+/* Onglet Photos de Parcours, « Affichage dans la vidéo » : portée des
+   réglages (parcours ouvert ou défaut), styles tout faits, intertitres. */
+.parcours-photo-scope {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    background: var(--tblr-bg-surface-secondary, #f6f8fb);
+}
+
+.parcours-photo-scope.is-custom {
+    background: var(--tblr-primary-lt, #e5f1fa);
+}
+
+.parcours-photo-scope-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.parcours-photo-presets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.parcours-photo-preset {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 4px;
+    border: 2px solid var(--tblr-border-color, #dce1e7);
+    border-radius: 6px;
+    background: var(--tblr-bg-surface, #fff);
+    font-size: 0.72rem;
+    line-height: 1.15;
+    color: var(--tblr-body-color, #1d273b);
+}
+
+.parcours-photo-preset .ti {
+    font-size: 1.3rem;
+    color: var(--tblr-secondary, #6b7280);
+}
+
+.parcours-photo-preset:hover {
+    border-color: var(--tblr-primary, #0072c6);
+}
+
+.parcours-photo-preset[aria-pressed="true"] {
+    border-color: var(--tblr-primary, #0072c6);
+    color: var(--tblr-primary, #0072c6);
+}
+
+.parcours-photo-preset[aria-pressed="true"] .ti {
+    color: var(--tblr-primary, #0072c6);
+}
+
+.parcours-photo-subtitle {
+    margin: 0.9rem 0 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tblr-secondary, #6b7280);
+}
+
+.parcours-photo-tilt-cell {
+    display: flex;
+    align-items: flex-end;
+}

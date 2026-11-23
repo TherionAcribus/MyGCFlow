@@ -116,15 +116,45 @@
         </div>
 
         <!-- Affichage dans la lecture et la vidéo (lot 9) : préférence globale
-             `parcours_photo_display`, parcours_photo_layout.mjs. -->
+             `parcours_photo_display` (défaut) surchargée par le parcours ouvert,
+             parcours_photo_layout.mjs. Intertitres sans repli : tout reste
+             visible (les specs n'ont rien à déplier). -->
         <div class="col-12 col-lg-5">
             <h5 class="gc-section-title">
                 <i class="ti ti-layout-collage text-muted me-1"></i>{{ _("Affichage dans la vidéo") }}
             </h5>
             <div class="card">
                 <div class="card-body">
+                    <div id="parcoursPhotoDisplayScope" class="parcours-photo-scope mb-3" role="status">
+                        <span id="parcoursPhotoDisplayScopeText" class="small"></span>
+                        <span class="parcours-photo-scope-actions">
+                            <button type="button" id="btnParcoursPhotoDisplayReset" class="btn btn-sm btn-link p-0" hidden>
+                                {{ _("Revenir aux réglages par défaut") }}
+                            </button>
+                            <button type="button" id="btnParcoursPhotoDisplayDefault" class="btn btn-sm btn-link p-0" hidden>
+                                {{ _("En faire les réglages par défaut") }}
+                            </button>
+                        </span>
+                    </div>
+
+                    <div class="parcours-photo-presets mb-3" role="group" aria-label="{{ _('Styles tout faits') }}">
+                        <button type="button" class="parcours-photo-preset" data-photo-preset="postcard" aria-pressed="false">
+                            <i class="ti ti-mail" aria-hidden="true"></i><span>{{ _("Carte postale") }}</span>
+                        </button>
+                        <button type="button" class="parcours-photo-preset" data-photo-preset="scrapbook" aria-pressed="false">
+                            <i class="ti ti-notebook" aria-hidden="true"></i><span>{{ _("Carnet de voyage") }}</span>
+                        </button>
+                        <button type="button" class="parcours-photo-preset" data-photo-preset="sober" aria-pressed="false">
+                            <i class="ti ti-square-rounded" aria-hidden="true"></i><span>{{ _("Sobre") }}</span>
+                        </button>
+                        <button type="button" class="parcours-photo-preset" data-photo-preset="film" aria-pressed="false">
+                            <i class="ti ti-movie" aria-hidden="true"></i><span>{{ _("Pellicule") }}</span>
+                        </button>
+                    </div>
+
+                    <h6 class="parcours-photo-subtitle">{{ _("Placement") }}</h6>
                     <div class="mb-2">
-                        <label class="form-label" for="parcoursPhotoLayout">{{ _("Placement") }}</label>
+                        <label class="form-label visually-hidden" for="parcoursPhotoLayout">{{ _("Placement") }}</label>
                         <select id="parcoursPhotoLayout" class="form-select form-select-sm" aria-describedby="parcoursPhotoLayoutHint">
                             <option value="stop">{{ _("Près de l'étape") }}</option>
                             <option value="fixed">{{ _("Emplacement fixe de l'écran") }}</option>
@@ -198,7 +228,8 @@
                             <span class="form-check-label">{{ _("Vider la bande à chaque journée") }}</span>
                         </label>
 
-                        <div class="row g-2 mt-1 mb-2">
+                        <h6 class="parcours-photo-subtitle">{{ _("Apparence") }}</h6>
+                        <div class="row g-2 mb-2">
                             <div class="col-6">
                                 <label class="form-label small mb-1" for="parcoursPhotoFrame">{{ _("Cadre") }}</label>
                                 <select id="parcoursPhotoFrame" class="form-select form-select-sm">
@@ -208,19 +239,31 @@
                                     <option value="plain">{{ _("Sans cadre") }}</option>
                                 </select>
                             </div>
-                            <div class="col-6">
-                                <label class="form-label small mb-1" for="parcoursPhotoEffect">{{ _("Apparition") }}</label>
-                                <select id="parcoursPhotoEffect" class="form-select form-select-sm">
-                                    <option value="fade">{{ _("Fondu") }}</option>
-                                    <option value="slide">{{ _("Glissement depuis le bord") }}</option>
-                                    <option value="zoom">{{ _("Zoom") }}</option>
-                                </select>
+                            <div class="col-6 parcours-photo-tilt-cell">
+                                <label class="form-check mb-1">
+                                    <input type="checkbox" id="parcoursPhotoTilt" class="form-check-input">
+                                    <span class="form-check-label">{{ _("Légère inclinaison") }}</span>
+                                </label>
                             </div>
                         </div>
-                        <label class="form-check mb-1">
-                            <input type="checkbox" id="parcoursPhotoTilt" class="form-check-input">
-                            <span class="form-check-label">{{ _("Légère inclinaison") }}</span>
-                        </label>
+                        <div class="mb-2">
+                            <label class="form-label small mb-1" for="parcoursPhotoCaptionTemplate">{{ _("Légende") }}</label>
+                            <input type="text" id="parcoursPhotoCaptionTemplate" class="form-control form-control-sm" maxlength="120"
+                                   aria-describedby="parcoursPhotoCaptionTemplateHint">
+                            <div id="parcoursPhotoCaptionTemplateHint" class="form-hint text-muted">
+                                {{ _("Balises : {legende} (celle de la photo), {etape}, {heure}, {jour}, {date}. Vide : pas de légende.") }}
+                            </div>
+                        </div>
+
+                        <h6 class="parcours-photo-subtitle">{{ _("Mouvement") }}</h6>
+                        <div class="mb-2">
+                            <label class="form-label small mb-1" for="parcoursPhotoEffect">{{ _("Apparition") }}</label>
+                            <select id="parcoursPhotoEffect" class="form-select form-select-sm">
+                                <option value="fade">{{ _("Fondu") }}</option>
+                                <option value="slide">{{ _("Glissement depuis le bord") }}</option>
+                                <option value="zoom">{{ _("Zoom") }}</option>
+                            </select>
+                        </div>
                         <label class="form-check mb-2">
                             <input type="checkbox" id="parcoursPhotoKenBurns" class="form-check-input">
                             <span class="form-check-label">{{ _("Zoom lent pendant l'affichage") }}</span>
@@ -230,12 +273,8 @@
                             <span class="form-check-label">{{ _("Faire défiler les panoramas") }}</span>
                             <span class="form-hint text-muted">{{ _("Une photo au moins deux fois plus large que haute (sans cadrage choisi) est montrée dans une fenêtre 16:9 qui la parcourt de gauche à droite.") }}</span>
                         </label>
-                        <label class="form-check mb-2">
-                            <input type="checkbox" id="parcoursPhotoEnRoute" class="form-check-input">
-                            <span class="form-check-label">{{ _("Montrer les photos prises en chemin") }}</span>
-                            <span class="form-hint text-muted">{{ _("Prises entre deux étapes, loin de l'une comme de l'autre (photo géolocalisée, ou située par la trace) : le géocacheur s'arrête à leur position le temps de les montrer.") }}</span>
-                        </label>
 
+                        <h6 class="parcours-photo-subtitle">{{ _("Temps d'écran") }}</h6>
                         <div class="row g-2 mb-2">
                             <div class="col-6">
                                 <label class="form-label small mb-1" for="parcoursPhotoDuration">{{ _("Durée par photo (s)") }}</label>
@@ -255,19 +294,20 @@
                             </select>
                             <div id="parcoursPhotoMaxHint" class="form-hint text-muted">{{ _("Au-delà de ce nombre de photos, une étape ne s'allonge plus : ses photos se partagent ce temps, ou seules les premières prises sont montrées.") }}</div>
                         </div>
-
-                        <div class="mb-2">
-                            <label class="form-label small mb-1" for="parcoursPhotoCaptionTemplate">{{ _("Légende") }}</label>
-                            <input type="text" id="parcoursPhotoCaptionTemplate" class="form-control form-control-sm" maxlength="120"
-                                   aria-describedby="parcoursPhotoCaptionTemplateHint">
-                            <div id="parcoursPhotoCaptionTemplateHint" class="form-hint text-muted">
-                                {{ _("Balises : {legende} (celle de la photo), {etape}, {heure}, {jour}, {date}. Vide : pas de légende.") }}
-                            </div>
-                        </div>
+                        <label class="form-check mb-2">
+                            <input type="checkbox" id="parcoursPhotoEnRoute" class="form-check-input">
+                            <span class="form-check-label">{{ _("Montrer les photos prises en chemin") }}</span>
+                            <span class="form-hint text-muted">{{ _("Prises entre deux étapes, loin de l'une comme de l'autre (photo géolocalisée, ou située par la trace) : le géocacheur s'arrête à leur position le temps de les montrer.") }}</span>
+                        </label>
                     </fieldset>
 
+                    <label class="form-check mb-2">
+                        <input type="checkbox" id="parcoursPhotoAutoPreview" class="form-check-input">
+                        <span class="form-check-label">{{ _("Montrer chaque réglage sur la carte") }}</span>
+                        <span class="form-hint text-muted">{{ _("Un réglage changé ouvre l'aperçu en pause sur la photo ouverte dans le détail, ou sur la première.") }}</span>
+                    </label>
                     <button type="button" id="btnParcoursPhotoPreview" class="btn btn-sm btn-outline-secondary" disabled>
-                        <i class="ti ti-eye me-1" aria-hidden="true"></i>{{ _("Voir la première photo sur la carte") }}
+                        <i class="ti ti-eye me-1" aria-hidden="true"></i><span id="btnParcoursPhotoPreviewLabel">{{ _("Voir la première photo sur la carte") }}</span>
                     </button>
                 </div>
             </div>

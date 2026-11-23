@@ -28,7 +28,8 @@ from models import (Geocache, LabDiscovery, Parcours, ParcoursOverride,
 from settings_manager import (PARCOURS_CAMERA_MODES, PARCOURS_FRAMINGS,
                               PARCOURS_HEAD_STYLES,
                               PARCOURS_HOURS_DISPLAYS, PARCOURS_PACES,
-                              PARCOURS_TITLE_SOURCES)
+                              PARCOURS_TITLE_SOURCES,
+                              clean_parcours_photo_display_value)
 
 NAME_MAX_LENGTH = 80
 # Format pensé pour des sorties courtes : au-delà, l'animation cache par cache
@@ -121,6 +122,24 @@ def _playback_in(value) -> str | None:
     return json.dumps(kept) if kept else None
 
 
+# Affichage des photos propre au parcours (colonne `photo_display`, JSON
+# épars) : même principe que `playback`, sur la préférence globale
+# `parcours_photo_display`. Domaines : ceux de settings_manager.
+def _photo_display_out(raw) -> dict:
+    return _playback_out(raw)
+
+
+def _photo_display_in(value) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    kept = {}
+    for key, item in value.items():
+        clean = clean_parcours_photo_display_value(key, item)
+        if clean is not None:
+            kept[key] = clean
+    return json.dumps(kept) if kept else None
+
+
 def to_dict(parcours: Parcours) -> dict:
     return {
         'id': parcours.id,
@@ -131,6 +150,7 @@ def to_dict(parcours: Parcours) -> dict:
         'include_dnf': bool(parcours.include_dnf),
         'utc_offset_minutes': parcours.utc_offset_minutes,
         'playback': _playback_out(parcours.playback),
+        'photo_display': _photo_display_out(parcours.photo_display),
         'created_at': parcours.created_at.isoformat() if parcours.created_at else None,
         'updated_at': parcours.updated_at.isoformat() if parcours.updated_at else None,
     }
@@ -298,6 +318,8 @@ def update(session, parcours_id: int, data: dict) -> Parcours:
         row.utc_offset_minutes = _utc_offset(data['utc_offset_minutes'])
     if 'playback' in data:
         row.playback = _playback_in(data['playback'])
+    if 'photo_display' in data:
+        row.photo_display = _photo_display_in(data['photo_display'])
     row.updated_at = datetime.now()
     session.commit()
     return row
@@ -354,6 +376,7 @@ def duplicate(session, parcours_id: int) -> Parcours:
         include_dnf=src.include_dnf,
         utc_offset_minutes=src.utc_offset_minutes,
         playback=src.playback,
+        photo_display=src.photo_display,
         created_at=now,
         updated_at=now,
     )
@@ -388,6 +411,7 @@ def export_payload(session, parcours_id: int) -> dict:
             'include_dnf': bool(parcours.include_dnf),
             'utc_offset_minutes': parcours.utc_offset_minutes,
             'playback': _playback_out(parcours.playback),
+            'photo_display': _photo_display_out(parcours.photo_display),
         },
         'overrides': [override_to_dict(row) for row in
                       session.query(ParcoursOverride).filter_by(parcours_id=parcours.id)],
@@ -419,6 +443,7 @@ def import_parcours(session, data: dict) -> Parcours:
         include_dnf=_bool(p.get('include_dnf'), True),
         utc_offset_minutes=_utc_offset(p.get('utc_offset_minutes')),
         playback=_playback_in(p.get('playback')),
+        photo_display=_photo_display_in(p.get('photo_display')),
         created_at=now,
         updated_at=now,
     )

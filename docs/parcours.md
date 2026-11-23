@@ -992,8 +992,17 @@ centre, 100 %).
 ### Affichage dans la vidéo (lot 9)
 
 Préférence globale `parcours_photo_display` (`coerce_parcours_photo_display`
-de settings_manager.py, `normalizePhotoDisplay` côté client, mêmes bornes),
-envoyée entière à chaque changement :
+de settings_manager.py, `normalizePhotoDisplay` côté client, mêmes bornes) :
+c'est le **défaut**, surchargé par le parcours ouvert depuis le 2026-11-23
+(colonne `photo_display`, migration v25, JSON épars validé par
+`clean_parcours_photo_display_value` ; copié par la duplication et
+l'export) — même principe que `playback` : avec un parcours ouvert, un
+réglage ne vaut que pour lui ; sans parcours ouvert, il écrit le défaut.
+Un bandeau en tête de la carte dit la portée (`photoDisplayScope`) et,
+quand le parcours a ses propres réglages, propose « Revenir aux réglages
+par défaut » (surcharges oubliées) et « En faire les réglages par défaut »
+(le défaut prend les réglages effectifs, le parcours n'a plus de
+surcharge). Clés :
 
 | Clé | Valeurs (défaut en premier) |
 |---|---|
@@ -1022,6 +1031,23 @@ envoyée entière à chaque changement :
   changent pas. `duration`, `max_per_stop`, `overflow` et
   `none` changent le temps d'écran (`photoTimelineOptions`), donc la
   chronologie — appliqués à la fin d'une lecture en cours, comme le rythme.
+  En **pause**, ils s'appliquent tout de suite : l'aperçu est arrêté (sa
+  fin applique la chronologie), puis rouvert en pause sur la même photo
+  (`reopenPausedAt`, parcours_data.js ; la première si elle n'a plus de
+  créneau).
+- **Styles tout faits** (`PHOTO_DISPLAY_PRESETS`, `photoDisplayPreset`) :
+  Carte postale (= défaut), Carnet de voyage (polaroid, pile, vignettes,
+  zoom), Sobre (emplacement fixe, coins arrondis, zoom lent), Pellicule
+  (bande vidée chaque jour, sans cadre). Ils ne posent que placement et
+  apparence — jamais durée, plafond, photos en chemin, légende ni taille ;
+  le bouton du style que les réglages reproduisent est pressé
+  (`aria-pressed`). Les réglages sont rangés sous des intertitres
+  (Placement, Apparence, Mouvement, Temps d'écran), sans repli.
+- **Aperçu automatique** (case « Montrer chaque réglage sur la carte »,
+  cochée par défaut, retenue par navigateur dans `localStorage`
+  `parcoursPhotoAutoPreview`) : un réglage changé au repos ouvre l'aperçu en
+  pause sur la photo du détail (si la lecture la montre), sinon la
+  première ; en pause sans photo à l'écran, il y saute. Jamais en lecture.
 - **Mise en page** : `photoFrameAt(timeline, q, réglages, vue)` rend les
   cartes du quantum (centre, taille, cadre, rotation, opacité, effet, zoom
   lent, légende, trait) en px du canevas ; `parcours_photo_draw.mjs` les

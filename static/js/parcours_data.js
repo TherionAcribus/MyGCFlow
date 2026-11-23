@@ -87,6 +87,7 @@ import { bindParcoursFileDrop, createParcoursUploads } from './parcours_upload.m
 import { cameraPoseAt } from './parcours_camera.mjs';
 import { createParcoursCamera } from './parcours_camera_ui.mjs';
 import { createParcoursPlaybackUI } from './parcours_playback_ui.mjs';
+import { saveSettingsPatch } from './settings_api.mjs';
 import { initParcoursCollect, parcoursCollectSnapshot, refreshParcoursCollect } from './parcours_collect.js';
 import {
     KIND_BASE,
@@ -163,8 +164,13 @@ const quantumBase = { originDay: dateToDayNumber(QUANTUM_ORIGIN) };
 let playbackDefaults = normalizePlayback(window.userSettings?.parcours_playback);
 let playbackOverrides = {};     // surcharges du parcours ouvert
 let playback = { ...playbackDefaults };
-// Affichage des photos (lot 9) : préférence globale `parcours_photo_display`.
-let photoDisplay = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
+// Affichage des photos (lot 9) : même principe — la préférence globale
+// `parcours_photo_display` sert de défaut, surchargée par le parcours ouvert
+// (colonne `photo_display`, JSON épars ; une balade de dix photos et un
+// voyage de deux cents n'appellent pas les mêmes réglages).
+let photoDisplayDefaults = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
+let photoDisplayOverrides = {};  // surcharges du parcours ouvert
+let photoDisplay = { ...photoDisplayDefaults };
 let infosTemplate = normalizeInfosTemplate(window.userSettings?.parcours_infos_template);
 let timeline = null;          // buildParcoursTimeline(ordered) du parcours ouvert
 let timelineRevision = 0;     // change à chaque `timeline` (barre de chronologie)
@@ -265,7 +271,8 @@ export async function initParcoursPage() {
     // Les préférences arrivent après l'évaluation du module : relues ici.
     playbackDefaults = normalizePlayback(window.userSettings?.parcours_playback);
     playback = normalizePlayback({ ...playbackDefaults, ...playbackOverrides });
-    photoDisplay = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
+    photoDisplayDefaults = normalizePhotoDisplay(window.userSettings?.parcours_photo_display);
+    photoDisplay = normalizePhotoDisplay({ ...photoDisplayDefaults, ...photoDisplayOverrides });
     infosTemplate = normalizeInfosTemplate(window.userSettings?.parcours_infos_template);
     const inp = el('inputInfosTemplate');
     if (inp) inp.value = infosTemplate;
@@ -337,6 +344,9 @@ function applyPlaybackContext() {
     playback = normalizePlayback({ ...playbackDefaults, ...playbackOverrides });
     playbackUI.sync();
     applyParcoursTitle();
+    photoDisplayOverrides = { ...(item?.photo_display || {}) };
+    photoDisplay = normalizePhotoDisplay({ ...photoDisplayDefaults, ...photoDisplayOverrides });
+    photosPanel.renderDisplay();
 }
 
 // Titre de la carte et de la vidéo (réglage « Titre affiché », Style ›
@@ -1114,6 +1124,96 @@ const uploads = createParcoursUploads({
     reloadAdjustments,
 });
 
+// --- Affichage des photos : parcours ouvert ou défaut global -----------------------
+
+// { parcours : un parcours est ouvert ; custom : ses réglages diffèrent du
+// défaut sur au moins une clé }.
+function photoDisplayScope() {
+    const custom = Object.keys(photoDisplayOverrides)
+        .some((key) => photoDisplay[key] !== photoDisplayDefaults[key]);
+    return { parcours: selectedId != null, custom: selectedId != null && custom };
+}
+
+function storePhotoDisplayDefaults(next) {
+    photoDisplayDefaults = next;
+    const full = { ...next };
+    if (window.userSettings) window.userSettings.parcours_photo_display = full;
+    return saveSettingsPatch({ parcours_photo_display: full }).then((ok) => {
+        if (window.userSettings) window.userSettings.parcours_photo_display = full;
+        return ok;
+    });
+}
+
+async function storePhotoDisplayOverrides(pid) {
+    try {
+        const body = await fetchJson(`/api/parcours/${pid}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ photo_display: photoDisplayOverrides }),
+        });
+        const item = listing.find((entry) => entry.id === pid);
+        if (item) item.photo_display = { ...(body?.parcours?.photo_display || {}) };
+    } catch (error) {
+        console.warn('[PARCOURS] Affichage des photos non enregistré :', error);
+        showToast(t('Les réglages des photos n’ont pas pu être enregistrés.'), 'error', t('Parcours'));
+    }
+}
+
+// Réglage changé (`patch`, valeur effective `next`) : écrit dans le parcours
+// ouvert, ou dans le défaut global sans parcours ouvert.
+function savePhotoDisplay(patch, next) {
+    photoDisplay = next;
+    if (selectedId == null) return storePhotoDisplayDefaults(next);
+    photoDisplayOverrides = { ...photoDisplayOverrides, ...patch };
+    return storePhotoDisplayOverrides(selectedId);
+}
+
+// « Revenir aux réglages par défaut » : surcharges du parcours oubliées. →
+// valeur effective.
+function resetPhotoDisplay() {
+    photoDisplayOverrides = {};
+    photoDisplay = { ...photoDisplayDefaults };
+    if (selectedId != null) storePhotoDisplayOverrides(selectedId);
+    return photoDisplay;
+}
+
+// « En faire les réglages par défaut » : les réglages du parcours deviennent
+// le défaut global (les autres parcours sans surcharge les suivent) ; le
+// parcours n'a plus de surcharge.
+function makePhotoDisplayDefault() {
+    const next = { ...photoDisplay };
+    photoDisplayOverrides = {};
+    if (selectedId != null) storePhotoDisplayOverrides(selectedId);
+    return storePhotoDisplayDefaults(next);
+}
+
+// Photo montrée en grand à la dernière image (pas une vignette posée sur la
+// carte), ou null.
+function shownPhotoId() {
+    const cards = playDraw.lastPhotoCards();
+    for (let i = cards.length - 1; i >= 0; i--) {
+        if (!cards[i].pinned) return cards[i].photoId;
+    }
+    return null;
+}
+
+// Réglage qui change la chronologie, fait en pause : l'aperçu est arrêté
+// (sa fin applique la chronologie en attente, applyPending), puis rouvert
+// en pause sur `photoId` — ou sur la première photo si celle-ci n'a plus de
+// créneau. Faux si l'aperçu n'a pas pu être arrêté (le réglage attend alors
+// la fin, comme en lecture).
+function reopenPausedAt(photoId) {
+    if (pkg.previewPlaybackState?.() !== 'paused') return false;
+    pendingTimeline = true;
+    // Le bouton plutôt que stopAnimation nu : il remet aussi les commandes.
+    el('btnStopAnimation')?.click();
+    if (clock.running) return false;
+    if (pendingTimeline) applyPending();
+    const slots = timeline ? photoSlots(timeline) : [];
+    const target = slots.some((slot) => slot.photoId === photoId) ? photoId : slots[0]?.photoId;
+    if (target != null) previewPhoto(target);
+    return true;
+}
+
 const photosPanel = createPhotosPanel({
     getState: () => ({ inputs, ordered, photoMatches, photoPositions, timeline, selectedId }),
     uploads,
@@ -1129,6 +1229,13 @@ const photosPanel = createPhotosPanel({
     getMap: () => pkg.getMap?.(),
     getPhotoDisplay: () => photoDisplay,
     setPhotoDisplay: (next) => { photoDisplay = next; },
+    photoDisplayScope,
+    savePhotoDisplay,
+    resetPhotoDisplay,
+    makePhotoDisplayDefault,
+    previewState: () => pkg.previewPlaybackState?.(),
+    shownPhotoId,
+    reopenPausedAt,
     clockRunning: () => clock.running,
     deferTimeline: () => { pendingTimeline = true; },
     applyTimeline: () => applyTimeline(),

@@ -390,7 +390,13 @@ Autres repères :
   parcours la jette silencieusement : le `PATCH` part, `playback` revient
   sans la clé). `framing` (`tight`/`balanced`/`wide`, cadrage de la caméra
   suivie, `frame` de `parcours_camera.mjs`) en est l'exemple. Même famille :
-  `parcours_photo_display` (affichage des photos), remis à
+  `parcours_photo_display` (affichage des photos : le DÉFAUT — avec un
+  parcours ouvert, un réglage s'écrit dans le parcours, `photo_display` de
+  `GET /api/parcours/<id>`, supprimé avec lui ; un spec lit la valeur
+  effective, cf. `savedDisplay` de parcours-photo-display.spec.mjs ; et
+  changer un réglage au repos OUVRE l'aperçu en pause — « Montrer chaque
+  réglage sur la carte », `localStorage` du contexte —, ce qui fait passer
+  la durée ou le plafond par un arrêt puis une réouverture), remis à
   `PHOTO_DISPLAY_DEFAULTS` par le même helper, et
   `parcours_infos_template` (un spec qui écrit `#inputInfosTemplate` sur
   /parcours). Les photos ont leur onglet

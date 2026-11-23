@@ -716,45 +716,50 @@ def coerce_parcours_playback(value, current: dict | None = None) -> dict:
     return out
 
 
+_PHOTO_DISPLAY_CHOICES = {
+    "layout": PARCOURS_PHOTO_LAYOUTS,
+    "side": PARCOURS_PHOTO_SIDES,
+    "anchor": PARCOURS_PHOTO_ANCHORS,
+    "strip_edge": PARCOURS_PHOTO_STRIP_EDGES,
+    "frame": PARCOURS_PHOTO_FRAMES,
+    "effect": PARCOURS_PHOTO_EFFECTS,
+    "overflow": PARCOURS_PHOTO_OVERFLOWS,
+}
+_PHOTO_DISPLAY_FLAGS = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns", "en_route", "pano_pan")
+_PHOTO_DISPLAY_NUMBERS = {
+    "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
+    "pin_size": (PARCOURS_PHOTO_PIN_SIZE_RANGE, int),
+    "duration": (PARCOURS_PHOTO_DURATION_RANGE, lambda v: round(float(v), 1)),
+    "max_per_stop": (PARCOURS_PHOTO_MAX_PER_STOP_RANGE, int),
+}
+
+
+def clean_parcours_photo_display_value(key, item):
+    """Valeur validée d'une clé de l'affichage des photos, ou None si elle ne
+    convient pas (clé inconnue comprise). Nombres bornés, durée arrondie au
+    dixième."""
+    if key in _PHOTO_DISPLAY_CHOICES:
+        return item if item in _PHOTO_DISPLAY_CHOICES[key] else None
+    if key in _PHOTO_DISPLAY_FLAGS:
+        return item if isinstance(item, bool) else None
+    if key in _PHOTO_DISPLAY_NUMBERS:
+        (low, high), cast = _PHOTO_DISPLAY_NUMBERS[key]
+        if isinstance(item, bool) or not isinstance(item, (int, float)) or item != item:
+            return None
+        return cast(min(high, max(low, item)))
+    if key == "caption":
+        if not isinstance(item, str):
+            return None
+        text = " ".join(item.split())
+        return text if len(text) <= PARCOURS_PHOTO_CAPTION_MAX else None
+    return None
+
+
 def coerce_parcours_photo_display(value, current: dict | None = None) -> dict:
     """Affichage des photos d'un parcours : patch partiel, valeur invalide →
     valeur courante (sinon défaut). Nombres bornés, durée arrondie au
     dixième."""
-    choices = {
-        "layout": PARCOURS_PHOTO_LAYOUTS,
-        "side": PARCOURS_PHOTO_SIDES,
-        "anchor": PARCOURS_PHOTO_ANCHORS,
-        "strip_edge": PARCOURS_PHOTO_STRIP_EDGES,
-        "frame": PARCOURS_PHOTO_FRAMES,
-        "effect": PARCOURS_PHOTO_EFFECTS,
-        "overflow": PARCOURS_PHOTO_OVERFLOWS,
-    }
-    flags = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns", "en_route", "pano_pan")
-    numbers = {
-        "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
-        "pin_size": (PARCOURS_PHOTO_PIN_SIZE_RANGE, int),
-        "duration": (PARCOURS_PHOTO_DURATION_RANGE, lambda v: round(float(v), 1)),
-        "max_per_stop": (PARCOURS_PHOTO_MAX_PER_STOP_RANGE, int),
-    }
-
-    def clean(key, item):
-        """Valeur validée, ou None si elle ne convient pas."""
-        if key in choices:
-            return item if item in choices[key] else None
-        if key in flags:
-            return item if isinstance(item, bool) else None
-        if key in numbers:
-            (low, high), cast = numbers[key]
-            if isinstance(item, bool) or not isinstance(item, (int, float)) or item != item:
-                return None
-            return cast(min(high, max(low, item)))
-        if key == "caption":
-            if not isinstance(item, str):
-                return None
-            text = " ".join(item.split())
-            return text if len(text) <= PARCOURS_PHOTO_CAPTION_MAX else None
-        return None
-
+    clean = clean_parcours_photo_display_value
     base = current if isinstance(current, dict) else {}
     out = {}
     for key, default in PARCOURS_PHOTO_DISPLAY_DEFAULTS.items():

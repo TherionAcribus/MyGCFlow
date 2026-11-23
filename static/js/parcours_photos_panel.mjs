@@ -9,7 +9,6 @@
 // d'import de parcours_data.js.
 import { showConfirmation, showToast, t } from './notifications.js';
 import { CONFIG } from './init.js';
-import { saveSettingsPatch } from './settings_api.mjs';
 import {
     calibrationOffset,
     formatDay,
@@ -38,12 +37,14 @@ import {
     withTrackPositions,
 } from './parcours_photos.mjs';
 import {
+    PHOTO_DISPLAY_PRESETS,
     PHOTO_LAYOUT_NONE,
     PHOTO_ZOOM_RANGE,
     isFullFrame,
     normalizePhotoDisplay,
     photoCrop,
     photoCropRect,
+    photoDisplayPreset,
     photoSlots,
 } from './parcours_photo_layout.mjs';
 
@@ -72,7 +73,10 @@ const PHOTO_DISPLAY_FLAGS = Object.freeze({
 // deps : { getState, uploads, button, fetchJson, reloadAdjustments,
 //          receiveAdjustments, adjustmentsLocked, stopByKey, createPlace,
 //          previewPhoto, evictPhotoImages, getMap, getPhotoDisplay,
-//          setPhotoDisplay, clockRunning, deferTimeline, applyTimeline }
+//          setPhotoDisplay, savePhotoDisplay, resetPhotoDisplay,
+//          makePhotoDisplayDefault, photoDisplayScope, previewState,
+//          shownPhotoId, reopenPausedAt, clockRunning, deferTimeline,
+//          applyTimeline }
 // getState() → { inputs, ordered, photoMatches, timeline, selectedId }
 export function createPhotosPanel(deps) {
     const s = () => deps.getState() || {};
@@ -959,37 +963,134 @@ export function createPhotosPanel(deps) {
         const { timeline } = s();
         const preview = el('btnParcoursPhotoPreview');
         if (preview) preview.disabled = layout === PHOTO_LAYOUT_NONE || !timeline || photoSlots(timeline).length === 0;
+        // Styles tout faits : celui que les réglages reproduisent est pressé.
+        const preset = photoDisplayPreset(photoDisplay);
+        document.querySelectorAll('[data-photo-preset]').forEach((button) => {
+            button.setAttribute('aria-pressed', String(button.dataset.photoPreset === preset));
+            button.disabled = layout === PHOTO_LAYOUT_NONE;
+        });
+        renderPhotoDisplayScope();
+        const auto = el('parcoursPhotoAutoPreview');
+        if (auto) auto.checked = autoPreviewEnabled();
+    }
+
+    // Portée des réglages : ceux du parcours ouvert (quand ils diffèrent du
+    // défaut, avec les deux actions), ou le défaut commun.
+    function renderPhotoDisplayScope() {
+        const scope = deps.photoDisplayScope?.() || { parcours: false, custom: false };
+        const box = el('parcoursPhotoDisplayScope');
+        const text = el('parcoursPhotoDisplayScopeText');
+        if (box) box.classList.toggle('is-custom', scope.custom);
+        if (text) {
+            text.textContent = !scope.parcours
+                ? t('Réglages par défaut, communs à tous les parcours.')
+                : scope.custom
+                    ? t('Réglages propres à ce parcours.')
+                    : t('Ce parcours suit les réglages par défaut ; un changement ne vaudra que pour lui.');
+        }
+        const reset = el('btnParcoursPhotoDisplayReset');
+        const makeDefault = el('btnParcoursPhotoDisplayDefault');
+        if (reset) reset.hidden = !scope.custom;
+        if (makeDefault) makeDefault.hidden = !scope.custom;
+    }
+
+    // « Montrer chaque réglage sur la carte » : préférence de l'écran (rien
+    // d'enregistré côté serveur), cochée par défaut.
+    const AUTO_PREVIEW_KEY = 'parcoursPhotoAutoPreview';
+    function autoPreviewEnabled() {
+        try {
+            return localStorage.getItem(AUTO_PREVIEW_KEY) !== '0';
+        } catch {
+            return true;
+        }
+    }
+
+    // Photo à montrer après un réglage : celle à l'écran en pause, sinon
+    // celle du détail si la lecture la montre, sinon la première.
+    function previewTarget() {
+        const { timeline } = s();
+        const slots = timeline ? photoSlots(timeline) : [];
+        const has = (id) => id != null && slots.some((slot) => slot.photoId === id);
+        const onScreen = deps.previewState?.() === 'paused' ? deps.shownPhotoId?.() : null;
+        if (has(onScreen)) return onScreen;
+        if (has(photoDetailId)) return photoDetailId;
+        return slots[0]?.photoId ?? null;
+    }
+
+    // Réglage appliqué (valeur effective `next`, précédente `before`) :
+    // contrôles, chronologie (la durée, le plafond, son dépassement, les
+    // photos en chemin et « aucune photo » la changent), aperçu.
+    function applyPhotoDisplayChange(before, next) {
+        renderPhotoDisplay();
+        const target = previewTarget();
+        const timing = before.duration !== next.duration
+            || before.max_per_stop !== next.max_per_stop
+            || before.overflow !== next.overflow
+            || before.en_route !== next.en_route
+            || (before.layout === PHOTO_LAYOUT_NONE) !== (next.layout === PHOTO_LAYOUT_NONE);
+        let reopened = false;
+        if (timing) {
+            // En pause (aperçu ouvert pour régler) : reconstruit tout de suite
+            // et rouvert sur la même photo. En pleine lecture ou en
+            // enregistrement : à la fin, comme le rythme.
+            if (deps.previewState?.() === 'paused' && deps.reopenPausedAt?.(target)) {
+                reopened = true;
+            } else if (deps.clockRunning()) {
+                deps.deferTimeline();
+                showToast(t("Le réglage s'appliquera à la fin de l'animation."), 'info', t('Parcours'));
+            } else {
+                deps.applyTimeline();
+            }
+        }
+        deps.getMap()?.render();
+        if (!reopened) autoPreview(target);
+    }
+
+    // Aperçu automatique : au repos, ouvre la pause sur la photo visée ; en
+    // pause sans photo à l'écran, y saute. Jamais en lecture.
+    function autoPreview(target) {
+        if (!autoPreviewEnabled() || target == null) return;
+        if (deps.getPhotoDisplay().layout === PHOTO_LAYOUT_NONE) return;
+        const state = deps.previewState?.();
+        if (state === 'idle' || (state === 'paused' && deps.shownPhotoId?.() == null)) {
+            deps.previewPhoto(target);
+        }
     }
 
     function bindPhotoDisplay() {
         renderPhotoDisplay();
-        // Valeur complète envoyée (comme parcours_playback) ; la durée, le
-        // plafond, son dépassement et « aucune photo » changent la chronologie.
+        // Écrit dans le parcours ouvert (ou le défaut sans parcours ouvert,
+        // cf. savePhotoDisplay de parcours_data.js).
         const save = (patch) => {
             const before = deps.getPhotoDisplay();
             const next = normalizePhotoDisplay({ ...before, ...patch });
-            deps.setPhotoDisplay(next);
-            const full = { ...next };
-            saveSettingsPatch({ parcours_photo_display: full }).then(() => {
-                if (window.userSettings) window.userSettings.parcours_photo_display = full;
-            });
-            if (window.userSettings) window.userSettings.parcours_photo_display = full;
-            renderPhotoDisplay();
-            const timing = before.duration !== next.duration
-                || before.max_per_stop !== next.max_per_stop
-                || before.overflow !== next.overflow
-                || before.en_route !== next.en_route
-                || (before.layout === PHOTO_LAYOUT_NONE) !== (next.layout === PHOTO_LAYOUT_NONE);
-            if (timing) {
-                if (deps.clockRunning()) {
-                    deps.deferTimeline();
-                    showToast(t("Le réglage s'appliquera à la fin de l'animation."), 'info', t('Parcours'));
-                } else {
-                    deps.applyTimeline();
-                }
-            }
-            deps.getMap()?.render();
+            deps.savePhotoDisplay(patch, next);
+            applyPhotoDisplayChange(before, next);
         };
+        document.querySelectorAll('[data-photo-preset]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const preset = PHOTO_DISPLAY_PRESETS[button.dataset.photoPreset];
+                if (preset) save({ ...preset });
+            });
+        });
+        el('btnParcoursPhotoDisplayReset')?.addEventListener('click', () => {
+            const before = deps.getPhotoDisplay();
+            applyPhotoDisplayChange(before, deps.resetPhotoDisplay());
+        });
+        el('btnParcoursPhotoDisplayDefault')?.addEventListener('click', () => {
+            Promise.resolve(deps.makePhotoDisplayDefault()).then((ok) => {
+                if (ok !== false) showToast(t('Ces réglages sont désormais ceux par défaut des parcours.'), 'success', t('Parcours'));
+            });
+            renderPhotoDisplayScope();
+        });
+        el('parcoursPhotoAutoPreview')?.addEventListener('change', (event) => {
+            try {
+                localStorage.setItem(AUTO_PREVIEW_KEY, event.target.checked ? '1' : '0');
+            } catch {
+                // Stockage indisponible : le choix vaut pour la session.
+            }
+            if (event.target.checked) autoPreview(previewTarget());
+        });
         for (const [key, id] of Object.entries(PHOTO_DISPLAY_FIELDS)) {
             el(id)?.addEventListener('change', (event) => save({ [key]: event.target.value }));
         }
@@ -1151,5 +1252,5 @@ export function createPhotosPanel(deps) {
         });
     }
 
-    return { bind, render, upload, linkPhoto, showPhoto };
+    return { bind, render, renderDisplay: renderPhotoDisplay, upload, linkPhoto, showPhoto };
 }

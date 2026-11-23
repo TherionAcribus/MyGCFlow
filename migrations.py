@@ -421,6 +421,15 @@ def _v24_photo_favorite_parcours(db):
             conn.exec_driver_sql("ALTER TABLE parcours_photo ADD COLUMN favorite BOOLEAN NOT NULL DEFAULT 0")
 
 
+def _v25_affichage_photos_par_parcours(db):
+    # Parcours : affichage des photos propre (JSON épars de surcharges sur la
+    # préférence globale `parcours_photo_display`). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours)")}
+        if "photo_display" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours ADD COLUMN photo_display TEXT")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -446,6 +455,7 @@ MIGRATIONS = [
     (22, _v22_lecture_parcours),
     (23, _v23_numero_serie_appareil_photo),
     (24, _v24_photo_favorite_parcours),
+    (25, _v25_affichage_photos_par_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

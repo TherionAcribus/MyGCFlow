@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import {
     CARD_MOSAIC_MAX,
     PHOTO_DISPLAY_DEFAULTS,
+    PHOTO_DISPLAY_PRESETS,
     PHOTO_FADE_Q,
     cardPhotos,
     isFullFrame,
@@ -15,6 +16,7 @@ import {
     photoCaptionText,
     photoCrop,
     photoCropRect,
+    photoDisplayPreset,
     photoFrameAt,
     photoSlots,
     photoTimelineOptions,
@@ -90,6 +92,23 @@ test('réglages d’affichage : défauts, bornes, valeurs inconnues', () => {
     assert.deepEqual(photoTimelineOptions(normalizePhotoDisplay({ duration: 2.5, max_per_stop: 6 })),
         { photoQ: 25, maxPhotosPerStop: 6, photoOverflow: 'share' });
     assert.equal(photoTimelineOptions(normalizePhotoDisplay({ overflow: 'first' })).photoOverflow, 'first');
+});
+
+test('styles tout faits : valides, reconnus, sans toucher au contenu', () => {
+    // Le défaut est la carte postale.
+    assert.equal(photoDisplayPreset(PHOTO_DISPLAY_DEFAULTS), 'postcard');
+    for (const [name, preset] of Object.entries(PHOTO_DISPLAY_PRESETS)) {
+        const applied = normalizePhotoDisplay({ ...PHOTO_DISPLAY_DEFAULTS, duration: 3, caption: '{etape}', ...preset });
+        // Chaque valeur survit à la normalisation, et le style est reconnu.
+        for (const [key, value] of Object.entries(preset)) assert.equal(applied[key], value, `${name}.${key}`);
+        assert.equal(photoDisplayPreset(applied), name);
+        // Durée, plafond, photos en chemin, légende : jamais posés.
+        for (const key of ['duration', 'max_per_stop', 'overflow', 'en_route', 'caption', 'size']) {
+            assert.ok(!(key in preset), `${name} pose ${key}`);
+        }
+    }
+    // Un réglage du style changé : plus reconnu.
+    assert.equal(photoDisplayPreset({ ...PHOTO_DISPLAY_DEFAULTS, frame: 'plain' }), null);
 });
 
 test('légende : balises, séparateurs orphelins retirés', () => {
