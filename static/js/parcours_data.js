@@ -63,6 +63,7 @@ import {
     formatClock,
     headAt,
     headModeAt,
+    TITLE_NAME,
     lastStopReached,
     nightLevelAt,
     normalizePlayback,
@@ -332,6 +333,21 @@ function applyPlaybackContext() {
     playbackOverrides = { ...(item?.playback || {}) };
     playback = normalizePlayback({ ...playbackDefaults, ...playbackOverrides });
     playbackUI.sync();
+    applyParcoursTitle();
+}
+
+// Titre de la carte et de la vidéo (réglage « Titre affiché », Style ›
+// Titres) : le nom du parcours ouvert, ou le titre du thème. Crochet
+// `titleText` du moteur, lu par updateTitleFrame (frames.js) — le titre du
+// thème, partagé avec les autres pages, n'est jamais réécrit.
+function parcoursTitleText() {
+    if (playback.title !== TITLE_NAME || selectedId == null) return null;
+    return listing.find((item) => item.id === selectedId)?.name || null;
+}
+
+function applyParcoursTitle() {
+    const theme = pkg.options?.infos?.title;
+    if (theme) pkg.updateTitleFrame?.(theme.text);
 }
 
 export async function openParcours(id) {
@@ -706,6 +722,7 @@ const PARCOURS_ENGINE = Object.freeze({
     styleChanged: parcoursStyleChanged,
     hidesPoints: () => stopStyle().render === RENDER_STOPS,
     timingUnits: parcoursTimingUnits,
+    titleText: parcoursTitleText,
     popupAt: parcoursPopupAt,
     recordingChapters: parcoursRecordingChapters,
 });
@@ -823,6 +840,7 @@ const playbackUI = createParcoursPlaybackUI({
     setPlayback: (next) => {
         playback = next;
         if (selectedId == null) playbackDefaults = next;
+        applyParcoursTitle();
     },
     saveParcoursPlayback: async (patch) => {
         playbackOverrides = { ...playbackOverrides, ...patch };
@@ -862,7 +880,15 @@ const listUI = createParcoursList({
 
 function renderListError() { listUI.renderListError(); }
 function renderList(activeId) { listUI.renderList(activeId); }
-function bindForm() { listUI.bindForm(); }
+function bindForm() {
+    listUI.bindForm();
+    // État vide de la carte : « Créer un parcours » ouvre l'onglet Données
+    // sur le formulaire, curseur dans le nom.
+    el('btnParcoursEmptyCreate')?.addEventListener('click', () => {
+        pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]'));
+        listUI.openCreateForm();
+    });
+}
 function fillFormDefaults() { listUI.fillFormDefaults(); }
 function loadSuggestions() { return listUI.loadSuggestions(); }
 function exportGpx() { listUI.exportGpx(); }
@@ -1315,6 +1341,12 @@ const planMap = createParcoursPlan({
     pinnedTimeOf, pinStopTime, excludeStop,
     saveOverrides, placeById, updatePlace, pushHistory, deletePlace,
     openStopDetails, adjustmentsLocked,
+    closeDetailsExcept: (key) => {
+        const open = stopsPanel.getEditKey();
+        if (open === null || open === key) return;
+        stopsPanel.setEditKey(null);
+        renderStops();
+    },
     getMap: () => pkg.getMap?.(),
     hidePopup: () => pkg.hideMapPopup?.(),
     showPopup: (coordinate, render) => pkg.showMapPopup?.(coordinate, render),

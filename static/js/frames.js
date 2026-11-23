@@ -357,7 +357,11 @@ export function destroyTitleFrame(){
 
 // mise à jour du titre
 export function updateTitleFrame(title){
-    const titleFrame = document.getElementById("titleFrame"); 
+    const titleFrame = document.getElementById("titleFrame");
+    // Page « cycle de vie » : son moteur peut imposer le titre (Parcours :
+    // le nom du parcours) sans toucher celui du thème, partagé entre pages.
+    const pageTitle = isLifecyclePage() ? lifecycleEngine()?.titleText?.() : null;
+    if (pageTitle != null) title = pageTitle;
     if (titleFrame) titleFrame.textContent = title == null ? '' : String(title).slice(0, 500);
     try { pkg.invalidateOverlayCache?.(); } catch(_) {}
 }

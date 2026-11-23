@@ -145,6 +145,10 @@
                         <div class="empty-state-card">
                             {% with logo_class='empty-state-logo' %}{% include '_brand_logo.html' %}{% endwith %}
                             <p class="empty-state-text">{{ _("Créez un parcours dans l'onglet Données : une journée ou des vacances de vos trouvailles") }}</p>
+                            <!-- Ouvre le formulaire de création (parcours_data.js). -->
+                            <button type="button" id="btnParcoursEmptyCreate" class="btn btn-primary">
+                                <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Créer un parcours") }}
+                            </button>
                             <p class="empty-state-hint">{{ _("Un parcours sans trouvaille ne se joue pas : choisissez des dates où vous avez trouvé des caches.") }}</p>
                         </div>
                         {% else %}

@@ -114,9 +114,15 @@ test('bulle d’une étape : épingler l’heure, la retirer, exclure, ouvrir le
 
   // Un clic ailleurs sur la carte referme la bulle.
   await clickStop(page, 'GCPAR03');
+  // Même étape : son panneau d'ajustement reste ouvert.
+  await expect(page.locator('.parcours-stop-edit[data-edit-key="GCPAR03"]')).toBeVisible();
   const box = await page.locator('.ol-viewport').boundingBox();
   await page.mouse.click(box.x + 30, box.y + box.height - 30);
   await expect(page.locator('#gcPopup')).toBeHidden();
+
+  // Autre étape cliquée : le panneau de la précédente se referme.
+  await clickStop(page, 'GCPAR01');
+  await expect(page.locator('.parcours-stop-edit[data-edit-key="GCPAR03"]')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

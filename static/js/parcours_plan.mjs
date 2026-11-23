@@ -22,7 +22,8 @@ const FIT_MAX_ZOOM = 16;
 // deps : { getState, paints, stackItem, placeForm, stopByKey, placeOf,
 //   button, pinnedTimeOf, pinStopTime, excludeStop, saveOverrides, placeById,
 //   updatePlace, pushHistory, deletePlace, openStopDetails,
-//   adjustmentsLocked, getMap, hidePopup, showPopup, showDataTab }
+//   closeDetailsExcept, adjustmentsLocked, getMap, hidePopup, showPopup,
+//   showDataTab }
 export function createParcoursPlan(deps) {
     const S = () => deps.getState();
     const paints = deps.paints;
@@ -274,6 +275,9 @@ export function createParcoursPlan(deps) {
         }
         const stop = feature ? deps.stopByKey(feature.get('key')) : null;
         if (!stop) return null;
+        // Le panneau d'ajustement d'une autre étape, resté ouvert, se ferme :
+        // la liste montre l'étape cliquée.
+        deps.closeDetailsExcept?.(stop.key);
         el('parcoursStops')?.querySelector(`[data-stop-key="${CSS.escape(stop.key)}"]`)
             ?.scrollIntoView({ block: 'nearest' });
         return { coordinate: feature.getGeometry().getCoordinates(), render: (box) => fillStopBubble(box, stop) };
@@ -534,11 +538,38 @@ export function createParcoursPlan(deps) {
         updateStacks();
     }
 
+    // Cadrage posé par la page : tant que la vue n'a pas bougé depuis, un
+    // changement de taille de la carte (disposition, séparateur, fenêtre) le
+    // refait — sinon des étapes restaient coupées aux bords. Une vue déplacée
+    // par l'utilisateur, ou une lecture en cours, n'est jamais recadrée.
+    let fitted = null;   // { extent (lon/lat), center, resolution }
+    let refitBound = false;
+
     function fitParcours(lonLatExtent) {
         const map = deps.getMap();
-        if (!map) return;
+        const size = map?.getSize();
+        if (!map || !size || !size[0] || !size[1]) return;
         const extent = ol.proj.transformExtent(lonLatExtent, 'EPSG:4326', 'EPSG:3857');
-        map.getView().fit(extent, { padding: [60, 60, 60, 60], maxZoom: FIT_MAX_ZOOM, size: map.getSize() });
+        const view = map.getView();
+        view.fit(extent, { padding: [60, 60, 60, 60], maxZoom: FIT_MAX_ZOOM, size });
+        fitted = { extent: lonLatExtent, center: view.getCenter(), resolution: view.getResolution() };
+        if (!refitBound) {
+            refitBound = true;
+            map.on('change:size', refitAfterResize);
+        }
+    }
+
+    function refitAfterResize() {
+        if (!fitted || S().clock.running) return;
+        const view = deps.getMap()?.getView();
+        const center = view?.getCenter();
+        const untouched = center && view.getResolution() === fitted.resolution
+            && center[0] === fitted.center[0] && center[1] === fitted.center[1];
+        if (!untouched) {
+            fitted = null;
+            return;
+        }
+        fitParcours(fitted.extent);
     }
 
     return {

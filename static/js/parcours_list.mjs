@@ -7,7 +7,7 @@
 // `openParcours` et l'effacement de la sélection restent orchestrés par
 // parcours_data.js et arrivent en deps — pas d'import de parcours_data.js.
 import { showConfirmation, showToast, t } from './notifications.js';
-import { formatRange, suggestionName } from './parcours_labels.mjs';
+import { formatRange, stopsCountText, suggestionName } from './parcours_labels.mjs';
 import { buildParcoursGpx } from './parcours_gpx.mjs';
 import { rangeDayCount } from './parcours_model.mjs';
 
@@ -156,21 +156,26 @@ export function createParcoursList(deps) {
         const box = document.createElement('div');
         box.className = 'small text-muted d-flex flex-wrap gap-2 parcours-item-counts';
         const counts = item.counts || {};
+        const n = (key) => counts[key] ?? 0;
+        // Libellé en clair, accordé : l'icône suivie d'un nombre seul ne se
+        // lisait pas (« 5 » à côté de deux repères qui ressemblaient à « % »).
         const entries = [
-            ['ti-map-pins', 'stops', t('${n} étapes', { n: counts.stops ?? 0 }), true],
-            ['ti-photo', 'photos', t('${n} photos', { n: counts.photos ?? 0 }), counts.photos > 0],
-            ['ti-route', 'tracks', t('${n} traces', { n: counts.tracks ?? 0 }), counts.tracks > 0],
-            ['ti-map-pin', 'places', t('${n} lieux ou bases', { n: counts.places ?? 0 }), counts.places > 0],
-            ['ti-adjustments', 'overrides', t('${n} ajustements', { n: counts.overrides ?? 0 }),
-                counts.overrides > 0],
+            ['ti-map-pins', 'stops', stopsCountText(n('stops')), true],
+            ['ti-photo', 'photos', n('photos') === 1 ? t('1 photo') : t('${n} photos', { n: n('photos') }), n('photos') > 0],
+            ['ti-route', 'tracks', n('tracks') === 1 ? t('1 trace') : t('${n} traces', { n: n('tracks') }), n('tracks') > 0],
+            ['ti-map-pin', 'places', n('places') === 1 ? t('1 lieu ou base') : t('${n} lieux ou bases', { n: n('places') }),
+                n('places') > 0],
+            ['ti-adjustments', 'overrides', n('overrides') === 1 ? t('1 ajustement') : t('${n} ajustements', { n: n('overrides') }),
+                n('overrides') > 0],
         ];
         for (const [icon, key, label, show] of entries) {
             if (!show) continue;
             const span = document.createElement('span');
             span.className = `parcours-count parcours-count-${key}`;
-            span.setAttribute('aria-label', label);
-            span.title = label;
-            span.innerHTML = `<i class="ti ${icon} me-1" aria-hidden="true"></i>${counts[key] ?? 0}`;
+            const glyph = document.createElement('i');
+            glyph.className = `ti ${icon} me-1`;
+            glyph.setAttribute('aria-hidden', 'true');
+            span.append(glyph, document.createTextNode(label));
             box.append(span);
         }
         return box;
@@ -574,6 +579,7 @@ export function createParcoursList(deps) {
         updateRangeHint,
         syncParcoursForm,
         startEdit: startEditParcours,
+        openCreateForm,
         cancelEdit: cancelEditParcours,
         editingId: () => editingParcoursId,
         loadSuggestions,

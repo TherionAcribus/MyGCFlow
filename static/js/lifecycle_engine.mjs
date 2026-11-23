@@ -53,6 +53,9 @@
 //                              span), edgeText / positionText / tipLines
 //                              (axisStart, offset), dayOffset(start, offset,
 //                              direction) } ; voir timeline_bar.js
+//   titleText()                titre de la carte et de la vidéo imposé par la
+//                              page, à la place de celui du thème (optionnel ;
+//                              null : titre du thème ; Parcours : son nom)
 //   timingUnits()              textes qui remplacent « n jours · n jours/s »
 //                              en tête de la synthèse du minutage (optionnel ;
 //                              Parcours : étapes et journées, ses « jours »

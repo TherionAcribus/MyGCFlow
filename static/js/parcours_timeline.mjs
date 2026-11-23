@@ -51,6 +51,12 @@ export const HEAD_PICTOGRAM = 'mode';
 export const HEAD_DOT = 'dot';
 export const HEAD_STYLES = Object.freeze([HEAD_PICTOGRAM, HEAD_DOT]);
 
+// Titre de la carte et de la vidéo : le nom du parcours, ou le titre du
+// thème (partagé avec les autres pages — le changer d'ici les changerait).
+export const TITLE_NAME = 'name';
+export const TITLE_THEME = 'theme';
+export const TITLE_SOURCES = Object.freeze([TITLE_NAME, TITLE_THEME]);
+
 // Lot 7 : caméra qui suit le géocacheur, cartons et nuit entre deux journées,
 // pictogramme du mode de déplacement, trajets estimés en pointillés.
 export const PLAYBACK_DEFAULTS = Object.freeze({
@@ -61,6 +67,7 @@ export const PLAYBACK_DEFAULTS = Object.freeze({
     day_cards: true,
     head: HEAD_PICTOGRAM,
     estimated_dashed: false,
+    title: TITLE_NAME,
 });
 
 // Durées en quanta (× 100 ms à la vitesse naturelle).
@@ -94,6 +101,7 @@ export function normalizePlayback(raw) {
         day_cards: flag('day_cards'),
         head: HEAD_STYLES.includes(o.head) ? o.head : PLAYBACK_DEFAULTS.head,
         estimated_dashed: flag('estimated_dashed'),
+        title: TITLE_SOURCES.includes(o.title) ? o.title : PLAYBACK_DEFAULTS.title,
     };
 }
 

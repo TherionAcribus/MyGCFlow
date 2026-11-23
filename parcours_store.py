@@ -27,7 +27,8 @@ from models import (Geocache, LabDiscovery, Parcours, ParcoursOverride,
                     ParcoursPhoto, ParcoursPlace, ParcoursTrack)
 from settings_manager import (PARCOURS_CAMERA_MODES, PARCOURS_FRAMINGS,
                               PARCOURS_HEAD_STYLES,
-                              PARCOURS_HOURS_DISPLAYS, PARCOURS_PACES)
+                              PARCOURS_HOURS_DISPLAYS, PARCOURS_PACES,
+                              PARCOURS_TITLE_SOURCES)
 
 NAME_MAX_LENGTH = 80
 # Format pensé pour des sorties courtes : au-delà, l'animation cache par cache
@@ -96,6 +97,7 @@ _PLAYBACK_CHOICES = {
     'camera': PARCOURS_CAMERA_MODES,
     'framing': PARCOURS_FRAMINGS,
     'head': PARCOURS_HEAD_STYLES,
+    'title': PARCOURS_TITLE_SOURCES,
 }
 _PLAYBACK_FLAGS = ('day_cards', 'estimated_dashed')
 

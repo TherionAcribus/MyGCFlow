@@ -359,6 +359,8 @@ PARCOURS_HOURS_DISPLAYS = ("approx", "exact", "slots", "none")
 PARCOURS_CAMERA_MODES = ("follow", "fixed")
 PARCOURS_FRAMINGS = ("tight", "balanced", "wide")
 PARCOURS_HEAD_STYLES = ("mode", "dot")
+# Titre de la carte et de la vidéo : nom du parcours ou titre du thème.
+PARCOURS_TITLE_SOURCES = ("name", "theme")
 PARCOURS_PLAYBACK_DEFAULTS = {
     "pace": "regular",
     "hours": "approx",
@@ -367,6 +369,7 @@ PARCOURS_PLAYBACK_DEFAULTS = {
     "day_cards": True,
     "head": "mode",
     "estimated_dashed": False,
+    "title": "name",
 }
 # Affichage des photos dans la lecture (lot 9, parcours_photo_layout.mjs :
 # mêmes clés, mêmes bornes).
@@ -693,6 +696,7 @@ def coerce_parcours_playback(value, current: dict | None = None) -> dict:
         "camera": PARCOURS_CAMERA_MODES,
         "framing": PARCOURS_FRAMINGS,
         "head": PARCOURS_HEAD_STYLES,
+        "title": PARCOURS_TITLE_SOURCES,
     }
     flags = ("day_cards", "estimated_dashed")
 

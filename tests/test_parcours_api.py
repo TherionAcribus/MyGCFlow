@@ -101,10 +101,10 @@ class CrudTests(_Base):
 
         body = self.patch(f"/api/parcours/{pid}", {"playback": {
             "camera": "fixed", "pace": "proportional", "day_cards": False,
-            "head": "casque", "hours": 12, "unknown": "x"}})
+            "head": "casque", "hours": 12, "unknown": "x", "title": "theme"}})
         self.assertEqual(body.status_code, 200)
         self.assertEqual(body.get_json()["parcours"]["playback"],
-                         {"camera": "fixed", "pace": "proportional", "day_cards": False})
+                         {"camera": "fixed", "pace": "proportional", "day_cards": False, "title": "theme"})
         listing = self.get("/api/parcours").get_json()
         self.assertEqual(listing["parcours"][0]["playback"]["camera"], "fixed")
 

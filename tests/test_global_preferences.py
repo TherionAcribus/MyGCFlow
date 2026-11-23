@@ -605,7 +605,7 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(payload['parcours_animation']['days_per_second'], 10.0)
         self.assertEqual(payload['parcours_playback'], {
             'pace': 'regular', 'hours': 'approx', 'camera': 'follow', 'framing': 'balanced',
-            'day_cards': True, 'head': 'mode', 'estimated_dashed': False,
+            'day_cards': True, 'head': 'mode', 'estimated_dashed': False, 'title': 'name',
         })
         self.assertIn('{heure}', payload['parcours_infos_template'])
 
@@ -613,7 +613,7 @@ class SettingsApiTests(unittest.TestCase):
         self.assertEqual(self.client.put('/api/settings', json={
             'parcours_animation': {'days_per_second': 20, 'camera_follow': True},
             'parcours_playback': {'hours': 'slots', 'pace': 'teleport', 'camera': 'drone',
-                                  'day_cards': False, 'estimated_dashed': 'oui'},
+                                  'day_cards': False, 'estimated_dashed': 'oui', 'title': 'theme'},
             'parcours_infos_template': '{date} · {km}',
         }).status_code, 200)
         after = self.client.get('/api/settings').get_json()
@@ -622,7 +622,7 @@ class SettingsApiTests(unittest.TestCase):
         self.assertFalse(after['parcours_animation']['camera_follow'])        # jamais la caméra du mode principal
         self.assertEqual(after['parcours_playback'], {
             'pace': 'regular', 'hours': 'slots', 'camera': 'follow', 'framing': 'balanced',
-            'day_cards': False, 'head': 'mode', 'estimated_dashed': False,
+            'day_cards': False, 'head': 'mode', 'estimated_dashed': False, 'title': 'theme',
         })
         self.assertEqual(after['parcours_infos_template'], '{date} · {km}')
         self.assertEqual(after['animation'], main_before)

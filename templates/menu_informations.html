@@ -41,8 +41,22 @@
                 <input class="form-check-input" type="checkbox" id="cbDisplayTitle">
                 <label class="form-check-label" for="cbDisplayTitle">{{ _("Afficher un titre") }}</label>
             </div>
+            {% if mode == 'parcours' %}
+            {% from '_scope_badges.html' import parcours_scope_badge with context %}
+            <!-- Titre affiché (parcours_playback.title, parcours_playback_ui.mjs) :
+                 le nom du parcours ouvert par défaut ; le titre du thème,
+                 partagé avec les autres pages, n'est pas réécrit. -->
             <div class="mb-2">
-                <label class="form-label" for="inputTitle">{{ _("Titre") }}</label>
+                <label class="form-label" for="parcoursTitleSource">{{ _("Titre affiché") }}{{ parcours_scope_badge() }}</label>
+                <select id="parcoursTitleSource" class="form-select" aria-describedby="helpParcoursTitleSource">
+                    <option value="name">{{ _("Nom du parcours") }}</option>
+                    <option value="theme">{{ _("Titre du thème") }}</option>
+                </select>
+                <small id="helpParcoursTitleSource" class="form-hint text-muted">{{ _("Le titre du thème est partagé avec les autres pages : le nom du parcours s'affiche sans le modifier.") }}</small>
+            </div>
+            {% endif %}
+            <div class="mb-2">
+                <label class="form-label" for="inputTitle">{% if mode == 'parcours' %}{{ _("Titre du thème") }}{% else %}{{ _("Titre") }}{% endif %}</label>
                 <input id="inputTitle" type="text" class="form-control" maxlength="500" placeholder="{{ _('Titre') }}">
             </div>
         </div>

@@ -173,6 +173,16 @@ est retenue par le navigateur (`localStorage` `parcours.enrichOpen`). Un
 envoi de traces ouvre leur section, une demande de collecte ou un export
 reçu celle de geocaching.com.
 
+Le cadrage automatique sur l'emprise du parcours (`fitParcours`,
+parcours_plan.mjs) est refait quand la carte change de taille
+(disposition, séparateur, fenêtre) tant que la vue n'a pas bougé depuis et
+qu'aucune lecture ne tourne — une vue déplacée par l'utilisateur n'est
+jamais recadrée. Un clic sur une étape de la carte referme le panneau
+d'ajustement d'une autre étape (`closeDetailsExcept`). Sans parcours, l'état
+vide de la carte porte un bouton « Créer un parcours » (onglet Données,
+curseur dans le nom). Dans la liste des parcours, les comptes s'écrivent
+en clair et s'accordent (« 1 ajustement », « 5 étapes »).
+
 **Plan au repos** : couche vectorielle propre (`parcoursLayer`, zIndex 1060,
 au-dessus des points WebGL pour garder les numéros lisibles), points
 numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
@@ -400,6 +410,8 @@ Crochets optionnels ajoutés au contrat du moteur :
 - `frameActive(now)` : entretient le rendu entre deux quanta ;
 - `camera(leadMs, msPerDay)` : pose la vue avant chaque rendu (lot 7,
   ci-dessous) ;
+- `titleText()` : titre de la carte et de la vidéo imposé par la page (nom
+  du parcours, réglage `title`) ; `null` rend celui du thème ;
 - `timingUnits()` : tête de la synthèse du minutage de l'onglet Animation
   (« 5 étapes · 2 jours » au lieu de « 178 jours · 10 jours/s », des
   quanta) ; les mentions en jours qui suivent (« jours par image », jours
@@ -417,7 +429,7 @@ repli de `perPage` sur la page principale faisait réécrire ses clés
 |---|---|
 | `parcours_animation` | Rythme (défaut : « Vitesse » 10 quanta/s ; préréglages lent ×0,5 / normal / rapide ×2), durée totale, musique ; jamais de suivi de caméra du mode principal |
 | `parcours_infos_template` | Modèle de la ligne d'infos (défaut `{date} · {heure} · {etapes} / {total} · {km}`) |
-| `parcours_playback` | `{pace: regular / proportional, hours: approx / exact / slots / none, camera: follow / fixed, day_cards, head: mode / dot, estimated_dashed}` (défauts : `regular`, `approx`, `follow`, `true`, `mode`, `false`) |
+| `parcours_playback` | `{pace: regular / proportional, hours: approx / exact / slots / none, camera: follow / fixed, framing: tight / balanced / wide, day_cards, head: mode / dot, estimated_dashed, title: name / theme}` (défauts : `regular`, `approx`, `follow`, `balanced`, `true`, `mode`, `false`, `name`) — `title` : titre de la carte et de la vidéo, nom du parcours ouvert ou titre du thème (Style › Titres, « Titre affiché ») ; le titre du thème, partagé avec les autres pages, n'est jamais réécrit — le crochet moteur `titleText()` le remplace à l'affichage (`updateTitleFrame`, frames.js), et la vidéo peint `#titleFrame` |
 | `parcours_last_profile_uid` | Dernier thème de la page (thèmes du mode principal ; première visite : celui de la page principale) |
 | `stats.parcours_panels`, `images.parcours_items` | Listes par page, vides tant que les onglets ne sont pas branchés |
 

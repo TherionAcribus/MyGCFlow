@@ -1,7 +1,7 @@
 // Réglages de lecture de la page Parcours (onglet Animation : section
-// « Lecture » de « Dates & rythme », sous-onglet « Caméra ») : rythme,
-// heures affichées, caméra, tête du géocacheur, cartons de journée, nuit
-// pointillée. Persistés dans le parcours ouvert (surcharges éparses,
+// « Lecture » de « Dates & rythme », sous-onglet « Caméra » ; Style ›
+// Titres : « Titre affiché ») : rythme, heures affichées, caméra, tête du
+// géocacheur, cartons de journée, nuit pointillée, titre. Persistés dans le parcours ouvert (surcharges éparses,
 // `saveParcoursPlayback`) — la préférence globale `parcours_playback` sert
 // de défaut et n'est écrite que sans parcours ouvert. Les réglages du lot 7
 // sont lus à chaque image et s'appliquent en pleine lecture, ceux qui
@@ -44,6 +44,17 @@ export function createParcoursPlaybackUI(deps) {
         if (head) head.value = playback.head;
         if (dayCards) dayCards.checked = playback.day_cards;
         if (dashed) dashed.checked = playback.estimated_dashed;
+        syncTitleSource();
+    }
+
+    // Style › Titres : « Titre affiché ». Le titre du thème n'a d'effet ici
+    // qu'en « Titre du thème » : son champ est grisé sinon.
+    function syncTitleSource() {
+        const { playback } = S();
+        const source = el('parcoursTitleSource');
+        if (source) source.value = playback.title;
+        const themeTitle = el('inputTitle');
+        if (themeTitle && source) themeTitle.disabled = playback.title === 'name';
     }
 
     function bind() {
@@ -112,6 +123,12 @@ export function createParcoursPlaybackUI(deps) {
         dashed?.addEventListener('change', () => {
             save({ estimated_dashed: dashed.checked });
             deps.redraw();
+        });
+        // Le titre est repeint par setPlayback (applyParcoursTitle).
+        const titleSource = el('parcoursTitleSource');
+        titleSource?.addEventListener('change', () => {
+            save({ title: titleSource.value });
+            syncTitleSource();
         });
     }
 

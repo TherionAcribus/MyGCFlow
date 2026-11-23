@@ -70,6 +70,12 @@ test('page sans parcours : mode actif, état vide, aucune erreur', async ({ page
   await expect(page.locator('#btnQuickPreview')).toBeDisabled();
   await expect(page.locator('#emptyState')).toBeVisible();
   await expect(page.locator('#emptyState')).toContainText('Créez un parcours');
+  // Son bouton mène au formulaire, curseur dans le nom, même depuis un autre
+  // onglet.
+  await page.locator('#mainTabs a[href="#style"]').click();
+  await page.locator('#btnParcoursEmptyCreate').click();
+  await expect(page.locator('#parcoursName')).toBeFocused();
+  await expect(page.locator('#mainTabs a[href="#data"]')).toHaveClass(/active/);
   expect((await snapshot(page)).status).toBe('idle');
   // Au-delà du délai d'écriture différée (500 ms) des réglages d'animation.
   await page.waitForTimeout(1200);
@@ -289,6 +295,13 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   await page.evaluate(() => document.activeElement.blur());
   await expect.poll(async () => (await box('.parcours-area-stops')).left - (await box('.parcours-area-list')).left)
     .toBeGreaterThan(100);
+  // Carte plus basse : le cadrage automatique (vue non touchée) est refait,
+  // aucune étape ne reste coupée au bord.
+  await expect.poll(async () => {
+    const { stopPixels } = await snapshot(page);
+    const [width, height] = await page.evaluate(async () => (await import('/static/js/index.js')).getMap().getSize());
+    return Object.values(stopPixels).every(([x, y]) => x > 0 && y > 0 && x < width && y < height);
+  }).toBe(true);
   await page.locator('#layoutPresets [data-layout="sidebar"]').click();
   await page.evaluate(() => document.activeElement.blur());
 
@@ -304,6 +317,38 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   await page.waitForFunction(() => window.mygcflowParcoursLoaded === true, null, { timeout: 30_000 });
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
   expect((await snapshot(page)).days[1].keys).toEqual(['GCPAR04', 'GCPAR05']);
+  expect(errors).toEqual([]);
+});
+
+test('titre affiché : le nom du parcours, ou le titre du thème laissé intact', async ({ page, request }) => {
+  await importFixture(page, request);
+  expect((await request.post('/api/parcours',
+    { data: { name: 'Week-end à Annecy', date_start: '2025-07-12', date_end: '2025-07-13' } })).status()).toBe(201);
+  const errors = collectErrors(page);
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  const themeTitle = () => page.evaluate(async () => (await import('/static/js/index.js')).options.infos.title.text);
+  const before = await themeTitle();
+  expect(before).not.toBe('Week-end à Annecy');
+
+  // Par défaut : le nom du parcours, sur la carte (et donc dans la vidéo,
+  // qui peint #titleFrame) ; le titre du thème, partagé, est grisé.
+  await expect(page.locator('#titleFrame')).toHaveText('Week-end à Annecy');
+  await page.locator('#mainTabs a[href="#style"]').click();
+  await page.locator('#style .nav-link[href="#tabTitles"]').click();
+  await expect(page.locator('#parcoursTitleSource')).toHaveValue('name');
+  await expect(page.locator('#inputTitle')).toBeDisabled();
+
+  // Titre du thème : affiché tel quel, jamais réécrit ; gardé par le parcours.
+  await page.locator('#parcoursTitleSource').selectOption('theme');
+  await expect(page.locator('#titleFrame')).toHaveText(before);
+  await expect(page.locator('#inputTitle')).toBeEnabled();
+  expect(await themeTitle()).toBe(before);
+  await expect.poll(async () => (await (await request.get('/api/parcours')).json()).parcours[0].playback.title)
+    .toBe('theme');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowParcoursLoaded === true, null, { timeout: 30_000 });
+  await expect(page.locator('#titleFrame')).toHaveText(before);
   expect(errors).toEqual([]);
 });
 
@@ -454,10 +499,12 @@ test('liste : jours, étapes et compteurs sur la ligne', async ({ page, request 
 
   const item = page.locator('.parcours-list-item');
   await expect(item).toContainText('2 jours');
-  await expect(item.locator('.parcours-count-stops')).toHaveAttribute('title', '5 étapes');
-  await expect(item.locator('.parcours-count-overrides')).toHaveAttribute('title', '1 ajustements');
-  await expect(item.locator('.parcours-count-places')).toHaveAttribute('title', '1 lieux ou bases');
-  // Comptes nuls masqués ; les libellés complets restent accessibles.
+  // Libellés en clair et accordés (l'icône et un nombre seul se lisaient
+  // mal, et « 1 ajustements » était attendu ici).
+  await expect(item.locator('.parcours-count-stops')).toHaveText('5 étapes');
+  await expect(item.locator('.parcours-count-overrides')).toHaveText('1 ajustement');
+  await expect(item.locator('.parcours-count-places')).toHaveText('1 lieu ou base');
+  // Comptes nuls masqués.
   await expect(item.locator('.parcours-count-photos')).toHaveCount(0);
   await expect(item.locator('.parcours-count-tracks')).toHaveCount(0);
 });

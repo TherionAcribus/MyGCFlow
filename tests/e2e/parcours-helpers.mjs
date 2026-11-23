@@ -101,7 +101,7 @@ export async function resetParcoursSettings(request) {
       parcours_animation: { rhythm_mode: 'rate', days_per_second: 10 },
       parcours_playback: {
         pace: 'regular', hours: 'approx', camera: 'follow', framing: 'balanced',
-        day_cards: true, head: 'mode', estimated_dashed: false,
+        day_cards: true, head: 'mode', estimated_dashed: false, title: 'name',
       },
       parcours_routing: {
         enabled: false, provider: 'fossgis', fossgis_url: 'https://routing.openstreetmap.de', ors_key: '',
