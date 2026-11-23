@@ -450,6 +450,12 @@ Autres repères :
   qui suit ; la descente se poursuit dans la première étape à grande
   échelle. En spec, poller `openCard → null` puis `cardText` tout de
   suite : la fenêtre « Jour 1 » s'ouvre à `openCardQ` exactement.
+  Mouvement réduit : `prefers-reduced-motion` adoucit la lecture en
+  aperçu (anneau fixe, pas de pops ni d'envols, photos au fondu sans Ken
+  Burns) — jamais en enregistrement ; relevé `reducedMotion`, testable
+  via `page.emulateMedia({ reducedMotion: 'reduce' })`, la requête étant
+  vivante une bascule s'observe en pleine lecture (spec « mouvement
+  réduit » de `parcours-finitions.spec.mjs`).
   Spec « ellipse » de `parcours-finitions.spec.mjs` : base vidée
   (`POST /clear_database`) + rechargement, sinon la modale « Remplacer
   ma base » rend l'import d'une autre fixture non déterministe.

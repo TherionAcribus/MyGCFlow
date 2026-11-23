@@ -222,6 +222,38 @@ test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés'
   expect(errors).toEqual([]);
 });
 
+test('mouvement réduit : pas de pops ni d’envols en aperçu, vidéo complète', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openReady(page);
+
+  await page.locator('#btnQuickPreview').click();
+  await expect.poll(async () => (await snapshot(page)).reducedMotion).toBe(true);
+  // Pastilles à taille pleine : aucun pop ni envol tant que le réglage tient…
+  const seen = { popsReduced: 0, popping: 0, drawn: 0 };
+  let released = false;
+  await expect.poll(async () => {
+    const s = await snapshot(page);
+    if (s.playStops) {
+      if (released) seen.popping = Math.max(seen.popping, s.playStops.popping);
+      else seen.popsReduced = Math.max(seen.popsReduced, s.playStops.popping);
+      seen.drawn = Math.max(seen.drawn, s.playStops.drawn);
+    }
+    // …puis le réglage est levé en pleine lecture : les pops reviennent.
+    if (!released && seen.drawn > 0) {
+      released = true;
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+    }
+    return released && seen.popping > 0 ? 'popped' : (s.running ? 'run' : 'end');
+  }, { intervals: [80], timeout: 40_000 }).toBe('popped');
+  expect(seen.drawn).toBeGreaterThan(0);
+  expect(seen.popsReduced).toBe(0);
+  expect((await snapshot(page)).reducedMotion).toBe(false);
+  // Remise au défaut pour les specs suivants.
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  expect(errors).toEqual([]);
+});
+
 test('réglages : cadrage de la caméra suivie, enregistré, grisé en caméra fixe', async ({ page, request }) => {
   const errors = collectErrors(page);
   await openReady(page);

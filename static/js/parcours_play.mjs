@@ -33,6 +33,7 @@ import {
     trailAt,
 } from './parcours_timeline.mjs';
 import {
+    CURRENT_RING_PERIOD,
     FAVORITE_COLOR,
     currentRingRadius,
     favoriteBurst,
@@ -85,6 +86,24 @@ const HEAD_ICON_CLASSES = Object.freeze({
 export function createParcoursPlayDraw(deps) {
     const S = () => deps.getState();
     const paints = deps.paints;
+
+    // Requête « prefers-reduced-motion », mémoïsée (même motif que mapgl.js,
+    // qui ne peut pas être importé ici) : en aperçu, les effets d'arrivée
+    // s'adoucissent — anneau fixe, pas d'envol de cœurs, pastilles à taille
+    // pleine, photos qui entrent au fondu et sans Ken Burns. Jamais en
+    // capture : la vidéo garde le dynamisme complet.
+    let motionQuery;
+    function reducedMotion() {
+        if (motionQuery === undefined) {
+            try {
+                motionQuery = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+                    ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+            } catch (_) {
+                motionQuery = null;
+            }
+        }
+        return !deps.isRecording() && !!motionQuery?.matches;
+    }
 
     let playTrailLayer = null;
     let playHeadLayer = null;
@@ -413,7 +432,7 @@ export function createParcoursPlayDraw(deps) {
                 ? stackLabel(members.map((m) => labels.get(timeline.stops[reached[m]].key) || ''))
                 : labels.get(head.key) || '';
             if (pile) piles.push(label);
-            const scale = stopPopScale(currentQ - newest.q);
+            const scale = reducedMotion() ? 1 : stopPopScale(currentQ - newest.q);
             if (scale <= 0.01) continue;
             if (scale !== 1) popping++;
             if (dim) dimmed++;
@@ -445,7 +464,7 @@ export function createParcoursPlayDraw(deps) {
             }
             drawn += members.length;
         }
-        const bursts = style.favorite_burst ? drawFavoriteBursts(context, favIdx) : 0;
+        const bursts = style.favorite_burst && !reducedMotion() ? drawFavoriteBursts(context, favIdx) : 0;
         playStopsDrawn = { ...playStopsDrawn, drawn, popping, piles, dimmed, favorites, bursts };
     }
 
@@ -496,7 +515,9 @@ export function createParcoursPlayDraw(deps) {
     const ringStyles = new Map();
 
     function drawCurrentRing(context, point, color, radius, elapsedQ) {
-        const r = Math.round(currentRingRadius(radius, elapsedQ) * 4);
+        // Mouvement réduit : anneau fixe à mi-amplitude plutôt que pulsé.
+        const elapsed = reducedMotion() ? CURRENT_RING_PERIOD / 4 : elapsedQ;
+        const r = Math.round(currentRingRadius(radius, elapsed) * 4);
         const key = `${color}|${r}`;
         let style = ringStyles.get(key);
         if (!style) {
@@ -623,7 +644,7 @@ export function createParcoursPlayDraw(deps) {
             const from = base ? (firstQ.get(stop.placeId) ?? stop.q) : stop.q;
             if (from > currentQ) continue;
             if (base) bases.add(stop.placeId);
-            const scale = stopPopScale(currentQ - from);
+            const scale = reducedMotion() ? 1 : stopPopScale(currentQ - from);
             if (scale <= 0.01) continue;
             point.setCoordinates(projected[i]);
             const phase = base ? 'normal' : playPhase(stop, currentQ, { day, past });
@@ -1003,7 +1024,9 @@ export function createParcoursPlayDraw(deps) {
         ensurePhotosNear();
         const view = photoLayoutView(event);
         lastPhotoView = { width: view.width, height: view.height, ratio: view.ratio };
-        const { cards } = photoFrameAt(timeline, currentQ, photoDisplay, view);
+        // Mouvement réduit : entrée au fondu, jamais de Ken Burns.
+        const display = reducedMotion() ? { ...photoDisplay, effect: 'fade', ken_burns: false } : photoDisplay;
+        const { cards } = photoFrameAt(timeline, currentQ, display, view);
         const ctx = event.context;
         const font = pageFontFamily();
         for (const card of cards) {
@@ -1059,6 +1082,7 @@ export function createParcoursPlayDraw(deps) {
         preloadPhotos,
         photosReady,
         photosMissing,
+        reducedMotion,
         clearImages,
         evictImage,
         imageStats,

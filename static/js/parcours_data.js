@@ -1421,6 +1421,7 @@ export function getParcoursSnapshot() {
         } : null,
         running: clock.running,
         currentQ,
+        reducedMotion: playDraw.reducedMotion(),
         head: timeline ? headAt(timeline, currentQ) : null,
         infos: parcoursInfosValues(),
         playLayers: playDraw.layersVisible(),

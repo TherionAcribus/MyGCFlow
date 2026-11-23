@@ -264,6 +264,10 @@ d'allouer à chaque image. Mesuré : dessin médian 1,1 → 0,2 ms/image.
     quanta (`stopPopScale`, léger dépassement) ; la dernière arrivée est
     dessinée au-dessus (au repos, c'est le n° 1). Lieux et bases gardent
     leur couleur et leur pastille de catégorie dans les deux rendus.
+  - En mouvement réduit (`prefers-reduced-motion`, aperçu seulement — la
+    vidéo enregistrée garde le dynamisme complet) : pastilles à taille
+    pleine dès l'arrivée, anneau fixe à mi-amplitude, pas d'envol de
+    cœurs, photos qui entrent au fondu et sans Ken Burns.
   - Avant, le plan posait ses pastilles PAR-DESSUS les points du thème,
     affichés aussi au repos, et la lecture ne montrait que les points du
     thème, sans numéros : la vidéo ne ressemblait pas au plan préparé.
