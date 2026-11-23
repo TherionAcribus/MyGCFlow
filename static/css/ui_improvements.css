@@ -4117,6 +4117,12 @@ body[data-mode="parcours"] .rhythm-rate-field {
     display: none !important;
 }
 
+/* Barre d'outils des étapes : `d-flex` (display !important) l'emportait sur
+   `hidden`, elle restait affichée sans parcours ouvert. */
+#parcoursStopsTools[hidden] {
+    display: none !important;
+}
+
 .parcours-list {
     max-height: 18rem;
     overflow-y: auto;

@@ -50,6 +50,8 @@ test('page sans parcours : mode actif, état vide, aucune erreur', async ({ page
   await expect(page.locator('#linkParcoursMode')).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('#parcoursListEmpty')).toBeVisible();
   await expect(page.locator('#parcoursSummary')).toContainText('Ouvrez ou créez un parcours');
+  // Outils des étapes (annuler, poser un lieu, exporter…) : rien sur quoi agir.
+  await expect(page.locator('#parcoursStopsTools')).toBeHidden();
   await expect(page.locator('#mainTabs a[href="#animation"]')).toBeVisible();
   await expect(page.locator('#mainTabs a[href="#stats"]')).toHaveCount(0);
   // Rien à jouer : lecture désactivée, état vide propre à la page.
