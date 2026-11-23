@@ -107,6 +107,66 @@ async function saveCopyAs() {
     }
 }
 
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (_) {
+        // Repli (contexte non sécurisé, permission refusée).
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.append(area);
+        area.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+        area.remove();
+        return ok;
+    }
+}
+
+async function copyChapters() {
+    const text = document.getElementById('videoReadyChaptersText')?.value || '';
+    if (!text) return;
+    const ok = await copyText(text);
+    showToast(ok ? t('Chapitres copiés : collez-les dans la description de la vidéo YouTube.')
+        : t('Copie impossible : sélectionnez la liste et copiez-la à la main.'),
+    ok ? 'success' : 'warning', t('Vidéo'));
+}
+
+// Chapitres d'une vidéo de parcours (capture.py, _write_youtube_chapters) :
+// { count, youtube, file }. Une vidéo sans chapitres masque le bloc.
+function renderChapters(chapters) {
+    const box = document.getElementById('videoReadyChapters');
+    if (!box) return;
+    const count = Number(chapters?.count) || 0;
+    box.hidden = count < 2;
+    if (box.hidden) return;
+    const text = chapters.youtube || '';
+    const title = document.getElementById('videoReadyChaptersTitle');
+    if (title) title.textContent = t('${n} chapitres intégrés à la vidéo', { n: count });
+    const area = document.getElementById('videoReadyChaptersText');
+    if (area) {
+        area.value = text;
+        area.hidden = !text;
+        area.rows = Math.min(8, Math.max(3, text.split('\n').length - 1));
+    }
+    const copy = document.getElementById('btnVideoReadyCopyChapters');
+    if (copy) copy.hidden = !text;
+    const hint = document.getElementById('videoReadyChaptersHint');
+    if (hint) {
+        if (!text) {
+            hint.textContent = t('Journées trop courtes pour les chapitres YouTube (10 s au moins, 3 chapitres) : ils restent intégrés au fichier.');
+        } else if (chapters.file) {
+            hint.textContent = t('Liste au format YouTube, aussi enregistrée dans ${file}.', { file: chapters.file });
+        } else {
+            hint.textContent = t('Liste au format YouTube.');
+        }
+    }
+}
+
 function bindOnce() {
     if (bound) return;
     const modal = document.getElementById(MODAL_ID);
@@ -121,6 +181,7 @@ function bindOnce() {
         postVideoAction('open_video', t('Impossible d’ouvrir la vidéo'));
     });
     document.getElementById('btnVideoReadySaveAs')?.addEventListener('click', saveCopyAs);
+    document.getElementById('btnVideoReadyCopyChapters')?.addEventListener('click', copyChapters);
     // Vidéo illisible par ce navigateur (4:4:4, codec absent) : mieux vaut pas
     // d'aperçu qu'un cadre noir. Le fichier, lui, est bon — les actions restent.
     document.getElementById('videoReadyPlayer')?.addEventListener('error', (event) => {
@@ -139,7 +200,8 @@ function bindOnce() {
  * Ouvre l'écran de fin d'export pour une vidéo du dossier des vidéos.
  * `warnings` : ce que l'export n'a pas pu faire (ex. vidéo sans la musique
  * demandée), affiché en tête de la modale.
- * @param {{file?: string, folder?: string, size_bytes?: number, duration_seconds?: number, warnings?: string[]}} info
+ * @param {{file?: string, folder?: string, size_bytes?: number, duration_seconds?: number, warnings?: string[],
+ *   chapters?: {count: number, youtube: ?string, file: ?string}}} info
  * @returns {boolean} false si la modale n'a pas pu être affichée (fichier
  *   inconnu, page sans modale) : à l'appelant de prévenir autrement.
  */
@@ -171,6 +233,7 @@ export function showVideoReady(info) {
     }
     const folderEl = document.getElementById('videoReadyFolder');
     if (folderEl) folderEl.textContent = info.folder || '';
+    renderChapters(info.chapters);
 
     const player = document.getElementById('videoReadyPlayer');
     // #t : fait afficher une première image au lieu d'un cadre noir tant que

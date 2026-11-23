@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-22 13:12+0100\n"
+"POT-Creation-Date: 2026-11-23 08:37+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -121,23 +121,23 @@ msgstr "Speicherindizes werden angewendet (Datum/Typ/Region)..."
 msgid "Filtrage direct en base (fallback)..."
 msgstr "Direktes Filtern in der Datenbank (Fallback)..."
 
-#: capture.py:94
+#: capture.py:95
 msgid "Aucune image dans la requête"
 msgstr "Kein Bild in der Anfrage"
 
-#: capture.py:133
+#: capture.py:134
 msgid "Format de données non supporté"
 msgstr "Datenformat wird nicht unterstützt"
 
-#: capture.py:135
+#: capture.py:136
 msgid "Image reçue avec succès"
 msgstr "Bild erfolgreich empfangen"
 
-#: capture.py:244 capture.py:302 capture.py:321 capture.py:1197
+#: capture.py:245 capture.py:310 capture.py:329 capture.py:1252
 msgid "Fichier vidéo introuvable"
 msgstr "Videodatei nicht gefunden"
 
-#: capture.py:251
+#: capture.py:252
 msgid ""
 "Impossible de supprimer cette vidéo : elle est peut-être ouverte dans un "
 "autre programme."
@@ -145,11 +145,11 @@ msgstr ""
 "Dieses Video kann nicht gelöscht werden: Es ist möglicherweise in einem "
 "anderen Programm geöffnet."
 
-#: capture.py:374
+#: capture.py:382
 msgid "Le répertoire a été vidé avec succès"
 msgstr "Das Verzeichnis wurde erfolgreich geleert"
 
-#: capture.py:810
+#: capture.py:818
 msgid ""
 "La musique choisie est introuvable sur le serveur : la vidéo a été créée "
 "sans musique."
@@ -157,27 +157,27 @@ msgstr ""
 "Die gewählte Musik wurde auf dem Server nicht gefunden: Das Video wurde "
 "ohne Musik erstellt."
 
-#: capture.py:899
+#: capture.py:907
 #, python-format
 msgid "%(label)s... %(pct)s%%"
 msgstr "%(label)s... %(pct)s%%"
 
-#: capture.py:901
+#: capture.py:909
 #, python-format
 msgid "%(label)s en cours..."
 msgstr "%(label)s läuft..."
 
-#: capture.py:930
+#: capture.py:938
 #, python-format
 msgid "%(label)s interrompu : le processus ne s'est pas terminé."
 msgstr "%(label)s unterbrochen: Der Prozess wurde nicht beendet."
 
-#: capture.py:934
+#: capture.py:942
 #, python-format
 msgid "%(label)s annulé à la demande."
 msgstr "%(label)s auf Wunsch abgebrochen."
 
-#: capture.py:941
+#: capture.py:949
 #, python-format
 msgid ""
 "%(label)s interrompu : aucune progression pendant %(minutes)s min. Le "
@@ -186,21 +186,21 @@ msgstr ""
 "%(label)s unterbrochen: %(minutes)s Min. lang kein Fortschritt. Die "
 "Quelldatei ist wahrscheinlich beschädigt."
 
-#: capture.py:946
+#: capture.py:954
 #, python-format
 msgid "ffmpeg a échoué (code %(code)s)"
 msgstr "ffmpeg ist fehlgeschlagen (Code %(code)s)"
 
-#: capture.py:948
+#: capture.py:956
 #, python-format
 msgid "%(label)s échoué : %(detail)s"
 msgstr "%(label)s fehlgeschlagen: %(detail)s"
 
-#: capture.py:1019
+#: capture.py:1065
 msgid "Aucune image trouvée dans le dossier"
 msgstr "Keine Bilder im Ordner gefunden"
 
-#: capture.py:1025
+#: capture.py:1071
 #, python-format
 msgid ""
 "Assemblage refusé : %(expected)d images attendues, %(found)d trouvées "
@@ -209,7 +209,7 @@ msgstr ""
 "Zusammenstellung abgelehnt: %(expected)d Bilder erwartet, %(found)d in "
 "der Aufnahme gefunden"
 
-#: capture.py:1044
+#: capture.py:1090
 msgid ""
 "Assemblage refusé : la séquence d'images n'est pas continue (frames "
 "manquantes ou dupliquées)"
@@ -217,84 +217,84 @@ msgstr ""
 "Zusammenstellung abgelehnt: Die Bildsequenz ist nicht durchgehend "
 "(fehlende oder doppelte Frames)"
 
-#: capture.py:1049
+#: capture.py:1095
 msgid "Préparation des images..."
 msgstr "Bilder werden vorbereitet..."
 
-#: capture.py:1110
+#: capture.py:1160
 msgid "Encodage de la vidéo..."
 msgstr "Video wird codiert..."
 
-#: capture.py:1114
+#: capture.py:1164
 msgid "Encodage vidéo"
 msgstr "Videocodierung"
 
-#: capture.py:1114
+#: capture.py:1164
 msgid "Assemblage ffmpeg"
 msgstr "ffmpeg-Zusammenstellung"
 
-#: capture.py:1126 capture.py:1127
+#: capture.py:1178 capture.py:1180
 msgid "Vidéo créée avec succès"
 msgstr "Video erfolgreich erstellt"
 
-#: capture.py:1163
+#: capture.py:1218
 msgid "Échec de l'assemblage"
 msgstr "Zusammenstellung fehlgeschlagen"
 
-#: capture.py:1203 capture.py:1289
+#: capture.py:1258 capture.py:1354
 msgid "Traitement vidéo annulé"
 msgstr "Videoverarbeitung abgebrochen"
 
-#: capture.py:1270
+#: capture.py:1328
 msgid "Démarrage du traitement vidéo..."
 msgstr "Videoverarbeitung wird gestartet..."
 
-#: capture.py:1274
+#: capture.py:1333
 msgid "Traitement vidéo"
 msgstr "Videoverarbeitung"
 
-#: capture.py:1274
+#: capture.py:1333
 msgid "Traitement ffmpeg"
 msgstr "ffmpeg-Verarbeitung"
 
-#: capture.py:1299 static/js/mapgl.js:5809 templates/guide.html:368
+#: capture.py:1364 static/js/mapgl.js:5860 templates/guide.html:368
 #: templates/modal_video_ready.html:9
 msgid "Vidéo prête"
 msgstr "Video bereit"
 
-#: capture.py:1302
+#: capture.py:1368
 msgid "Vidéo traitée avec succès"
 msgstr "Video erfolgreich verarbeitet"
 
-#: capture.py:1327
+#: capture.py:1395
 msgid "Échec du traitement vidéo"
 msgstr "Videoverarbeitung fehlgeschlagen"
 
-#: capture.py:1364 capture.py:1419
+#: capture.py:1433 capture.py:1489
 msgid "Aucun fichier vidéo fourni"
 msgstr "Keine Videodatei bereitgestellt"
 
-#: capture.py:1404
+#: capture.py:1474
 msgid "Traitement vidéo lancé en tâche de fond"
 msgstr "Videoverarbeitung im Hintergrund gestartet"
 
-#: capture.py:1431
+#: capture.py:1501
 msgid "Vidéo reçue et sauvegardée"
 msgstr "Video empfangen und gespeichert"
 
-#: capture.py:1447
+#: capture.py:1517
 msgid "Aucun fichier audio fourni"
 msgstr "Keine Audiodatei bereitgestellt"
 
-#: capture.py:1536 capture.py:1573
+#: capture.py:1606 capture.py:1643
 msgid "Flux vidéo inconnu"
 msgstr "Unbekannter Videostream"
 
-#: capture.py:1541
+#: capture.py:1611
 msgid "Fragment vidéo hors séquence"
 msgstr "Videofragment außerhalb der Sequenz"
 
-#: capture.py:1544
+#: capture.py:1614
 msgid "Fragment vidéo absent"
 msgstr "Videofragment fehlt"
 
@@ -647,14 +647,14 @@ msgstr "die Logs haben sich seit der Vorschau geändert: Starten Sie diese erneu
 msgid "Code GC"
 msgstr "GC-Code"
 
-#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:740
+#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:752
 #: templates/menu_data_parcours.html:32 templates/menu_data_parcours.html:264
 #: templates/menu_images.html:152 templates/stats_page.html:658
 #: templates/stats_page.html:732
 msgid "Nom"
 msgstr "Name"
 
-#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:774
+#: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:786
 #: static/js/ui.js:11717 templates/menu_data_parcours.html:257
 msgid "Type"
 msgstr "Typ"
@@ -744,22 +744,22 @@ msgstr "Beta-Fund"
 msgid "Premier log"
 msgstr "Erstes Log"
 
-#: poses_dataset.py:666 static/js/evolution_data.js:825 static/js/mapgl.js:4070
+#: poses_dataset.py:666 static/js/evolution_data.js:825 static/js/mapgl.js:4096
 #: static/js/poses_data.js:917 templates/menu_data_poses.html:83
 msgid "Active"
 msgstr "Aktiv"
 
-#: poses_dataset.py:667 static/js/mapgl.js:4070 static/js/poses_data.js:918
+#: poses_dataset.py:667 static/js/mapgl.js:4096 static/js/poses_data.js:918
 #: templates/menu_data_poses.html:84
 msgid "Désactivée"
 msgstr "Deaktiviert"
 
-#: poses_dataset.py:668 static/js/mapgl.js:4070 static/js/poses_data.js:919
+#: poses_dataset.py:668 static/js/mapgl.js:4096 static/js/poses_data.js:919
 #: templates/menu_data_poses.html:85
 msgid "Archivée"
 msgstr "Archiviert"
 
-#: settings_manager.py:3105
+#: settings_manager.py:3108
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
@@ -768,45 +768,45 @@ msgstr ""
 "Der Name „%(name)s“ enthält kein verwendbares Zeichen (mindestens ein "
 "Buchstabe oder eine Ziffer ist erforderlich)"
 
-#: blueprints/profiles.py:607 settings_manager.py:3145 settings_manager.py:3222
-#: settings_manager.py:3274
+#: blueprints/profiles.py:607 settings_manager.py:3148 settings_manager.py:3225
+#: settings_manager.py:3277
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr "Design „%(name)s“ nicht gefunden"
 
-#: settings_manager.py:3166
+#: settings_manager.py:3169
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr "Kein Design mit der UUID gefunden: %(uid)s"
 
-#: settings_manager.py:3202 settings_manager.py:3227
+#: settings_manager.py:3205 settings_manager.py:3230
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr "Ein Design mit dem Namen „%(name)s“ existiert bereits"
 
-#: settings_manager.py:3239
+#: settings_manager.py:3242
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr "Quelldesign „%(name)s“ nicht gefunden"
 
-#: settings_manager.py:3255
+#: settings_manager.py:3258
 msgid "Mode de thème inconnu"
 msgstr "Unbekannter Design-Modus"
 
-#: settings_manager.py:3258
+#: settings_manager.py:3261
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr "Das Design „%(name)s“ gehört bereits zu diesem Modus"
 
-#: settings_manager.py:3450
+#: settings_manager.py:3453
 msgid "Payload invalide"
 msgstr "Ungültige Nutzdaten"
 
-#: settings_manager.py:3453
+#: settings_manager.py:3456
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr "Ungültige Designdatei (Kennung fehlt)"
 
-#: settings_manager.py:3457
+#: settings_manager.py:3460
 msgid "Section 'profile' manquante"
 msgstr "Abschnitt „profile“ fehlt"
 
@@ -854,6 +854,26 @@ msgstr "Stil"
 #: templates/app.html:238 test_translations.py:32
 msgid "Animation"
 msgstr "Animation"
+
+#: video_chapters.py:86
+#, python-format
+msgid "Jour %(day)s — %(date)s"
+msgstr "Tag %(day)s — %(date)s"
+
+#: video_chapters.py:87
+#, python-format
+msgid "Jour %(day)s"
+msgstr "Tag %(day)s"
+
+#: video_chapters.py:89
+#, python-format
+msgid "Jours %(first)s à %(last)s — %(start)s → %(end)s"
+msgstr "Tage %(first)s bis %(last)s — %(start)s → %(end)s"
+
+#: video_chapters.py:91
+#, python-format
+msgid "Jours %(first)s à %(last)s"
+msgstr "Tage %(first)s bis %(last)s"
 
 #: blueprints/core.py:197
 msgid "Choisir fichier"
@@ -1429,7 +1449,7 @@ msgstr ""
 "✔ An MyGCFlow gesendet — Import läuft (${adv} Adventures, ${disc} "
 "Stationen)"
 
-#: blueprints/media.py:89
+#: blueprints/media.py:90
 msgid ""
 "Un assemblage vidéo est déjà en cours. Attendez sa fin avant d'en lancer "
 "un autre ou de relancer une capture (les deux utilisent le dossier "
@@ -1439,11 +1459,11 @@ msgstr ""
 "Sie eine weitere starten oder eine Aufnahme erneut starten (beide "
 "verwenden den Ordner captured/)."
 
-#: blueprints/media.py:179
+#: blueprints/media.py:182
 msgid "Assemblage vidéo lancé en tâche de fond"
 msgstr "Videozusammenstellung im Hintergrund gestartet"
 
-#: blueprints/media.py:208
+#: blueprints/media.py:211
 msgid ""
 "Un assemblage vidéo est en cours : le dossier captured/ ne peut pas être "
 "vidé maintenant."
@@ -1451,30 +1471,30 @@ msgstr ""
 "Eine Videozusammenstellung läuft: Der Ordner captured/ kann jetzt nicht "
 "geleert werden."
 
-#: blueprints/media.py:267 blueprints/media.py:298
+#: blueprints/media.py:270 blueprints/media.py:301
 msgid "Musique inconnue"
 msgstr "Unbekannte Musik"
 
-#: blueprints/media.py:269
+#: blueprints/media.py:272
 msgid "La musique choisie ne peut pas être retirée."
 msgstr "Die ausgewählte Musik kann nicht entfernt werden."
 
-#: blueprints/media.py:271
+#: blueprints/media.py:274
 msgid "Un export vidéo est en cours : réessayez une fois la vidéo terminée."
 msgstr ""
 "Ein Videoexport läuft: Versuchen Sie es erneut, sobald das Video fertig "
 "ist."
 
-#: blueprints/media.py:286
+#: blueprints/media.py:289
 #, python-format
 msgid "Un enchaînement compte de 2 à %(max)d morceaux."
 msgstr "Ein Medley umfasst 2 bis %(max)d Titel."
 
-#: blueprints/media.py:296 static/js/ui.js:12230
+#: blueprints/media.py:299 static/js/ui.js:12230
 msgid "Un des morceaux est introuvable sur le serveur."
 msgstr "Einer der Titel wurde auf dem Server nicht gefunden."
 
-#: blueprints/media.py:300
+#: blueprints/media.py:303
 msgid ""
 "Les morceaux n'ont pas pu être enchaînés : l'un d'eux est peut-être "
 "illisible."
@@ -1482,36 +1502,36 @@ msgstr ""
 "Die Titel konnten nicht aneinandergefügt werden: Einer davon ist "
 "möglicherweise nicht lesbar."
 
-#: blueprints/media.py:317 blueprints/media.py:329
+#: blueprints/media.py:320 blueprints/media.py:332
 msgid "Musique introuvable sur le serveur"
 msgstr "Musik auf dem Server nicht gefunden"
 
-#: blueprints/media.py:334 static/js/stats_page_video.js:717
+#: blueprints/media.py:337 static/js/stats_page_video.js:717
 #: static/js/stats_page_video.js:792 static/js/stats_page_video.js:1171
 msgid "Cette musique est illisible (format inconnu ou fichier endommagé)."
 msgstr "Diese Musik ist nicht lesbar (unbekanntes Format oder beschädigte Datei)."
 
-#: blueprints/media.py:456
+#: blueprints/media.py:459
 msgid "Indiquez un dossier."
 msgstr "Geben Sie einen Ordner an."
 
-#: blueprints/media.py:459
+#: blueprints/media.py:462
 msgid "Indiquez le chemin complet du dossier (par exemple D:\\Vidéos)."
 msgstr "Geben Sie den vollständigen Pfad des Ordners an (zum Beispiel D:\\Videos)."
 
-#: blueprints/media.py:466
+#: blueprints/media.py:469
 msgid "MyGCFlow ne peut pas écrire dans ce dossier."
 msgstr "MyGCFlow kann in diesen Ordner nicht schreiben."
 
-#: blueprints/media.py:494
+#: blueprints/media.py:497
 msgid "Choisir le dossier des vidéos"
 msgstr "Ordner für die Videos auswählen"
 
-#: blueprints/media.py:499
+#: blueprints/media.py:502
 msgid "Une fenêtre de choix du dossier est déjà ouverte."
 msgstr "Ein Fenster zur Ordnerauswahl ist bereits geöffnet."
 
-#: blueprints/media.py:503
+#: blueprints/media.py:506
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr "Die Ordnerauswahl ist nicht verfügbar: Geben Sie den Pfad ein."
 
@@ -1728,13 +1748,13 @@ msgstr ""
 "Diese Musik kann nicht abgespielt werden (nicht unterstütztes Format oder"
 " beschädigte Datei)."
 
-#: static/js/background_audio.js:121 static/js/mapgl.js:5810
+#: static/js/background_audio.js:121 static/js/mapgl.js:5861
 #: static/js/stats_page_video.js:991 static/js/ui.js:950 static/js/ui.js:1019
 #: static/js/ui.js:2375 static/js/ui.js:11788 static/js/ui.js:11868
 #: static/js/ui.js:12074 static/js/ui.js:12189 static/js/ui.js:12246
 #: static/js/ui.js:12272 static/js/ui.js:12331 static/js/ui.js:12339
 #: static/js/ui.js:12347 static/js/ui.js:12517 templates/guide.html:314
-#: templates/menu_animation.html:27 templates/menu_animation.html:384
+#: templates/menu_animation.html:27 templates/menu_animation.html:392
 #: templates/stats_page.html:829
 msgid "Musique"
 msgstr "Musik"
@@ -1759,7 +1779,7 @@ msgstr ""
 "${count} Kartenkachel(n) konnten während der Aufnahme nicht geladen "
 "werden: Das Video kann leere Bereiche enthalten."
 
-#: static/js/bdd.js:250 static/js/mapgl.js:7147
+#: static/js/bdd.js:250 static/js/mapgl.js:7204
 msgid "Terminé"
 msgstr "Fertig"
 
@@ -3601,7 +3621,7 @@ msgstr "${period} (läuft)"
 msgid "${period} (au ${date})"
 msgstr "${period} (Stand ${date})"
 
-#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:769
+#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:862
 #: static/js/parcours_tbar.mjs:69 static/js/parcours_tbar.mjs:142
 #, python-brace-format
 msgid "Jour ${n}"
@@ -3945,8 +3965,8 @@ msgid "Arrêtez l'animation avant de changer de base."
 msgstr "Stoppen Sie die Animation, bevor Sie die Datenbank wechseln."
 
 #: static/js/evolution_data.js:322 static/js/evolution_data.js:1412
-#: static/js/mapgl.js:5142 static/js/mapgl.js:5194 static/js/mapgl.js:5201
-#: static/js/mapgl.js:6358 static/js/notifications.js:425
+#: static/js/mapgl.js:5175 static/js/mapgl.js:5227 static/js/mapgl.js:5234
+#: static/js/mapgl.js:6414 static/js/notifications.js:425
 msgid "Attention"
 msgstr "Achtung"
 
@@ -4752,7 +4772,7 @@ msgstr "Maximal vier Bilder."
 msgid "Attendez la fin de l'enregistrement pour ajouter une image."
 msgstr "Warten Sie das Ende der Aufnahme ab, um ein Bild hinzuzufügen."
 
-#: static/js/images_ui.js:562 static/js/video_ready.js:31
+#: static/js/images_ui.js:562 static/js/video_ready.js:36
 #, python-brace-format
 msgid "${n} Mo"
 msgstr "${n} MB"
@@ -4917,12 +4937,12 @@ msgstr "(fehlt)"
 msgid "Apparition planifiée"
 msgstr "Geplantes Erscheinen"
 
-#: static/js/images_ui.js:1353 static/js/parcours_stops_panel.mjs:555
+#: static/js/images_ui.js:1353 static/js/parcours_stops_panel.mjs:567
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:577
 msgid "Monter"
 msgstr "Nach oben"
 
-#: static/js/images_ui.js:1354 static/js/parcours_stops_panel.mjs:558
+#: static/js/images_ui.js:1354 static/js/parcours_stops_panel.mjs:570
 #: static/js/stats_page_video.js:342 static/js/stats_ui.js:578
 msgid "Descendre"
 msgstr "Nach unten"
@@ -5660,145 +5680,163 @@ msgstr "${found}/${total} Stationen gefunden"
 msgid "Position approximative (centre de l’Adventure)"
 msgstr "Ungefähre Position (Mitte der Adventure)"
 
-#: static/js/mapgl.js:4065 static/js/poses_data.js:956
+#: static/js/mapgl.js:4091 static/js/poses_data.js:956
 #, python-brace-format
 msgid "Publiée le ${date}"
 msgstr "Veröffentlicht am ${date}"
 
-#: static/js/mapgl.js:4066 static/js/poses_data.js:957
+#: static/js/mapgl.js:4092 static/js/poses_data.js:957
 #, python-brace-format
 msgid "Posée le ${date}"
 msgstr "Gelegt am ${date}"
 
-#: static/js/mapgl.js:4067 static/js/poses_data.js:958
+#: static/js/mapgl.js:4093 static/js/poses_data.js:958
 #, python-brace-format
 msgid "Trouvée avant sa publication le ${date}"
 msgstr "Gefunden vor ihrer Veröffentlichung am ${date}"
 
-#: static/js/mapgl.js:4068 static/js/poses_data.js:959
+#: static/js/mapgl.js:4094 static/js/poses_data.js:959
 #, python-brace-format
 msgid "Premier log le ${date}"
 msgstr "Erster Log am ${date}"
 
-#: static/js/mapgl.js:4081
+#: static/js/mapgl.js:4107
 #, python-brace-format
 msgid "Dernière maintenance le ${date}"
 msgstr "Letzte Wartung am ${date}"
 
-#: static/js/mapgl.js:4082
+#: static/js/mapgl.js:4108
 msgid "Aucune maintenance enregistrée"
 msgstr "Keine Wartung aufgezeichnet"
 
-#: static/js/mapgl.js:4088
+#: static/js/mapgl.js:4114
 msgid "Ma cache"
 msgstr "Mein Cache"
 
-#: static/js/mapgl.js:4718
+#: static/js/mapgl.js:4744
 msgid "Aucune vidéo n'a été créée."
 msgstr "Es wurde kein Video erstellt."
 
-#: static/js/mapgl.js:4718
+#: static/js/mapgl.js:4744
 msgid "Arrêt de l'enregistrement"
 msgstr "Aufnahme wird beendet"
 
-#: static/js/mapgl.js:5133
+#: static/js/mapgl.js:5166
 msgid "Capture rapide non supportée, bascule en mode image par image."
 msgstr "Schnelle Aufnahme nicht unterstützt, Wechsel in den Einzelbildmodus."
 
-#: static/js/mapgl.js:5133 static/js/mapgl.js:6736
+#: static/js/mapgl.js:5166 static/js/mapgl.js:6793
 msgid "Compatibilité"
 msgstr "Kompatibilität"
 
-#: static/js/mapgl.js:5142
+#: static/js/mapgl.js:5175
 msgid "Données en cours de chargement. Veuillez réessayer."
 msgstr "Daten werden geladen. Bitte versuchen Sie es erneut."
 
-#: static/js/mapgl.js:5162
+#: static/js/mapgl.js:5195
 msgid "Préparation de l'enregistrement..."
 msgstr "Aufnahme wird vorbereitet..."
 
-#: static/js/mapgl.js:5162
+#: static/js/mapgl.js:5195
 msgid "Nettoyage initial"
 msgstr "Erste Bereinigung"
 
-#: static/js/mapgl.js:5186
+#: static/js/mapgl.js:5219
 msgid "Un assemblage vidéo est en cours. Réessayez à la fin du traitement."
 msgstr ""
 "Eine Videozusammenstellung läuft. Versuchen Sie es nach Abschluss der "
 "Verarbeitung erneut."
 
-#: static/js/mapgl.js:5187
+#: static/js/mapgl.js:5220
 msgid "Enregistrement annulé"
 msgstr "Aufnahme abgebrochen"
 
-#: static/js/mapgl.js:5192
+#: static/js/mapgl.js:5225
 msgid "Répertoire d’images nettoyé."
 msgstr "Bilderverzeichnis bereinigt."
 
-#: static/js/mapgl.js:5192
+#: static/js/mapgl.js:5225
 msgid "Préparation"
 msgstr "Vorbereitung"
 
-#: static/js/mapgl.js:5194
+#: static/js/mapgl.js:5227
 msgid "Nettoyage initial impossible. Poursuite de l'enregistrement."
 msgstr "Erste Bereinigung nicht möglich. Die Aufnahme wird fortgesetzt."
 
-#: static/js/mapgl.js:5201
+#: static/js/mapgl.js:5234
 msgid "Erreur nettoyage initial. Poursuite."
 msgstr "Fehler bei der ersten Bereinigung. Fortfahren."
 
-#: static/js/mapgl.js:5394
+#: static/js/mapgl.js:5271
+#, python-brace-format
+msgid ""
+"${n} photos du parcours n’ont pas pu être chargées — elles peuvent "
+"manquer dans la vidéo."
+msgstr ""
+"${n} Fotos der Tour konnten nicht geladen werden — sie fehlen "
+"möglicherweise im Video."
+
+#: static/js/mapgl.js:5272
+#, python-brace-format
+msgid ""
+"${n} photo du parcours n’a pas pu être chargée — elle peut manquer dans "
+"la vidéo."
+msgstr ""
+"${n} Foto der Tour konnte nicht geladen werden — es fehlt möglicherweise "
+"im Video."
+
+#: static/js/mapgl.js:5273 static/js/mapgl.js:5860 static/js/mapgl.js:6593
+#: static/js/mapgl.js:6900 static/js/mapgl.js:6918 static/js/mapgl.js:7327
+#: static/js/mapgl.js:7438 static/js/mapgl.js:7442
+msgid "Enregistrement"
+msgstr "Aufnahme"
+
+#: static/js/mapgl.js:5445
 msgid "0% | préparation..."
 msgstr "0% | Vorbereitung..."
 
-#: static/js/mapgl.js:5403 static/js/mapgl.js:6370
+#: static/js/mapgl.js:5454 static/js/mapgl.js:6426
 msgid " ♪ La musique sera intégrée automatiquement après la capture."
 msgstr " ♪ Die Musik wird nach der Aufnahme automatisch eingefügt."
 
-#: static/js/mapgl.js:5410
+#: static/js/mapgl.js:5461
 msgid "Capture en cours – Ne pas bouger la fenêtre"
 msgstr "Aufnahme läuft – Fenster nicht bewegen"
 
-#: static/js/mapgl.js:5411
+#: static/js/mapgl.js:5462
 msgid "Préparation de la capture..."
 msgstr "Aufnahme wird vorbereitet..."
 
-#: static/js/mapgl.js:5443
+#: static/js/mapgl.js:5494
 msgid "Capture en pause : revenez sur cet onglet pour la poursuivre."
 msgstr "Aufnahme pausiert: Kehren Sie zu diesem Tab zurück, um sie fortzusetzen."
 
-#: static/js/mapgl.js:5443 static/js/mapgl.js:6969
+#: static/js/mapgl.js:5494 static/js/mapgl.js:7026
 msgid "Onglet masqué"
 msgstr "Tab ausgeblendet"
 
-#: static/js/mapgl.js:5554
+#: static/js/mapgl.js:5605
 msgid "Le rendu initial de la carte n'a pas abouti (timeout)"
 msgstr "Das erste Rendern der Karte ist fehlgeschlagen (Timeout)"
 
-#: static/js/mapgl.js:5681
+#: static/js/mapgl.js:5732
 msgid "Nettoyage en cours..."
 msgstr "Bereinigung läuft..."
 
-#: static/js/mapgl.js:5781
+#: static/js/mapgl.js:5832
 msgid "erreur inconnue"
 msgstr "unbekannter Fehler"
 
-#: static/js/mapgl.js:5783
+#: static/js/mapgl.js:5834
 #, python-brace-format
 msgid "La capture a été interrompue suite à une erreur : ${message}"
 msgstr "Die Aufnahme wurde aufgrund eines Fehlers unterbrochen: ${message}"
 
-#: static/js/mapgl.js:5785
+#: static/js/mapgl.js:5836
 msgid "Capture interrompue"
 msgstr "Aufnahme unterbrochen"
 
-#: static/js/mapgl.js:5809 static/js/mapgl.js:6536 static/js/mapgl.js:6843
-#: static/js/mapgl.js:6861 static/js/mapgl.js:7270 static/js/mapgl.js:7376
-#: static/js/mapgl.js:7380
-msgid "Enregistrement"
-msgstr "Aufnahme"
-
-#: static/js/mapgl.js:5822
+#: static/js/mapgl.js:5873
 msgid ""
 "La musique n'a pas pu être envoyée au serveur : la vidéo a été créée sans"
 " musique."
@@ -5806,7 +5844,7 @@ msgstr ""
 "Die Musik konnte nicht an den Server gesendet werden: Das Video wurde "
 "ohne Musik erstellt."
 
-#: static/js/mapgl.js:5826
+#: static/js/mapgl.js:5877
 msgid ""
 "La musique n'a pas pu être ajoutée à la vidéo : elle a été créée sans "
 "musique."
@@ -5814,23 +5852,23 @@ msgstr ""
 "Die Musik konnte nicht zum Video hinzugefügt werden: Es wurde ohne Musik "
 "erstellt."
 
-#: static/js/mapgl.js:5864
+#: static/js/mapgl.js:5915
 msgid "task_id manquant"
 msgstr "task_id fehlt"
 
-#: static/js/mapgl.js:5865
+#: static/js/mapgl.js:5916
 msgid "Délai d'assemblage dépassé"
 msgstr "Zeitlimit für die Zusammenstellung überschritten"
 
-#: static/js/mapgl.js:5878
+#: static/js/mapgl.js:5929
 msgid "Tâche introuvable sur le serveur (purgée ou serveur redémarré)"
 msgstr "Aufgabe auf dem Server nicht gefunden (gelöscht oder Server neu gestartet)"
 
-#: static/js/mapgl.js:5892
+#: static/js/mapgl.js:5943
 msgid "Tâche échouée"
 msgstr "Aufgabe fehlgeschlagen"
 
-#: static/js/mapgl.js:5899
+#: static/js/mapgl.js:5950
 #, python-brace-format
 msgid ""
 "Suivi de la tâche interrompu après ${count} erreurs consécutives : "
@@ -5839,68 +5877,68 @@ msgstr ""
 "Aufgabenverfolgung nach ${count} aufeinanderfolgenden Fehlern "
 "abgebrochen: ${detail}"
 
-#: static/js/mapgl.js:6011
+#: static/js/mapgl.js:6062
 msgid "Envoi des dernières images..."
 msgstr "Letzte Bilder werden gesendet..."
 
-#: static/js/mapgl.js:6106 static/js/ui.js:9199
+#: static/js/mapgl.js:6157 static/js/ui.js:9199
 msgid "Assemblage en cours"
 msgstr "Zusammenstellung läuft"
 
-#: static/js/mapgl.js:6106
+#: static/js/mapgl.js:6157
 msgid "Création de la vidéo à partir des images..."
 msgstr "Video wird aus den Bildern erstellt..."
 
-#: static/js/mapgl.js:6190
+#: static/js/mapgl.js:6246
 msgid "Impossible de lancer l'assemblage vidéo"
 msgstr "Die Videozusammenstellung konnte nicht gestartet werden"
 
-#: static/js/mapgl.js:6197
+#: static/js/mapgl.js:6253
 msgid "Création de la vidéo..."
 msgstr "Video wird erstellt..."
 
-#: static/js/mapgl.js:6204
+#: static/js/mapgl.js:6260
 msgid "Vidéo créée. Nettoyage des images..."
 msgstr "Video erstellt. Bilder werden bereinigt..."
 
-#: static/js/mapgl.js:6205
+#: static/js/mapgl.js:6261
 msgid "Nettoyage en cours"
 msgstr "Bereinigung läuft"
 
-#: static/js/mapgl.js:6205
+#: static/js/mapgl.js:6261
 msgid "Vidéo créée avec succès. Nettoyage des images..."
 msgstr "Video erfolgreich erstellt. Bilder werden bereinigt..."
 
-#: static/js/mapgl.js:6222
+#: static/js/mapgl.js:6278
 msgid "Nettoyage terminé"
 msgstr "Bereinigung abgeschlossen"
 
-#: static/js/mapgl.js:6236
+#: static/js/mapgl.js:6292
 #, python-brace-format
 msgid "Erreur lors du traitement automatique: ${message}"
 msgstr "Fehler bei der automatischen Verarbeitung: ${message}"
 
-#: static/js/mapgl.js:6238
+#: static/js/mapgl.js:6294
 msgid "Erreur chaîne"
 msgstr "Fehler in der Verarbeitungskette"
 
-#: static/js/mapgl.js:6358
+#: static/js/mapgl.js:6414
 msgid "Données en cours de chargement. Réessayez."
 msgstr "Daten werden geladen. Versuchen Sie es erneut."
 
-#: static/js/mapgl.js:6471
+#: static/js/mapgl.js:6527
 msgid "Enregistrement en cours – Ne pas bouger la fenêtre"
 msgstr "Aufnahme läuft – Fenster nicht bewegen"
 
-#: static/js/mapgl.js:6472
+#: static/js/mapgl.js:6528
 msgid "Démarrage de la capture..."
 msgstr "Aufnahme wird gestartet..."
 
-#: static/js/mapgl.js:6536
+#: static/js/mapgl.js:6593
 msgid "Erreur de la capture rapide, bascule en mode image par image."
 msgstr "Fehler bei der Schnellaufnahme, Wechsel in den Bild-für-Bild-Modus."
 
-#: static/js/mapgl.js:6735
+#: static/js/mapgl.js:6792
 #, python-brace-format
 msgid ""
 "Format ${wanted} non pris en charge par ce navigateur : enregistrement en"
@@ -5909,15 +5947,15 @@ msgstr ""
 "Format ${wanted} wird von diesem Browser nicht unterstützt: Aufnahme in "
 "${used}."
 
-#: static/js/mapgl.js:6797
+#: static/js/mapgl.js:6854
 msgid "Résolution réduite aux capacités du navigateur."
 msgstr "Auflösung an die Fähigkeiten des Browsers angepasst."
 
-#: static/js/mapgl.js:6843
+#: static/js/mapgl.js:6900
 msgid "La copie de la vidéo a échoué. Arrêt de l'enregistrement."
 msgstr "Das Kopieren des Videos ist fehlgeschlagen. Die Aufnahme wird beendet."
 
-#: static/js/mapgl.js:6861
+#: static/js/mapgl.js:6918
 msgid ""
 "Erreur de l'encodeur vidéo. Arrêt de l'enregistrement et récupération de "
 "la séquence déjà capturée."
@@ -5925,7 +5963,7 @@ msgstr ""
 "Fehler des Video-Encoders. Die Aufnahme wird beendet und die bereits "
 "aufgenommene Sequenz wird wiederhergestellt."
 
-#: static/js/mapgl.js:6969
+#: static/js/mapgl.js:7026
 msgid ""
 "Enregistrement en pause : revenez sur cet onglet pour reprendre la "
 "capture."
@@ -5933,94 +5971,94 @@ msgstr ""
 "Aufnahme pausiert: Kehren Sie zu diesem Tab zurück, um die Aufnahme "
 "fortzusetzen."
 
-#: static/js/mapgl.js:7171
+#: static/js/mapgl.js:7228
 msgid "Copie vers le dossier vidéo échouée"
 msgstr "Kopieren in den Videoordner fehlgeschlagen"
 
-#: static/js/mapgl.js:7195
+#: static/js/mapgl.js:7252
 msgid "Finalisation"
 msgstr "Fertigstellung"
 
-#: static/js/mapgl.js:7195
+#: static/js/mapgl.js:7252
 msgid "Écriture de la durée de la vidéo..."
 msgstr "Videodauer wird geschrieben..."
 
-#: static/js/mapgl.js:7211
+#: static/js/mapgl.js:7268
 msgid "Ajout audio"
 msgstr "Audio hinzufügen"
 
-#: static/js/mapgl.js:7211
+#: static/js/mapgl.js:7268
 msgid "Fusion de la piste audio avec la vidéo en cours..."
 msgstr "Audiospur wird mit dem Video zusammengeführt..."
 
-#: static/js/mapgl.js:7255 static/js/video_postprocess.js:31
+#: static/js/mapgl.js:7312 static/js/video_postprocess.js:31
 msgid "Normalisation"
 msgstr "Normalisierung"
 
-#: static/js/mapgl.js:7255
+#: static/js/mapgl.js:7312
 #, python-brace-format
 msgid "Accélération x${applicable} pour lecture à vitesse normale..."
 msgstr ""
 "Beschleunigung x${applicable} für Wiedergabe mit normaler "
 "Geschwindigkeit..."
 
-#: static/js/mapgl.js:7270
+#: static/js/mapgl.js:7327
 msgid "La vidéo n'a pas pu être assemblée."
 msgstr "Das Video konnte nicht zusammengestellt werden."
 
-#: static/js/mapgl.js:7279
+#: static/js/mapgl.js:7336
 msgid "Traitement serveur"
 msgstr "Serververarbeitung"
 
-#: static/js/mapgl.js:7279
+#: static/js/mapgl.js:7336
 msgid "Envoi de la vidéo au serveur..."
 msgstr "Video wird an den Server gesendet..."
 
-#: static/js/mapgl.js:7324 static/js/mapgl.js:7331
+#: static/js/mapgl.js:7386 static/js/mapgl.js:7393
 msgid "Traitement serveur..."
 msgstr "Serververarbeitung..."
 
-#: static/js/mapgl.js:7329
+#: static/js/mapgl.js:7391
 msgid "Traitement serveur non démarré"
 msgstr "Serververarbeitung nicht gestartet"
 
-#: static/js/mapgl.js:7376
+#: static/js/mapgl.js:7438
 msgid "L'enregistrement a été interrompu : la copie des données a échoué."
 msgstr ""
 "Die Aufnahme wurde unterbrochen: Das Kopieren der Daten ist "
 "fehlgeschlagen."
 
-#: static/js/mapgl.js:7380
+#: static/js/mapgl.js:7442
 msgid "Traitement serveur indisponible, repli local..."
 msgstr "Serververarbeitung nicht verfügbar, lokaler Fallback..."
 
-#: static/js/mapgl.js:7436
+#: static/js/mapgl.js:7498
 msgid "Élément non trouvé"
 msgstr "Element nicht gefunden"
 
-#: static/js/mapgl.js:7457
+#: static/js/mapgl.js:7519
 msgid "Timeout rendercomplete (5s) : rendu carte bloqué"
 msgstr "Timeout rendercomplete (5 s): Karten-Rendering blockiert"
 
-#: static/js/mapgl.js:7478
+#: static/js/mapgl.js:7540
 msgid "Aucun canvas trouvé dans la carte"
 msgstr "Kein Canvas in der Karte gefunden"
 
-#: static/js/mapgl.js:7546
+#: static/js/mapgl.js:7608
 msgid "Échec conversion canvas en blob"
 msgstr "Konvertierung des Canvas in Blob fehlgeschlagen"
 
-#: static/js/mapgl.js:8390 static/js/mapgl.js:8482
+#: static/js/mapgl.js:8452 static/js/mapgl.js:8544
 msgid "Aucun déplacement à tracer pour cette sélection."
 msgstr "Keine Bewegung für diese Auswahl zu zeichnen."
 
-#: static/js/mapgl.js:8390 static/js/mapgl.js:8392 static/js/mapgl.js:8482
+#: static/js/mapgl.js:8452 static/js/mapgl.js:8454 static/js/mapgl.js:8544
 #: templates/guide.html:233 templates/menu_style.html:86
 #: templates/menu_style.html:90
 msgid "Trajet"
 msgstr "Route"
 
-#: static/js/mapgl.js:8392
+#: static/js/mapgl.js:8454
 msgid ""
 "Journées très chargées : regroupement automatique appliqué sur le rayon "
 "choisi."
@@ -6028,7 +6066,7 @@ msgstr ""
 "Sehr volle Tage: automatische Gruppierung auf den gewählten Radius "
 "angewendet."
 
-#: static/js/mapgl.js:9051 static/js/mapgl.js:9351
+#: static/js/mapgl.js:9113 static/js/mapgl.js:9413
 msgid ""
 "Aucune cache visible à l’écran : déplacez la carte au-dessus de vos "
 "points."
@@ -6036,16 +6074,16 @@ msgstr ""
 "Kein Cache auf dem Bildschirm sichtbar: Bewegen Sie die Karte über Ihre "
 "Punkte."
 
-#: static/js/mapgl.js:9051 templates/guide.html:683
+#: static/js/mapgl.js:9113 templates/guide.html:683
 #: templates/menu_style.html:82
 msgid "Pseudos"
 msgstr "Benutzernamen"
 
-#: static/js/mapgl.js:9347
+#: static/js/mapgl.js:9409
 msgid "Choisissez d’abord une forme de flash."
 msgstr "Wählen Sie zuerst eine Flash-Form."
 
-#: static/js/mapgl.js:9347 static/js/mapgl.js:9351 templates/guide.html:229
+#: static/js/mapgl.js:9409 static/js/mapgl.js:9413 templates/guide.html:229
 #: templates/menu_style.html:79
 msgid "Flash"
 msgstr "Flash"
@@ -6063,7 +6101,7 @@ msgstr "Flash"
 #: templates/menu_style.html:410 templates/modal_evolution.html:9
 #: templates/modal_evolution.html:39 templates/modal_evolution.html:78
 #: templates/modal_first_use.html:33 templates/modal_infos.html:11
-#: templates/modal_video_ready.html:11 templates/modal_video_ready.html:37
+#: templates/modal_video_ready.html:11 templates/modal_video_ready.html:50
 #: templates/stats_page.html:158 templates/stats_page.html:261
 #: templates/stats_page.html:284 templates/stats_page.html:559
 #: templates/stats_page.html:594 templates/stats_page.html:603
@@ -6176,9 +6214,9 @@ msgstr "Aktiv, wenn eigene Caches angezeigt werden"
 msgid "Arrêtez la lecture avant d’ajuster le parcours."
 msgstr "Beenden Sie die Wiedergabe, bevor Sie die Tour anpassen."
 
-#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:379
-#: static/js/parcours_data.js:776 static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:89 static/js/parcours_upload.mjs:120
+#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:395
+#: static/js/parcours_data.js:943 static/js/parcours_photos_panel.mjs:539
+#: static/js/parcours_playback_ui.mjs:96 static/js/parcours_upload.mjs:120
 #: static/js/parcours_upload.mjs:134 static/js/parcours_upload.mjs:164
 #: templates/_app_header.html:29 templates/_app_header.html:31
 #: templates/_scope_badges.html:43 templates/app.html:41
@@ -6228,23 +6266,31 @@ msgstr "${count} Cache-Seiten hinzugefügt oder aktualisiert."
 msgid "Compléter depuis geocaching.com"
 msgstr "Von geocaching.com ergänzen"
 
-#: static/js/parcours_data.js:379
+#: static/js/parcours_data.js:395
 msgid "Le parcours s’ouvrira à la fin de l’animation."
 msgstr "Die Tour wird nach dem Ende der Animation geöffnet."
 
-#: static/js/parcours_data.js:732
+#: static/js/parcours_data.js:745 static/js/parcours_stops_panel.mjs:560
+msgid "Lire depuis ici"
+msgstr "Ab hier abspielen"
+
+#: static/js/parcours_data.js:833
+msgid "Reprendre le suivi"
+msgstr "Verfolgung fortsetzen"
+
+#: static/js/parcours_data.js:892
 msgid "Itinéraires © contributeurs OpenStreetMap, openrouteservice"
 msgstr "Routen © OpenStreetMap-Mitwirkende, openrouteservice"
 
-#: static/js/parcours_data.js:733
+#: static/js/parcours_data.js:893
 msgid "Itinéraires © contributeurs OpenStreetMap, FOSSGIS"
 msgstr "Routen © OpenStreetMap-Mitwirkende, FOSSGIS"
 
-#: static/js/parcours_data.js:776
+#: static/js/parcours_data.js:943
 msgid "Les réglages de lecture n’ont pas pu être enregistrés."
 msgstr "Wiedergabeeinstellungen konnten nicht gespeichert werden."
 
-#: static/js/parcours_data.js:1014
+#: static/js/parcours_data.js:1181
 msgid ""
 "Annuler tous les ajustements de ce parcours (ordre, heures, journées, "
 "exclusions) ? Les lieux posés sont gardés."
@@ -6252,11 +6298,11 @@ msgstr ""
 "Alle Anpassungen dieser Tour rückgängig machen (Reihenfolge, Uhrzeiten, "
 "Tage, Ausschlüsse)? Gesetzte Orte bleiben erhalten."
 
-#: static/js/parcours_data.js:1015
+#: static/js/parcours_data.js:1182
 msgid "Annuler les ajustements"
 msgstr "Anpassungen rückgängig machen"
 
-#: static/js/parcours_data.js:1018
+#: static/js/parcours_data.js:1185
 msgid "Tout annuler"
 msgstr "Alles rückgängig machen"
 
@@ -6277,11 +6323,11 @@ msgstr "${n} Stationen"
 msgid "${n} étape"
 msgstr "${n} Station"
 
-#: static/js/parcours_labels.mjs:80 static/js/parcours_stops_panel.mjs:692
+#: static/js/parcours_labels.mjs:80 static/js/parcours_stops_panel.mjs:704
 msgid "à vélo"
 msgstr "mit dem Fahrrad"
 
-#: static/js/parcours_labels.mjs:81 static/js/parcours_stops_panel.mjs:692
+#: static/js/parcours_labels.mjs:81 static/js/parcours_stops_panel.mjs:704
 msgid "en voiture"
 msgstr "mit dem Auto"
 
@@ -6289,7 +6335,7 @@ msgstr "mit dem Auto"
 msgid "en avion"
 msgstr "mit dem Flugzeug"
 
-#: static/js/parcours_labels.mjs:83 static/js/parcours_stops_panel.mjs:692
+#: static/js/parcours_labels.mjs:83 static/js/parcours_stops_panel.mjs:704
 msgid "à pied"
 msgstr "zu Fuß"
 
@@ -6313,7 +6359,7 @@ msgstr "Unterkunft"
 msgid "ravitaillement"
 msgstr "Versorgung"
 
-#: static/js/parcours_labels.mjs:109 static/js/parcours_stops_panel.mjs:462
+#: static/js/parcours_labels.mjs:109 static/js/parcours_stops_panel.mjs:468
 #: templates/menu_data_parcours.html:288
 msgid "Parking"
 msgstr "Parkplatz"
@@ -6343,12 +6389,12 @@ msgstr "Benutzerdefiniert…"
 msgid "Autre"
 msgstr "Sonstiges"
 
-#: static/js/parcours_labels.mjs:133 static/js/parcours_stops_panel.mjs:778
+#: static/js/parcours_labels.mjs:133 static/js/parcours_stops_panel.mjs:790
 #: templates/menu_data_evolution.html:18
 msgid "Base"
 msgstr "Datenbank"
 
-#: static/js/parcours_labels.mjs:134 static/js/parcours_stops_panel.mjs:778
+#: static/js/parcours_labels.mjs:134 static/js/parcours_stops_panel.mjs:790
 msgid "Lieu"
 msgstr "Ort"
 
@@ -6380,7 +6426,7 @@ msgstr "kürzester Umweg"
 msgid "heure épinglée"
 msgstr "festgelegte Uhrzeit"
 
-#: static/js/parcours_labels.mjs:149 static/js/parcours_stops_panel.mjs:234
+#: static/js/parcours_labels.mjs:149 static/js/parcours_stops_panel.mjs:240
 msgid "ordre manuel"
 msgstr "manuelle Reihenfolge"
 
@@ -6683,7 +6729,7 @@ msgid "Décalage en minutes"
 msgstr "Korrektur in Minuten"
 
 #: static/js/parcours_photos_panel.mjs:228
-#: static/js/parcours_stops_panel.mjs:666
+#: static/js/parcours_stops_panel.mjs:678
 msgid "min"
 msgstr "Min."
 
@@ -6717,7 +6763,7 @@ msgid "Nom du lieu"
 msgstr "Name des Orts"
 
 #: static/js/parcours_photos_panel.mjs:330
-#: static/js/parcours_stops_panel.mjs:466
+#: static/js/parcours_stops_panel.mjs:472
 msgid "Créer ce lieu"
 msgstr "Diesen Ort anlegen"
 
@@ -6756,7 +6802,7 @@ msgid "Ouvrir l’aperçu en pause sur cette photo"
 msgstr "Vorschau pausiert bei diesem Foto öffnen"
 
 #: static/js/parcours_photos_panel.mjs:417
-#: static/js/parcours_stops_panel.mjs:871 static/js/stats_page_cards.js:636
+#: static/js/parcours_stops_panel.mjs:883 static/js/stats_page_cards.js:636
 #: static/js/stats_page_links.js:277 static/js/stats_page_links.js:325
 #: static/js/stats_page_links.js:344
 msgid "Voir sur la carte"
@@ -6780,11 +6826,11 @@ msgid "Glissez sur la photo pour choisir la partie gardée."
 msgstr "Ziehen Sie auf dem Foto, um den behaltenen Teil zu wählen."
 
 #: static/js/parcours_photos_panel.mjs:539
-#: static/js/parcours_playback_ui.mjs:89 static/js/poses_data.js:131
+#: static/js/parcours_playback_ui.mjs:96 static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr "Die Einstellung wird am Ende der Animation angewendet."
 
-#: static/js/parcours_place_form.mjs:114 static/js/parcours_stops_panel.mjs:802
+#: static/js/parcours_place_form.mjs:114 static/js/parcours_stops_panel.mjs:814
 msgid "Toutes les journées"
 msgstr "Alle Tage"
 
@@ -6793,24 +6839,24 @@ msgstr "Alle Tage"
 msgid "Icône ${icon}"
 msgstr "Symbol ${icon}"
 
-#: static/js/parcours_plan.mjs:370 static/js/parcours_stops_panel.mjs:625
+#: static/js/parcours_plan.mjs:370 static/js/parcours_stops_panel.mjs:637
 #: templates/menu_informations.html:72
 msgid "Heure"
 msgstr "Uhrzeit"
 
-#: static/js/parcours_plan.mjs:373 static/js/parcours_stops_panel.mjs:632
+#: static/js/parcours_plan.mjs:373 static/js/parcours_stops_panel.mjs:644
 msgid "Épingler cette heure"
 msgstr "Diese Uhrzeit festlegen"
 
-#: static/js/parcours_plan.mjs:374 static/js/parcours_stops_panel.mjs:633
+#: static/js/parcours_plan.mjs:374 static/js/parcours_stops_panel.mjs:645
 msgid "Épingler"
 msgstr "Festlegen"
 
-#: static/js/parcours_plan.mjs:382 static/js/parcours_stops_panel.mjs:637
+#: static/js/parcours_plan.mjs:382 static/js/parcours_stops_panel.mjs:649
 msgid "Retirer l’heure épinglée"
 msgstr "Festgelegte Uhrzeit entfernen"
 
-#: static/js/parcours_plan.mjs:393 static/js/parcours_stops_panel.mjs:890
+#: static/js/parcours_plan.mjs:393 static/js/parcours_stops_panel.mjs:902
 msgid "Exclure du parcours"
 msgstr "Aus der Tour ausschließen"
 
@@ -6826,14 +6872,14 @@ msgstr "Zurück zur Position des Caches"
 msgid "Position d’origine"
 msgstr "Ursprüngliche Position"
 
-#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:895
-#: static/js/parcours_stops_panel.mjs:896 templates/menu_data_evolution.html:34
+#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:907
+#: static/js/parcours_stops_panel.mjs:908 templates/menu_data_evolution.html:34
 #: templates/modal_evolution.html:74
 msgid "Supprimer la base"
 msgstr "Datenbank löschen"
 
-#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:895
-#: static/js/parcours_stops_panel.mjs:896
+#: static/js/parcours_plan.mjs:403 static/js/parcours_stops_panel.mjs:907
+#: static/js/parcours_stops_panel.mjs:908
 msgid "Supprimer le lieu"
 msgstr "Ort löschen"
 
@@ -6869,12 +6915,21 @@ msgstr "Hier einen Ort setzen"
 msgid "Poser une base ici"
 msgstr "Hier eine Basis setzen"
 
-#: static/js/parcours_play.mjs:781
+#: static/js/parcours_play.mjs:856
+#, python-brace-format
+msgid "${n} jours plus tard · ${date}"
+msgstr "${n} Tage später · ${date}"
+
+#: static/js/parcours_play.mjs:880 static/js/parcours_play.mjs:897
 #, python-brace-format
 msgid "${n} journées"
 msgstr "${n} Tage"
 
-#: static/js/parcours_play.mjs:782 static/js/parcours_tbar.mjs:92
+#: static/js/parcours_play.mjs:882
+msgid "Le parcours"
+msgstr "Die Tour"
+
+#: static/js/parcours_play.mjs:898 static/js/parcours_tbar.mjs:92
 msgid "Fin du parcours"
 msgstr "Ende der Tour"
 
@@ -6962,103 +7017,107 @@ msgstr "Tag aufklappen"
 msgid "Replier la journée"
 msgstr "Tag zuklappen"
 
-#: static/js/parcours_stops_panel.mjs:236
+#: static/js/parcours_stops_panel.mjs:233
+msgid "Lire depuis cette journée"
+msgstr "Ab diesem Tag abspielen"
+
+#: static/js/parcours_stops_panel.mjs:242
 msgid "Revenir à l’ordre automatique"
 msgstr "Zurück zur automatischen Reihenfolge"
 
-#: static/js/parcours_stops_panel.mjs:236
+#: static/js/parcours_stops_panel.mjs:242
 msgid "Ordre automatique"
 msgstr "Automatische Reihenfolge"
 
-#: static/js/parcours_stops_panel.mjs:251
+#: static/js/parcours_stops_panel.mjs:257
 msgid "Aucune étape ce jour-là"
 msgstr "An diesem Tag keine Stationen"
 
-#: static/js/parcours_stops_panel.mjs:449
+#: static/js/parcours_stops_panel.mjs:455
 msgid "1 parking connu pour cette journée"
 msgstr "1 bekannter Parkplatz für diesen Tag"
 
-#: static/js/parcours_stops_panel.mjs:450
+#: static/js/parcours_stops_panel.mjs:456
 #, python-brace-format
 msgid "${n} parkings connus pour cette journée"
 msgstr "${n} bekannte Parkplätze für diesen Tag"
 
-#: static/js/parcours_stops_panel.mjs:463
+#: static/js/parcours_stops_panel.mjs:469
 #, python-brace-format
 msgid "pour ${caches}"
 msgstr "für ${caches}"
 
-#: static/js/parcours_stops_panel.mjs:571
+#: static/js/parcours_stops_panel.mjs:583
 msgid "Glisser pour réordonner"
 msgstr "Zum Ändern der Reihenfolge ziehen"
 
-#: static/js/parcours_stops_panel.mjs:592
+#: static/js/parcours_stops_panel.mjs:604
 msgid "exclue du parcours"
 msgstr "aus der Tour ausgeschlossen"
 
-#: static/js/parcours_stops_panel.mjs:595
+#: static/js/parcours_stops_panel.mjs:607
 msgid "Réintégrer"
 msgstr "Wieder aufnehmen"
 
-#: static/js/parcours_stops_panel.mjs:638 templates/guide.html:315
-#: templates/menu_animation.html:415 templates/menu_images.html:96
+#: static/js/parcours_stops_panel.mjs:650 templates/guide.html:315
+#: templates/menu_animation.html:423 templates/menu_images.html:96
 msgid "Retirer"
 msgstr "Entfernen"
 
-#: static/js/parcours_stops_panel.mjs:652
+#: static/js/parcours_stops_panel.mjs:664
 msgid "Durée de visite"
 msgstr "Besuchsdauer"
 
-#: static/js/parcours_stops_panel.mjs:658
+#: static/js/parcours_stops_panel.mjs:670
 #, python-brace-format
 msgid "${n} min"
 msgstr "${n} Min."
 
-#: static/js/parcours_stops_panel.mjs:686
+#: static/js/parcours_stops_panel.mjs:698
 msgid "Trajet vers l’étape suivante"
 msgstr "Weg zur nächsten Station"
 
-#: static/js/parcours_stops_panel.mjs:692
+#: static/js/parcours_stops_panel.mjs:704
 msgid "en ligne droite"
 msgstr "Luftlinie"
 
-#: static/js/parcours_stops_panel.mjs:693
+#: static/js/parcours_stops_panel.mjs:705
 #, python-brace-format
 msgid "Automatique (${mode})"
 msgstr "Automatisch (${mode})"
 
-#: static/js/parcours_stops_panel.mjs:712
-#: static/js/parcours_stops_panel.mjs:796 templates/menu_data_parcours.html:269
+#: static/js/parcours_stops_panel.mjs:724
+#: static/js/parcours_stops_panel.mjs:808 templates/menu_data_parcours.html:269
 msgid "Journée"
 msgstr "Tag"
 
-#: static/js/parcours_stops_panel.mjs:761 static/js/profiles.js:975
+#: static/js/parcours_stops_panel.mjs:773 static/js/profiles.js:975
 #: static/js/profiles.js:2802 templates/stats_page.html:737
 msgid "Renommer"
 msgstr "Umbenennen"
 
-#: static/js/parcours_stops_panel.mjs:822
+#: static/js/parcours_stops_panel.mjs:834
 msgid "Rôle"
 msgstr "Rolle"
 
-#: static/js/parcours_stops_panel.mjs:826 templates/menu_data_parcours.html:279
+#: static/js/parcours_stops_panel.mjs:838 templates/menu_data_parcours.html:279
 msgid "Départ et retour"
 msgstr "Start und Rückkehr"
 
-#: static/js/parcours_stops_panel.mjs:827 templates/menu_data_parcours.html:280
+#: static/js/parcours_stops_panel.mjs:839 templates/menu_data_parcours.html:280
 msgid "Départ seulement"
 msgstr "Nur Start"
 
-#: static/js/parcours_stops_panel.mjs:827 templates/menu_data_parcours.html:281
+#: static/js/parcours_stops_panel.mjs:839 templates/menu_data_parcours.html:281
 msgid "Arrivée seulement"
 msgstr "Nur Ankunft"
 
-#: static/js/parcours_stops_panel.mjs:843 static/js/stats_panels.js:3048
+#: static/js/parcours_stops_panel.mjs:855 static/js/stats_panels.js:3048
 #: static/js/stats_panels.js:3091 templates/menu_data_parcours.html:285
 msgid "Catégorie"
 msgstr "Kategorie"
 
-#: static/js/parcours_stops_panel.mjs:884
+#: static/js/parcours_stops_panel.mjs:896
 msgid "Déplacer sur la carte"
 msgstr "Auf der Karte verschieben"
 
@@ -7687,14 +7746,14 @@ msgstr ""
 "Sind Sie sicher, dass Sie das Design „${name}“ auf die Standardwerte "
 "zurücksetzen möchten?"
 
-#: static/js/recent_videos.js:52 static/js/video_ready.js:116
+#: static/js/recent_videos.js:52 static/js/video_ready.js:191
 msgid "Impossible d’afficher la vidéo dans son dossier"
 msgstr "Das Video kann nicht in seinem Ordner angezeigt werden"
 
 #: static/js/recent_videos.js:52 static/js/recent_videos.js:90
-#: static/js/recent_videos.js:94 static/js/video_ready.js:55
-#: static/js/video_ready.js:84 static/js/video_ready.js:101
-#: static/js/video_ready.js:104
+#: static/js/recent_videos.js:94 static/js/video_ready.js:62
+#: static/js/video_ready.js:94 static/js/video_ready.js:113
+#: static/js/video_ready.js:116 static/js/video_ready.js:149
 msgid "Vidéo"
 msgstr "Video"
 
@@ -7719,7 +7778,7 @@ msgstr "Video gelöscht."
 msgid "La vidéo n’a pas pu être supprimée."
 msgstr "Das Video konnte nicht gelöscht werden."
 
-#: static/js/recent_videos.js:119 templates/modal_video_ready.html:26
+#: static/js/recent_videos.js:119 templates/modal_video_ready.html:39
 #: templates/stats_page.html:892
 msgid "Afficher dans le dossier"
 msgstr "Im Ordner anzeigen"
@@ -9298,7 +9357,7 @@ msgid "Arrêter"
 msgstr "Anhalten"
 
 #: static/js/stats_page_video.js:1135 static/js/ui.js:991
-#: templates/guide.html:324 templates/menu_animation.html:509
+#: templates/guide.html:324 templates/menu_animation.html:517
 #: templates/stats_page.html:834
 msgid "Écouter"
 msgstr "Anhören"
@@ -10586,7 +10645,7 @@ msgid "Arrêtez l'animation pour écouter la musique seule."
 msgstr "Stoppen Sie die Animation, um die Musik allein zu hören."
 
 #: static/js/ui.js:992 templates/guide.html:324
-#: templates/menu_animation.html:513
+#: templates/menu_animation.html:521
 msgid "Écouter la fin"
 msgstr "Ende anhören"
 
@@ -11017,7 +11076,7 @@ msgstr "Fehler beim Öffnen des Videoordners"
 msgid "Sélectionnez d'abord un fichier audio"
 msgstr "Wählen Sie zuerst eine Audiodatei"
 
-#: static/js/ui.js:11661 templates/menu_animation.html:419
+#: static/js/ui.js:11661 templates/menu_animation.html:427
 msgid "Aucune musique sélectionnée"
 msgstr "Keine Musik ausgewählt"
 
@@ -11216,21 +11275,53 @@ msgstr "Die Audiospur konnte nicht gestartet werden: ${detail}"
 msgid "Erreur lecture vidéo pour mux audio"
 msgstr "Fehler beim Lesen des Videos für das Audio-Muxing"
 
-#: static/js/video_ready.js:28
+#: static/js/video_ready.js:33
 #, python-brace-format
 msgid "${n} Go"
 msgstr "${n} GB"
 
-#: static/js/video_ready.js:101
+#: static/js/video_ready.js:113
 #, python-brace-format
 msgid "Copie enregistrée : ${name}"
 msgstr "Kopie gespeichert: ${name}"
 
-#: static/js/video_ready.js:104
+#: static/js/video_ready.js:116
 msgid "La copie de la vidéo a échoué."
 msgstr "Das Kopieren des Videos ist fehlgeschlagen."
 
-#: static/js/video_ready.js:121
+#: static/js/video_ready.js:147
+msgid "Chapitres copiés : collez-les dans la description de la vidéo YouTube."
+msgstr "Kapitel kopiert: Fügen Sie sie in die Beschreibung des YouTube-Videos ein."
+
+#: static/js/video_ready.js:148
+msgid "Copie impossible : sélectionnez la liste et copiez-la à la main."
+msgstr ""
+"Kopieren nicht möglich: Markieren Sie die Liste und kopieren Sie sie "
+"manuell."
+
+#: static/js/video_ready.js:164
+#, python-brace-format
+msgid "${n} chapitres intégrés à la vidéo"
+msgstr "${n} Kapitel im Video eingebettet"
+
+#: static/js/video_ready.js:176
+msgid ""
+"Journées trop courtes pour les chapitres YouTube (10 s au moins, 3 "
+"chapitres) : ils restent intégrés au fichier."
+msgstr ""
+"Tage zu kurz für YouTube-Kapitel (mindestens 10 s, 3 Kapitel): Sie "
+"bleiben in der Datei eingebettet."
+
+#: static/js/video_ready.js:178
+#, python-brace-format
+msgid "Liste au format YouTube, aussi enregistrée dans ${file}."
+msgstr "Liste im YouTube-Format, auch in ${file} gespeichert."
+
+#: static/js/video_ready.js:180
+msgid "Liste au format YouTube."
+msgstr "Liste im YouTube-Format."
+
+#: static/js/video_ready.js:197
 msgid "Impossible d’ouvrir la vidéo"
 msgstr "Das Video konnte nicht geöffnet werden"
 
@@ -11807,7 +11898,7 @@ msgstr "Micro"
 msgid "Regular"
 msgstr "Regular"
 
-#: templates/_filter_cache_attrs.html:55
+#: templates/_filter_cache_attrs.html:55 templates/menu_animation.html:309
 msgid "Large"
 msgstr "Large"
 
@@ -11897,7 +11988,9 @@ msgstr "Global"
 msgid ""
 "Enregistré dans le parcours ouvert : chaque parcours garde ses réglages "
 "de lecture. Sans parcours ouvert, la valeur sert de défaut."
-msgstr "In der geöffneten Tour gespeichert: Jede Tour behält ihre eigenen Wiedergabeeinstellungen. Ohne geöffnete Tour dient der Wert als Vorgabe."
+msgstr ""
+"In der geöffneten Tour gespeichert: Jede Tour behält ihre eigenen "
+"Wiedergabeeinstellungen. Ohne geöffnete Tour dient der Wert als Vorgabe."
 
 #: templates/_scope_badges.html:49
 msgid ""
@@ -13060,7 +13153,7 @@ msgstr "Kamera"
 msgid "Cochez"
 msgstr "Aktivieren Sie"
 
-#: templates/guide.html:299 templates/menu_animation.html:323
+#: templates/guide.html:299 templates/menu_animation.html:331
 msgid "Activer le suivi de caméra"
 msgstr "Kameraverfolgung aktivieren"
 
@@ -13068,7 +13161,7 @@ msgstr "Kameraverfolgung aktivieren"
 msgid "pour que la vue glisse vers les caches du jour, puis choisissez le"
 msgstr "damit die Ansicht zu den Caches des Tages gleitet, und wählen Sie dann die"
 
-#: templates/guide.html:299 templates/menu_animation.html:334
+#: templates/guide.html:299 templates/menu_animation.html:342
 msgid "Dynamisme de la caméra"
 msgstr "Dynamik der Kamera"
 
@@ -13084,7 +13177,7 @@ msgstr ""
 msgid "La"
 msgstr "Das"
 
-#: templates/guide.html:300 templates/menu_animation.html:327
+#: templates/guide.html:300 templates/menu_animation.html:335
 msgid "Cible du suivi"
 msgstr "Verfolgungsziel"
 
@@ -13104,7 +13197,7 @@ msgstr ""
 msgid "Avec"
 msgstr "Mit"
 
-#: templates/guide.html:301 templates/menu_animation.html:353
+#: templates/guide.html:301 templates/menu_animation.html:361
 msgid "Revenir au cadrage de départ à la fin"
 msgstr "Am Ende zum Ausgangsausschnitt zurückkehren"
 
@@ -13118,7 +13211,7 @@ msgstr ""
 "Position und Zoom des Starts zurück, vor der Endpause. Diese Rückkehr "
 "wird wie die anderen Strecken in die Dauer eingerechnet."
 
-#: templates/guide.html:302 templates/menu_animation.html:346
+#: templates/guide.html:302 templates/menu_animation.html:354
 msgid "Privilégier le cadrage de départ"
 msgstr "Ausgangsausschnitt bevorzugen"
 
@@ -13162,7 +13255,7 @@ msgstr ""
 msgid "Ajoutez une musique (optionnel)"
 msgstr "Fügen Sie eine Musik hinzu (optional)"
 
-#: templates/guide.html:315 templates/menu_animation.html:391
+#: templates/guide.html:315 templates/menu_animation.html:399
 msgid "Inclure la musique"
 msgstr "Musik einschließen"
 
@@ -13170,7 +13263,7 @@ msgstr "Musik einschließen"
 msgid "puis choisissez un fichier avec"
 msgstr "und wählen Sie dann eine Datei mit"
 
-#: templates/guide.html:315 templates/menu_animation.html:399
+#: templates/guide.html:315 templates/menu_animation.html:407
 #: templates/menu_data.html:50 templates/menu_data_evolution.html:53
 #: templates/stats_page.html:691 templates/stats_page.html:819
 #: templates/stats_page.html:832
@@ -13181,7 +13274,7 @@ msgstr "Durchsuchen…"
 msgid "ou glissez-le sur la page. Le menu"
 msgstr "oder ziehen Sie sie auf die Seite. Das Menü"
 
-#: templates/guide.html:315 templates/menu_animation.html:407
+#: templates/guide.html:315 templates/menu_animation.html:415
 msgid "Récentes"
 msgstr "Zuletzt verwendet"
 
@@ -13193,7 +13286,7 @@ msgstr "übernimmt einen bereits verwendeten Titel, ohne ihn erneut zu senden, u
 msgid "oublie la sélection."
 msgstr "verwirft die Auswahl."
 
-#: templates/guide.html:316 templates/menu_animation.html:433
+#: templates/guide.html:316 templates/menu_animation.html:441
 msgid "Ajouter un morceau à la suite"
 msgstr "Einen Titel anhängen"
 
@@ -13205,7 +13298,7 @@ msgstr ""
 "verkettet mehrere Musikstücke zu einem einzigen: Ihre Pegel werden "
 "angeglichen und Stille an den Übergängen entfernt. Aktivieren Sie"
 
-#: templates/guide.html:316 templates/menu_animation.html:438
+#: templates/guide.html:316 templates/menu_animation.html:446
 msgid "Enchaîner en fondu"
 msgstr "Übergänge überblenden"
 
@@ -13228,11 +13321,11 @@ msgstr ""
 "Stelle ab; seine zwei Griffe legen fest, wo er beginnt und wo er endet, "
 "wie die Felder"
 
-#: templates/guide.html:317 templates/menu_animation.html:520
+#: templates/guide.html:317 templates/menu_animation.html:528
 msgid "Commencer la musique à"
 msgstr "Musik beginnen bei"
 
-#: templates/guide.html:317 templates/menu_animation.html:531
+#: templates/guide.html:317 templates/menu_animation.html:539
 msgid "Terminer la musique à"
 msgstr "Musik beenden bei"
 
@@ -13240,7 +13333,7 @@ msgstr "Musik beenden bei"
 msgid "Musique plus courte que la vidéo :"
 msgstr "Musik kürzer als das Video:"
 
-#: templates/guide.html:319 templates/menu_animation.html:608
+#: templates/guide.html:319 templates/menu_animation.html:616
 msgid "Répéter la musique en boucle"
 msgstr "Musik in einer Schleife wiederholen"
 
@@ -13248,7 +13341,7 @@ msgstr "Musik in einer Schleife wiederholen"
 msgid "la fait reprendre à son point de départ,"
 msgstr "lässt sie an ihrem Ausgangspunkt wieder beginnen,"
 
-#: templates/guide.html:319 templates/menu_animation.html:613
+#: templates/guide.html:319 templates/menu_animation.html:621
 msgid "Enchaîner les reprises en fondu"
 msgstr "Wiederholungen mit Überblendung verketten"
 
@@ -13260,7 +13353,7 @@ msgstr "mildert jeden Übergang ab."
 msgid "Musique plus longue que la vidéo :"
 msgstr "Musik länger als das Video:"
 
-#: templates/guide.html:320 templates/menu_animation.html:545
+#: templates/guide.html:320 templates/menu_animation.html:553
 msgid "Garder la fin du morceau"
 msgstr "Das Ende des Titels beibehalten"
 
@@ -13270,7 +13363,7 @@ msgstr ""
 "verschiebt den Anfang, damit sein echtes Ende mit dem des Videos "
 "zusammenfällt, und"
 
-#: templates/guide.html:320 templates/menu_animation.html:639
+#: templates/guide.html:320 templates/menu_animation.html:647
 msgid "Terminer la musique en fondu"
 msgstr "Musik am Ende ausblenden"
 
@@ -13278,7 +13371,7 @@ msgstr "Musik am Ende ausblenden"
 msgid "évite une coupure nette. Si la piste se termine par un blanc,"
 msgstr "vermeidet einen harten Schnitt. Endet die Spur mit Stille,"
 
-#: templates/guide.html:320 templates/menu_animation.html:556
+#: templates/guide.html:320 templates/menu_animation.html:564
 msgid "Ignorer le blanc de fin"
 msgstr "Stille am Ende ignorieren"
 
@@ -13286,7 +13379,7 @@ msgstr "Stille am Ende ignorieren"
 msgid "le retire de la durée."
 msgstr "zieht sie von der Dauer ab."
 
-#: templates/guide.html:321 templates/menu_animation.html:627
+#: templates/guide.html:321 templates/menu_animation.html:635
 msgid "Commencer la musique en fondu"
 msgstr "Musik am Anfang einblenden"
 
@@ -13294,7 +13387,7 @@ msgstr "Musik am Anfang einblenden"
 msgid "monte progressivement le volume au début de la vidéo."
 msgstr "erhöht die Lautstärke zu Beginn des Videos allmählich."
 
-#: templates/guide.html:322 templates/menu_animation.html:566
+#: templates/guide.html:322 templates/menu_animation.html:574
 msgid "Volume musique"
 msgstr "Musiklautstärke"
 
@@ -13302,7 +13395,7 @@ msgstr "Musiklautstärke"
 msgid "règle le niveau (au-delà de 100 % pour relever un morceau calme) ;"
 msgstr "stellt den Pegel ein (über 100 % hinaus, um einen leisen Titel anzuheben);"
 
-#: templates/guide.html:322 templates/menu_animation.html:584
+#: templates/guide.html:322 templates/menu_animation.html:592
 msgid "Niveau sonore standard"
 msgstr "Standard-Lautstärkepegel"
 
@@ -13328,7 +13421,7 @@ msgstr ""
 "spielt nur die letzten Sekunden davon ab, um eine Überblendung oder einen"
 " Schnitt zu beurteilen."
 
-#: templates/guide.html:325 templates/menu_animation.html:595
+#: templates/guide.html:325 templates/menu_animation.html:603
 msgid "Caler sur la musique"
 msgstr "Auf die Musik abstimmen"
 
@@ -13336,7 +13429,7 @@ msgstr "Auf die Musik abstimmen"
 msgid "synchronise la durée sur celle du morceau —"
 msgstr "synchronisiert die Dauer mit der des Titels —"
 
-#: templates/guide.html:325 templates/menu_animation.html:600
+#: templates/guide.html:325 templates/menu_animation.html:608
 msgid "Dissocier"
 msgstr "Verknüpfung aufheben"
 
@@ -15907,51 +16000,64 @@ msgstr ""
 "Nah zu Fuß, zoomt bei langen Wegen, nachts und am Ende heraus. Wird die "
 "Karte während der Wiedergabe verschoben, bleibt sie dort."
 
+#: templates/menu_animation.html:305 templates/menu_photos_parcours.html:71
+#: templates/stats_page.html:698
+msgid "Cadrage"
+msgstr "Bildausschnitt"
+
 #: templates/menu_animation.html:307
+msgid "Serré"
+msgstr "Eng"
+
+#: templates/menu_animation.html:308 templates/menu_points.html:409
+msgid "Équilibré"
+msgstr "Ausgewogen"
+
+#: templates/menu_animation.html:315
 msgid "Géocacheur"
 msgstr "Geocacher"
 
-#: templates/menu_animation.html:309
+#: templates/menu_animation.html:317
 msgid "Pictogramme du déplacement (à pied, vélo, voiture…)"
 msgstr "Symbol der Fortbewegung (zu Fuß, Fahrrad, Auto…)"
 
-#: templates/menu_animation.html:310
+#: templates/menu_animation.html:318
 msgid "Simple point"
 msgstr "Einfacher Punkt"
 
-#: templates/menu_animation.html:317
+#: templates/menu_animation.html:325
 msgid "Suivi de caméra"
 msgstr "Kameraverfolgung"
 
-#: templates/menu_animation.html:329
+#: templates/menu_animation.html:337
 msgid "Chaque jour, quand il s'affiche"
 msgstr "Jeden Tag, wenn er angezeigt wird"
 
-#: templates/menu_animation.html:330
+#: templates/menu_animation.html:338
 msgid "La tête du trajet"
 msgstr "Der Kopf der Route"
 
-#: templates/menu_animation.html:336
+#: templates/menu_animation.html:344
 msgid "1 — Minimal : hors champ uniquement"
 msgstr "1 — Minimal: nur außerhalb des Bildausschnitts"
 
-#: templates/menu_animation.html:337
+#: templates/menu_animation.html:345
 msgid "2 — Discret : hors champ ou très périphérique"
 msgstr "2 — Dezent: außerhalb des Bildausschnitts oder sehr peripher"
 
-#: templates/menu_animation.html:338
+#: templates/menu_animation.html:346
 msgid "3 — Dynamique : hors zone centrale"
 msgstr "3 — Dynamisch: außerhalb der zentralen Zone"
 
-#: templates/menu_animation.html:339
+#: templates/menu_animation.html:347
 msgid "4 — Intense : recentrage et zoom systématiques"
 msgstr "4 — Intensiv: systematisches Neuzentrieren und Zoomen"
 
-#: templates/menu_animation.html:341
+#: templates/menu_animation.html:349
 msgid "Sans effet avec cette cible : la caméra suit le stylo en continu."
 msgstr "Ohne Wirkung bei diesem Ziel: Die Kamera folgt dem Stift kontinuierlich."
 
-#: templates/menu_animation.html:348
+#: templates/menu_animation.html:356
 msgid ""
 "Quand les caches d'un jour tiennent dans le cadrage de départ, la caméra "
 "revient sur ce cadrage au lieu de se centrer sur elles. Sans effet avec "
@@ -15961,7 +16067,7 @@ msgstr ""
 "Kamera zu diesem Ausschnitt zurück, statt sich auf sie zu zentrieren. "
 "Ohne Wirkung beim Ziel „Der Kopf der Route“."
 
-#: templates/menu_animation.html:355
+#: templates/menu_animation.html:363
 msgid ""
 "Après la dernière date, la caméra retrouve la position et le zoom du "
 "lancement : la dernière image ne dépend plus de l'endroit où se trouvent "
@@ -15971,15 +16077,15 @@ msgstr ""
 "Starts zurück: Das letzte Bild hängt nicht mehr davon ab, wo sich die "
 "letzten Caches befinden."
 
-#: templates/menu_animation.html:361
+#: templates/menu_animation.html:369
 msgid "Le trajet est désactivé : le suivi reste par jour."
 msgstr "Die Route ist deaktiviert: Die Verfolgung bleibt pro Tag."
 
-#: templates/menu_animation.html:362
+#: templates/menu_animation.html:370
 msgid "Ouvrir Style › Trajet"
 msgstr "„Design › Route“ öffnen"
 
-#: templates/menu_animation.html:367
+#: templates/menu_animation.html:375
 msgid ""
 "La vue glisse vers les caches du jour. Les trajets sont comptés dans la "
 "durée : en « Par durée » ou « Sur la musique », la vidéo garde la durée "
@@ -15989,7 +16095,7 @@ msgstr ""
 "Dauer eingerechnet: Bei „Nach Dauer“ oder „Auf die Musik“ behält das "
 "Video die gewünschte Dauer."
 
-#: templates/menu_animation.html:368
+#: templates/menu_animation.html:376
 msgid ""
 "La vue glisse derrière le stylo qui dessine le trajet et adapte son zoom "
 "à la vitesse du parcours."
@@ -15997,35 +16103,35 @@ msgstr ""
 "Die Ansicht gleitet hinter dem Stift, der die Route zeichnet, und passt "
 "ihren Zoom an die Geschwindigkeit des Verlaufs an."
 
-#: templates/menu_animation.html:369
+#: templates/menu_animation.html:377
 msgid "En savoir plus"
 msgstr "Mehr erfahren"
 
-#: templates/menu_animation.html:396
+#: templates/menu_animation.html:404
 msgid "Fichier de musique"
 msgstr "Musikdatei"
 
-#: templates/menu_animation.html:398
+#: templates/menu_animation.html:406
 msgid "Choisir un fichier audio"
 msgstr "Audiodatei auswählen"
 
-#: templates/menu_animation.html:414
+#: templates/menu_animation.html:422
 msgid "Retirer la musique"
 msgstr "Musik entfernen"
 
-#: templates/menu_animation.html:427
+#: templates/menu_animation.html:435
 msgid "Morceaux enchaînés"
 msgstr "Aneinandergereihte Titel"
 
-#: templates/menu_animation.html:430
+#: templates/menu_animation.html:438
 msgid "Morceau à ajouter"
 msgstr "Hinzuzufügender Titel"
 
-#: templates/menu_animation.html:432
+#: templates/menu_animation.html:440
 msgid "Enchaîner un autre morceau après celui-ci"
 msgstr "Einen weiteren Titel nach diesem anfügen"
 
-#: templates/menu_animation.html:438
+#: templates/menu_animation.html:446
 msgid ""
 "La fin de chaque morceau s'efface pendant que le suivant monte, au lieu "
 "de s'enchaîner bout à bout."
@@ -16033,59 +16139,59 @@ msgstr ""
 "Das Ende jedes Titels blendet aus, während der nächste einblendet, statt "
 "Stoß an Stoß aneinandergereiht zu werden."
 
-#: templates/menu_animation.html:441
+#: templates/menu_animation.html:449
 msgid "Durée du fondu entre les morceaux, en secondes"
 msgstr "Dauer der Überblendung zwischen den Titeln, in Sekunden"
 
-#: templates/menu_animation.html:458
+#: templates/menu_animation.html:466
 msgid "Cliquez pour écouter à partir d'ici"
 msgstr "Klicken, um von hier ab zu hören"
 
-#: templates/menu_animation.html:483
+#: templates/menu_animation.html:491
 msgid "Point de départ de la musique"
 msgstr "Startpunkt der Musik"
 
-#: templates/menu_animation.html:485
+#: templates/menu_animation.html:493
 msgid "Faites glisser pour choisir où commence la musique"
 msgstr "Ziehen, um zu wählen, wo die Musik beginnt"
 
-#: templates/menu_animation.html:487
+#: templates/menu_animation.html:495
 msgid "Point de fin de la musique"
 msgstr "Endpunkt der Musik"
 
-#: templates/menu_animation.html:489
+#: templates/menu_animation.html:497
 msgid "Faites glisser pour choisir où s'arrête la musique"
 msgstr "Ziehen, um zu wählen, wo die Musik endet"
 
-#: templates/menu_animation.html:495
+#: templates/menu_animation.html:503
 msgid "Début sauté"
 msgstr "Übersprungener Anfang"
 
-#: templates/menu_animation.html:496
+#: templates/menu_animation.html:504
 msgid "Non jouée"
 msgstr "Nicht abgespielt"
 
-#: templates/menu_animation.html:497
+#: templates/menu_animation.html:505
 msgid "Fondu d'entrée"
 msgstr "Einblendung"
 
-#: templates/menu_animation.html:498
+#: templates/menu_animation.html:506
 msgid "Fondu de sortie"
 msgstr "Ausblendung"
 
-#: templates/menu_animation.html:499
+#: templates/menu_animation.html:507
 msgid "Reprise de la boucle"
 msgstr "Wiederholung der Schleife"
 
-#: templates/menu_animation.html:500
+#: templates/menu_animation.html:508
 msgid "Fin de vidéo sans musique"
 msgstr "Videoende ohne Musik"
 
-#: templates/menu_animation.html:508
+#: templates/menu_animation.html:516
 msgid "Entendre la musique comme dans la vidéo : départ, fondus, boucle, fin."
 msgstr "Die Musik wie im Video hören: Anfang, Überblendungen, Schleife, Ende."
 
-#: templates/menu_animation.html:512
+#: templates/menu_animation.html:520
 msgid ""
 "Entendre seulement les dernières secondes de la vidéo, pour juger la fin "
 "de la musique."
@@ -16093,11 +16199,11 @@ msgstr ""
 "Nur die letzten Sekunden des Videos hören, um das Ende der Musik zu "
 "beurteilen."
 
-#: templates/menu_animation.html:526 templates/menu_animation.html:537
+#: templates/menu_animation.html:534 templates/menu_animation.html:545
 msgid "ou faites glisser le repère de la forme d'onde"
 msgstr "oder ziehen Sie die Markierung der Wellenform"
 
-#: templates/menu_animation.html:545
+#: templates/menu_animation.html:553
 msgid ""
 "La musique commence plus loin, pour que sa vraie fin tombe avec celle de "
 "la vidéo au lieu d'être coupée."
@@ -16105,7 +16211,7 @@ msgstr ""
 "Die Musik beginnt später, damit ihr wahres Ende mit dem des Videos "
 "zusammenfällt, statt abgeschnitten zu werden."
 
-#: templates/menu_animation.html:556
+#: templates/menu_animation.html:564
 msgid ""
 "La durée de la musique est comptée sans son blanc de fin : une vidéo "
 "calée dessus se termine avec le dernier son."
@@ -16113,11 +16219,11 @@ msgstr ""
 "Die Dauer der Musik wird ohne ihre Endstille gezählt: Ein darauf "
 "abgestimmtes Video endet mit dem letzten Ton."
 
-#: templates/menu_animation.html:568
+#: templates/menu_animation.html:576
 msgid "Aide : volume de la musique"
 msgstr "Hilfe: Lautstärke der Musik"
 
-#: templates/menu_animation.html:569
+#: templates/menu_animation.html:577
 msgid ""
 "Volume de la musique dans la vidéo, en part du volume du fichier : au-"
 "delà de 100 %, un morceau calme est relevé. « Niveau sonore standard » y "
@@ -16127,11 +16233,11 @@ msgstr ""
 "100 % wird ein ruhiger Titel angehoben. „Standardlautstärke“ setzt den "
 "Regler darauf; ein manuelles Verschieben übernimmt wieder die Kontrolle."
 
-#: templates/menu_animation.html:586
+#: templates/menu_animation.html:594
 msgid "Aide : niveau sonore standard"
 msgstr "Hilfe: Standardlautstärke"
 
-#: templates/menu_animation.html:587
+#: templates/menu_animation.html:595
 msgid ""
 "Mesure le niveau moyen du morceau, sans ses silences, et place le curseur"
 " Volume sur ce qui l'amène à un niveau standard, sans jamais le faire "
@@ -16144,19 +16250,19 @@ msgstr ""
 "welcher Titel. Der ganze Titel steigt oder fällt als Ganzes, leise "
 "Passagen bleiben leise."
 
-#: templates/menu_animation.html:594
+#: templates/menu_animation.html:602
 msgid "Caler la durée de la vidéo sur celle de la musique"
 msgstr "Die Dauer des Videos auf die der Musik abstimmen"
 
-#: templates/menu_animation.html:598
+#: templates/menu_animation.html:606
 msgid "Calé sur la musique"
 msgstr "Auf die Musik abgestimmt"
 
-#: templates/menu_animation.html:601
+#: templates/menu_animation.html:609
 msgid "Différence"
 msgstr "Differenz"
 
-#: templates/menu_animation.html:608
+#: templates/menu_animation.html:616
 msgid ""
 "La musique reprend à son point de départ chaque fois qu'elle se termine, "
 "jusqu'à la fin de la vidéo."
@@ -16164,7 +16270,7 @@ msgstr ""
 "Die Musik beginnt jedes Mal von ihrem Startpunkt neu, wenn sie endet, bis"
 " zum Ende des Videos."
 
-#: templates/menu_animation.html:613
+#: templates/menu_animation.html:621
 msgid ""
 "La fin de la musique s'efface pendant que son début remonte, au lieu d'un"
 " raccord net."
@@ -16172,19 +16278,19 @@ msgstr ""
 "Das Ende der Musik blendet aus, während ihr Anfang einblendet, statt "
 "eines sauberen Übergangs."
 
-#: templates/menu_animation.html:616
+#: templates/menu_animation.html:624
 msgid "Durée du fondu entre les reprises, en secondes"
 msgstr "Dauer der Überblendung zwischen den Wiederholungen, in Sekunden"
 
-#: templates/menu_animation.html:627
+#: templates/menu_animation.html:635
 msgid "Le volume de la musique monte progressivement au début de la vidéo."
 msgstr "Die Lautstärke der Musik steigt am Anfang des Videos allmählich an."
 
-#: templates/menu_animation.html:630
+#: templates/menu_animation.html:638
 msgid "Durée du fondu d'entrée, en secondes"
 msgstr "Dauer der Einblendung, in Sekunden"
 
-#: templates/menu_animation.html:639
+#: templates/menu_animation.html:647
 msgid ""
 "Le volume de la musique baisse progressivement à la fin de la vidéo, au "
 "lieu d'une coupure nette."
@@ -16192,7 +16298,7 @@ msgstr ""
 "Die Lautstärke der Musik sinkt am Ende des Videos allmählich, statt "
 "abrupt abzubrechen."
 
-#: templates/menu_animation.html:642
+#: templates/menu_animation.html:650
 msgid "Durée du fondu de sortie, en secondes"
 msgstr "Dauer der Ausblendung, in Sekunden"
 
@@ -18618,10 +18724,6 @@ msgstr "Legende"
 msgid "Sommet du Semnoz, pique-nique…"
 msgstr "Gipfel des Semnoz, Picknick…"
 
-#: templates/menu_photos_parcours.html:71 templates/stats_page.html:698
-msgid "Cadrage"
-msgstr "Bildausschnitt"
-
 #: templates/menu_photos_parcours.html:73
 msgid "Photo entière"
 msgstr "Ganzes Foto"
@@ -19087,10 +19189,6 @@ msgstr "Animationsstufe"
 #: templates/menu_points.html:408
 msgid "Sobre"
 msgstr "Schlicht"
-
-#: templates/menu_points.html:409
-msgid "Équilibré"
-msgstr "Ausgewogen"
 
 #: templates/menu_points.html:410
 msgid "Riche"
@@ -21048,11 +21146,15 @@ msgstr "Die Pocket Query \"My Finds\" kann nur einmal alle 3 Tage erstellt werde
 msgid "Voir le mode d'emploi"
 msgstr "Anleitung ansehen"
 
-#: templates/modal_video_ready.html:29
+#: templates/modal_video_ready.html:30
+msgid "Copier pour YouTube"
+msgstr "Für YouTube kopieren"
+
+#: templates/modal_video_ready.html:42
 msgid "Ouvrir dans le lecteur"
 msgstr "Im Player öffnen"
 
-#: templates/modal_video_ready.html:32
+#: templates/modal_video_ready.html:45
 msgid "Enregistrer une copie sous…"
 msgstr "Kopie speichern unter…"
 

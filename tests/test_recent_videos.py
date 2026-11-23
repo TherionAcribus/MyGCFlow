@@ -95,6 +95,18 @@ class RecentVideosTests(unittest.TestCase):
         self.assertTrue(payload['recoverable'])
         self.assertEqual(os.path.abspath(trash.call_args.args[0]), os.path.abspath(path))
 
+    def test_delete_takes_the_youtube_chapters_along(self):
+        path = self._video('film.mp4', 1000)
+        chapters = os.path.splitext(path)[0] + '.youtube.txt'
+        with open(chapters, 'w', encoding='utf-8') as handle:
+            handle.write('0:00 Jour 1\n')
+        with mock.patch('capture.recycle_bin.send_to_trash', return_value=True) as trash:
+            payload, status = self._delete('film.mp4')
+
+        self.assertEqual(status, 200)
+        self.assertEqual([os.path.abspath(c.args[0]) for c in trash.call_args_list],
+                         [os.path.abspath(path), os.path.abspath(chapters)])
+
     def test_delete_unknown_or_outside_file_is_404(self):
         with open('secret.mp4', 'wb') as handle:
             handle.write(b'x')

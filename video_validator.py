@@ -61,6 +61,7 @@ def probe_video(path: str, ffprobe: str | None = None) -> dict[str, Any]:
         "-v", "error",
         "-show_format",
         "-show_streams",
+        "-show_chapters",
         "-of", "json",
         path,
     ]
@@ -103,6 +104,15 @@ def probe_video(path: str, ffprobe: str | None = None) -> dict[str, Any]:
         "has_audio": bool(audio_streams),
         "video_stream_count": len(video_streams),
         "audio_stream_count": len(audio_streams),
+        # Chapitres intégrés (vidéo d'un parcours : une journée par chapitre).
+        "chapters": [
+            {
+                "start": _float_or_none(chapter.get("start_time")),
+                "end": _float_or_none(chapter.get("end_time")),
+                "title": (chapter.get("tags") or {}).get("title"),
+            }
+            for chapter in raw.get("chapters") or []
+        ],
         "raw": raw,
     }
 

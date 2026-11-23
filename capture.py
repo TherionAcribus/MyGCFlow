@@ -27,6 +27,7 @@ from werkzeug.utils import secure_filename
 
 import paths
 import recycle_bin
+import video_chapters
 from localization import get_locale
 
 
@@ -250,6 +251,13 @@ def delete_video(request):
         return jsonify({'success': False, 'message': _(
             "Impossible de supprimer cette vidéo : elle est peut-être ouverte dans un autre programme."
         )}), 409
+    # La liste des chapitres YouTube écrite à côté suit la vidéo.
+    chapters_path = video_chapters.chapters_file_path(path)
+    if os.path.isfile(chapters_path):
+        try:
+            recycle_bin.send_to_trash(chapters_path)
+        except OSError as e:
+            print(f"[videos] Chapitres non supprimés ({chapters_path}): {e}")
     return jsonify({'success': True, 'file': os.path.basename(path), 'recoverable': recoverable})
 
 
@@ -987,16 +995,54 @@ def _write_concat_list(image_files, fps, list_path):
         handle.write(f"file {_concat_quote(image_files[-1])}\n")
 
 
+def _chapters_input(chapters, total_seconds, input_index):
+    """Entrée ffmpeg des chapitres : (arguments, fichier temporaire à
+    supprimer après l'encodage), ou ([], None) sans chapitres. `input_index` :
+    rang de cette entrée parmi celles de la commande."""
+    chapters = video_chapters.within_duration(chapters or [], total_seconds)
+    if not chapters:
+        return [], None
+    handle, path = tempfile.mkstemp(prefix='mygcflow_chapters_', suffix='.txt')
+    with os.fdopen(handle, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(video_chapters.ffmetadata_text(chapters, total_seconds, gettext=_))
+    return ['-f', 'ffmetadata', '-i', path, '-map_chapters', str(input_index)], path
+
+
+def _write_youtube_chapters(output_video, chapters, duration):
+    """Liste des chapitres au format YouTube, écrite à côté de la vidéo.
+
+    Retourne ce que l'écran de fin affiche : nombre de chapitres intégrés,
+    texte YouTube (None si YouTube ne le reconnaîtrait pas) et nom du fichier.
+    Un échec d'écriture n'invalide pas la vidéo.
+    """
+    chapters = video_chapters.within_duration(chapters or [], duration)
+    info = {'count': len(chapters), 'youtube': None, 'file': None}
+    text = video_chapters.youtube_text(chapters, duration, gettext=_)
+    if not text:
+        return info
+    info['youtube'] = text
+    path = video_chapters.chapters_file_path(output_video)
+    try:
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(text)
+        info['file'] = os.path.basename(path)
+    except OSError as e:
+        print(f"[chapters] Écriture impossible ({path}): {e}")
+    return info
+
+
 def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0, status=None,
                        audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0,
                        color_fidelity=DEFAULT_COLOR_FIDELITY, expected_frames=0, audio_start=0.0, audio_fade_in=0.0,
-                       audio_loop_crossfade=0.0, audio_end=0.0, audio_fade_out_end=0.0):
+                       audio_loop_crossfade=0.0, audio_end=0.0, audio_fade_out_end=0.0, chapters=None):
     """Coeur de l'assemblage vidéo. Retourne un dict {'success', 'message', ...}.
 
     Met à jour un TaskStatus optionnel (`status`) pour le suivi de progression,
     ce qui permet de l'exécuter en tâche de fond sans bloquer la requête HTTP.
     `expected_frames` (0 = inconnu) est le nombre de frames que le client a
     capturées : un écart signifie qu'au moins un upload s'est perdu.
+    `chapters` : chapitres validés (video_chapters.parse_chapters), intégrés
+    au MP4.
     """
     def _progress(p, msg):
         if status is not None:
@@ -1077,6 +1123,7 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
     # atterrir dans captured/, que le client vide dès l'assemblage terminé.
     handle, list_path = tempfile.mkstemp(prefix='mygcflow_concat_', suffix='.ffconcat', text=True)
     os.close(handle)
+    chapters_path = None
 
     try:
         _write_concat_list(image_files, fps_value, list_path)
@@ -1089,11 +1136,14 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
         # fps et la durée du fichier restaient corrects.
         cmd = [ffmpeg, '-y', '-f', 'concat', '-safe', '0', '-r', str(fps_value), '-i', list_path]
         if audio_file:
+            cmd += ['-i', audio_file]
+        chapter_args, chapters_path = _chapters_input(chapters, out_dur, 2 if audio_file else 1)
+        cmd += chapter_args
+        if audio_file:
             # apad complète l'audio par du silence s'il est plus court que la vidéo ;
             # -t borne la sortie à la durée vidéo, ce qui coupe aussi un audio plus long.
             # On n'utilise PAS -shortest avec apad (l'audio paddé devient infini).
             cmd += [
-                '-i', audio_file,
                 '-filter_complex',
                 f"[0:v]{_EVEN_DIMENSIONS_FILTER}[v];"
                 + _audio_filter_graph(vol, out_dur, fade_out, loop=loop, loop_end=loop_end, start=start,
@@ -1115,17 +1165,22 @@ def _assemble_pictures(image_folder, output_video, fps=24, audio_path=None, audi
             log_prefix="assemble",
         )
     finally:
-        try:
-            os.remove(list_path)
-        except OSError:
-            pass
+        for path in (list_path, chapters_path):
+            try:
+                if path:
+                    os.remove(path)
+            except OSError:
+                pass
 
     if not result.get('success'):
         return result
 
     _progress(100, _("Vidéo créée avec succès"))
+    description = describe_video(output_video)
     return {'success': True, 'message': _('Vidéo créée avec succès'), 'output': output_video,
-            'warnings': _audio_warnings(audio_path, audio_file), **describe_video(output_video)}
+            'warnings': _audio_warnings(audio_path, audio_file), **description,
+            'chapters': _write_youtube_chapters(output_video, chapters,
+                                                description.get('duration_seconds') or out_dur)}
 
 
 def assemble_pictures_directory(image_folder, output_video, fps=24, audio_path=None, audio_volume=1.0,
@@ -1143,7 +1198,7 @@ def run_assemble_video_task(status, app, image_folder, output_video, fps=24, aud
                             audio_volume=1.0, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None,
                             expected_frames=0, audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0,
                             audio_start=0.0, audio_fade_in=0.0, audio_loop_crossfade=0.0, audio_end=0.0,
-                            audio_fade_out_end=0.0):
+                            audio_fade_out_end=0.0, chapters=None):
     """Tâche de fond : assemble la vidéo et met à jour la progression via TaskStatus.
 
     Exécutée par le TaskManager dans un thread, ce qui évite l'expiration du
@@ -1158,7 +1213,7 @@ def run_assemble_video_task(status, app, image_folder, output_video, fps=24, aud
                                     audio_loop=audio_loop, audio_loop_end=audio_loop_end,
                                     audio_start=audio_start, audio_fade_in=audio_fade_in,
                                     audio_loop_crossfade=audio_loop_crossfade, audio_end=audio_end,
-                                    audio_fade_out_end=audio_fade_out_end)
+                                    audio_fade_out_end=audio_fade_out_end, chapters=chapters)
         if not result.get('success'):
             status.fail(result.get('message', _("Échec de l'assemblage")))
             return
@@ -1180,7 +1235,7 @@ TASK_TYPE_VIDEO_PROCESS = "video_processing"
 def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=None, audio_volume=1.0, fps=None,
                             status=None, color_fidelity=DEFAULT_COLOR_FIDELITY, audio_fade_out=0.0,
                             audio_loop=False, audio_loop_end=0.0, audio_start=0.0, audio_fade_in=0.0, audio_loop_crossfade=0.0,
-                            audio_end=0.0, audio_fade_out_end=0.0):
+                            audio_end=0.0, audio_fade_out_end=0.0, chapters=None):
     """Normalise la vitesse (setpts) et mux l'audio en UNE passe ffmpeg → MP4 H.264/AAC.
 
     Remplace l'ancien pipeline navigateur (jusqu'à 3 ré-encodages temps réel,
@@ -1240,6 +1295,9 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     cmd = [ffmpeg, '-y', '-i', input_path]
     if audio_file:
         cmd += ['-i', audio_file]
+    chapter_args, chapters_path = _chapters_input(chapters, out_dur, 2 if audio_file else 1)
+    cmd += chapter_args
+    if audio_file:
         if out_dur and out_dur > 0:
             # Durée vidéo connue : on borne la sortie à out_dur avec -t et on complète
             # l'audio par du silence (apad) si besoin. On N'utilise PAS -shortest avec apad
@@ -1268,12 +1326,19 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
     cmd += ['-progress', 'pipe:1', '-nostats', output_path]
 
     _progress(2, _("Démarrage du traitement vidéo..."))
-    result = _run_ffmpeg(
-        cmd, out_dur=out_dur, status=status,
-        progress_start=2, progress_end=98,
-        progress_label=_("Traitement vidéo"), error_label=_("Traitement ffmpeg"),
-        log_prefix="process",
-    )
+    try:
+        result = _run_ffmpeg(
+            cmd, out_dur=out_dur, status=status,
+            progress_start=2, progress_end=98,
+            progress_label=_("Traitement vidéo"), error_label=_("Traitement ffmpeg"),
+            log_prefix="process",
+        )
+    finally:
+        if chapters_path:
+            try:
+                os.remove(chapters_path)
+            except OSError:
+                pass
     if result.get('cancelled'):
         # ffmpeg a été tué : ni le MP4 partiel ni le .webm brut ne doivent
         # rester (même nettoyage de l'entrée qu'en cas de succès).
@@ -1297,19 +1362,22 @@ def _process_recorded_video(input_path, output_path, slowdown=1.0, audio_path=No
         pass
 
     _progress(100, _("Vidéo prête"))
+    description = describe_video(output_path)
     return {
         'success': True,
         'message': _('Vidéo traitée avec succès'),
         'output': output_path,
         'warnings': _audio_warnings(audio_path, audio_file),
-        **describe_video(output_path),
+        **description,
+        'chapters': _write_youtube_chapters(output_path, chapters,
+                                            description.get('duration_seconds') or out_dur),
     }
 
 
 def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, audio_path=None,
                            audio_volume=1.0, fps=None, color_fidelity=DEFAULT_COLOR_FIDELITY, locale=None,
                            audio_fade_out=0.0, audio_loop=False, audio_loop_end=0.0, audio_start=0.0, audio_fade_in=0.0,
-                           audio_loop_crossfade=0.0, audio_end=0.0, audio_fade_out_end=0.0):
+                           audio_loop_crossfade=0.0, audio_end=0.0, audio_fade_out_end=0.0, chapters=None):
     """Tâche de fond : post-traite un enregistrement MediaRecorder via ffmpeg.
 
     `app`/`locale` viennent de la requête appelante (même raison que
@@ -1322,7 +1390,7 @@ def run_process_video_task(status, app, input_path, output_path, slowdown=1.0, a
                                          audio_loop=audio_loop, audio_loop_end=audio_loop_end,
                                          audio_start=audio_start, audio_fade_in=audio_fade_in,
                                          audio_loop_crossfade=audio_loop_crossfade, audio_end=audio_end,
-                                         audio_fade_out_end=audio_fade_out_end)
+                                         audio_fade_out_end=audio_fade_out_end, chapters=chapters)
         if not result.get('success'):
             status.fail(result.get('message', _("Échec du traitement vidéo")))
             return
@@ -1351,6 +1419,7 @@ def process_recorded_video(request):
         'audio_loop_end' (secondes), 'audio_start' (secondes), 'audio_fade_in'
         (secondes), 'audio_loop_crossfade' (secondes), 'color_fidelity' : options
       - 'fileName' : nom de base de la vidéo (cf. video_output_path)
+      - 'chapters' : chapitres (JSON, cf. video_chapters.parse_chapters)
     """
     from task_manager import task_manager
 
@@ -1398,6 +1467,7 @@ def process_recorded_video(request):
         audio_loop_crossfade=_num('audio_loop_crossfade', 0.0),
         audio_end=_num('audio_end', 0.0),
         audio_fade_out_end=_num('audio_fade_out_end', 0.0),
+        chapters=video_chapters.parse_chapters(request.form.get('chapters')),
     )
     return jsonify({
         'success': True,

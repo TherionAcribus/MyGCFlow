@@ -114,6 +114,8 @@ for (const mode of ['images', 'mediarecorder']) test(`export vidéo (${mode}) : 
   await openParcoursPage(page);
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
   const { quanta } = (await snapshot(page)).timeline;
+  // Chapitres attendus : la 2e journée commence avec sa nuit.
+  const day2Q = (await snapshot(page)).timeline.dayStartQ[1];
 
   await page.locator('a[href="#animation"]').click();
   await page.locator('#recordingConfigTab').click();
@@ -132,6 +134,12 @@ for (const mode of ['images', 'mediarecorder']) test(`export vidéo (${mode}) : 
   // Pendant la capture : le géocacheur et le trait sont dessinés.
   await expect.poll(async () => (await snapshot(page)).playLayers, { timeout: 30_000 }).toBe(true);
   await expect(page.locator('#modal_video_ready')).toBeVisible({ timeout: 120_000 });
+  // Deux journées : chapitres intégrés, mais trop peu pour YouTube (3 au moins).
+  await expect(page.locator('#videoReadyChapters')).toBeVisible();
+  await expect(page.locator('#videoReadyChaptersTitle')).toHaveText('2 chapitres intégrés à la vidéo');
+  await expect(page.locator('#videoReadyChaptersText')).toBeHidden();
+  await expect(page.locator('#btnVideoReadyCopyChapters')).toBeHidden();
+  await expect(page.locator('#videoReadyChaptersHint')).toContainText('trop courtes');
   let created = [];
   await expect.poll(() => (created = mp4Names().filter((name) => !existing.has(name))).length, { timeout: 30_000 })
     .toBeGreaterThan(0);
@@ -142,17 +150,52 @@ for (const mode of ['images', 'mediarecorder']) test(`export vidéo (${mode}) : 
     const expectation = path.join(RUNTIME, 'parcours-video-expectation.json');
     writeFileSync(expectation, JSON.stringify({ video_codec: 'h264', min_size_bytes: 1_000 }));
     const probe = spawnSync(python, [path.join(ROOT, 'video_validator.py'), videoPath, '--expect', expectation, '--json'],
-      { encoding: 'utf8' });
+      { encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
     expect(probe.status, `${probe.stdout}\n${probe.stderr}`).toBe(0);
-    const { duration_seconds: duration } = JSON.parse(probe.stdout);
+    const { duration_seconds: duration, chapters } = JSON.parse(probe.stdout);
     // Un quantum par 1/20 s, plus la pause automatique de fin (flash).
     expect(duration).toBeGreaterThan(quanta / 20 - 0.5);
     expect(duration).toBeLessThan(quanta / 20 + 4);
+    // Une journée par chapitre, relevée pendant la capture.
+    expect(chapters.map((c) => c.title)).toEqual(['Jour 1 — 12/07/2025', 'Jour 2 — 13/07/2025']);
+    expect(chapters[0].start).toBe(0);
+    expect(chapters[1].start).toBeGreaterThan(day2Q / 20 - 0.5);
+    expect(chapters[1].start).toBeLessThan(day2Q / 20 + 0.5);
+    expect(chapters[1].end).toBeCloseTo(duration, 0);
   } finally {
     rmSync(videoPath, { force: true });
   }
   expect((await snapshot(page)).running).toBe(false);
   expect(errors).toEqual([]);
+});
+
+test('écran de fin : la liste des chapitres YouTube se copie', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await openParcoursPage(page);
+  // Résultat d'export simulé (capture.py, _write_youtube_chapters) : trois
+  // journées assez longues pour YouTube.
+  const youtube = '0:00 Jour 1 — 12/07/2025\n0:12 Jour 3 — 14/07/2025\n0:30 Jour 4 — 15/07/2025\n';
+  await page.evaluate(async (text) => {
+    const app = await import('/static/js/index.js');
+    app.showVideoReady({ file: 'vacances.mp4', chapters: { count: 3, youtube: text, file: 'vacances.youtube.txt' } });
+  }, youtube);
+  await expect(page.locator('#videoReadyChaptersTitle')).toHaveText('3 chapitres intégrés à la vidéo');
+  await expect(page.locator('#videoReadyChaptersText')).toHaveValue(youtube);
+  await expect(page.locator('#videoReadyChaptersHint')).toContainText('vacances.youtube.txt');
+  await page.locator('#btnVideoReadyCopyChapters').click();
+  // Le presse-papiers de Windows rend des fins de ligne CRLF.
+  await expect.poll(() => page.evaluate(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, '\n')))
+    .toBe(youtube);
+
+  // Vidéo sans chapitres (page principale, journée unique) : bloc masqué.
+  await page.locator('#modal_video_ready .btn-close').click();
+  await expect(page.locator('#modal_video_ready')).toBeHidden();
+  await page.evaluate(async () => {
+    const app = await import('/static/js/index.js');
+    app.showVideoReady({ file: 'carte.mp4', chapters: { count: 0, youtube: null, file: null } });
+  });
+  await expect(page.locator('#modal_video_ready')).toBeVisible();
+  await expect(page.locator('#videoReadyChapters')).toBeHidden();
 });
 
 test('créer un parcours : étapes reconstruites par jour, heures, sur la carte', async ({ page, request }) => {

@@ -68,6 +68,7 @@ import {
     stateAt,
     stopsInRange,
 } from './parcours_timeline.mjs';
+import { chaptersForUpload, createChapterLog } from './parcours_chapters.mjs';
 import { createParcoursTimelineBar, slotLabels } from './parcours_tbar.mjs';
 import { createParcoursAdjust } from './parcours_adjust.mjs';
 import { createParcoursStyleUI } from './parcours_style_ui.mjs';
@@ -166,6 +167,8 @@ let olFeatures = [];          // une feature WebGL par étape de `timeline`
 const clock = createEvolutionClock();
 let endDay = 0;
 let currentQ = 0;             // position du moteur, en quanta fractionnaires
+// Débuts de journée relevés pendant une capture : chapitres de la vidéo.
+const chapterLog = createChapterLog();
 let pendingOpenId = null;     // parcours ouvert pendant une lecture
 let pendingTimeline = false;  // rythme changé pendant une lecture
 let playMsPerDay = QUANTUM_MS;  // quantum à l'écran, tenu par parcoursFrameVars
@@ -504,6 +507,7 @@ function parcoursBegin(startDate, endDate, at) {
     const wasRunning = clock.running;
     beginEvolution(clock, startDay, at);
     currentQ = startDay;
+    chapterLog.begin(timeline, startDay);
     playDraw.reset();
     pkg.hideMapPopup?.();
     closeFan();
@@ -519,6 +523,7 @@ function parcoursStep(dates, at) {
     const last = dayIndexOf(quantumBase, dates[dates.length - 1]);
     const placed = stopsInRange(timeline, first, last).map((i) => olFeatures[i]).filter(Boolean);
     stepEvolution(clock, last, at, last >= endDay);
+    chapterLog.note(last, pkg.recordingVideoTimeMs?.());
     return { placed, archived: [], values: countersAt(last) };
 }
 
@@ -534,6 +539,16 @@ function parcoursFrameVars(now, msPerDay) {
         currentQ = Math.max(0, clock.day + Math.min(1, elapsed / perDay));
     }
     return vars;
+}
+
+// Chapitres de la dernière capture, pour l'encodage (mapgl.js) ; `speed` :
+// accélération appliquée par le post-traitement.
+function parcoursRecordingChapters(speed) {
+    const display = (iso) => {
+        const date = iso ? pkg.parseLocalDate?.(iso) : null;
+        return (date && pkg.formatDateDisplay?.(date)) || iso || '';
+    };
+    return chaptersForUpload(chapterLog.entries(), speed, display);
 }
 
 function parcoursEnd() {
@@ -648,6 +663,7 @@ const PARCOURS_ENGINE = Object.freeze({
     styleChanged: parcoursStyleChanged,
     hidesPoints: () => stopStyle().render === RENDER_STOPS,
     popupAt: parcoursPopupAt,
+    recordingChapters: parcoursRecordingChapters,
 });
 
 
@@ -1418,7 +1434,11 @@ export function getParcoursSnapshot() {
             stopQ: timeline.stops.map((stop) => stop.q),
             nightLegs: timeline.legs.filter((leg) => leg.night).length,
             totalKm: timeline.totalKm,
+            // Début de chaque journée (nuit comprise) : bornes des chapitres.
+            dayStartQ: timeline.days.map((day) => day.startQ),
         } : null,
+        // Chapitres relevés pendant la dernière capture (ms de vidéo brute).
+        chapters: chapterLog.entries(),
         running: clock.running,
         currentQ,
         reducedMotion: playDraw.reducedMotion(),

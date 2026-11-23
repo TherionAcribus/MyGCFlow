@@ -425,6 +425,41 @@ décalait sous le pointeur. La série et les repères sont mémoïsés sur
 `timelineRevision` (incrémenté à chaque chronologie) et le réglage des
 heures.
 
+### Chapitres de la vidéo
+
+Une vidéo de parcours sur plusieurs journées porte un chapitre par journée
+(`parcours_chapters.mjs`, côté serveur `video_chapters.py`) :
+
+- **Bornes.** Un chapitre commence avec la nuit qui précède sa journée
+  (`timeline.days[i].startQ` : trajet de nuit et carton « n jours plus
+  tard » inclus, comme dans la chronologie) ; le premier commence à 0 s et
+  couvre le carton d'ouverture.
+- **Instants relevés, pas recalculés.** `parcoursStep` note l'instant
+  vidéo (`recordingVideoTimeMs` de mapgl.js : images capturées ÷ fps en mode
+  images, temps actif en MediaRecorder) au premier pas qui atteint chaque
+  borne. Pré-roll, pauses et images de caméra sont ainsi comptés tels qu'ils
+  sont dans le fichier. Le ralentissement MediaRecorder est retiré à l'envoi
+  (`serverNormalizationFactor`). Un aperçu ne note rien.
+- **Envoi.** Champ `chapters` (JSON `[{start, day, date}]`, date déjà
+  formatée) de `/start_create_video` et de `/process_recorded_video` ;
+  moins de deux chapitres : rien. `parse_chapters` écarte toute entrée mal
+  formée sans faire échouer l'export.
+- **Dans le MP4.** Tous les chapitres, quelle que soit leur durée : fichier
+  de métadonnées ffmpeg passé en entrée (`-f ffmetadata`, `-map_chapters`)
+  dans l'encodage existant, sans passe de plus. Titres « Jour n — date »
+  traduits côté serveur. Lus par VLC, mpv… ; `video_validator.py` les
+  rapporte (`chapters`).
+- **Pour YouTube.** `<vidéo>.youtube.txt`, à côté du MP4, et bloc
+  « Copier pour YouTube » de l'écran « Vidéo prête ». YouTube ignore toute
+  la liste si un chapitre dure moins de 10 s ou s'il y en a moins de
+  trois : une journée trop courte rejoint la précédente (« Jours 3 à 4 »),
+  la première rejoint la suivante ; sous trois chapitres, pas de fichier
+  et l'écran le dit. La suppression d'une vidéo (« Dernières vidéos »)
+  emporte son `.youtube.txt`.
+
+Relevé : `getParcoursSnapshot().chapters` (journal de la dernière capture,
+ms bruts) et `timeline.dayStartQ`.
+
 ### Finitions (lot 7)
 
 Réglages de la carte « Lecture » de l'onglet Données, lus à chaque image :
@@ -1108,7 +1143,12 @@ deux étapes, 19 591 trouvailles, 4 774 étapes Lab horodatées) :
   `tests/js/parcours_camera.test.mjs`, `tests/js/parcours_model.test.mjs`,
   `tests/js/parcours_photo_layout.test.mjs` (cadrage, réglages, légende,
   créneaux, trois placements, effets, dessin sur un contexte factice),
-  `tests/js/app_mode.test.mjs`.
+  `tests/js/parcours_chapters.test.mjs`, `tests/js/app_mode.test.mjs`.
+- Chapitres : `tests/test_video_chapters.py` (validation, formats,
+  regroupement YouTube, encodages ffmpeg réels avec et sans musique),
+  `test_delete_takes_the_youtube_chapters_along` de
+  test_recent_videos.py ; e2e : « export vidéo » (chapitres lus dans le
+  MP4, deux modes) et « écran de fin » de parcours-page.spec.mjs.
 - Compléter depuis geocaching.com : `CollectRequestTests` et
   `test_stop_positions_follow_cache_position`,
   `test_favorite_and_cache_facts` et `test_parkings_of_the_parcours_caches`

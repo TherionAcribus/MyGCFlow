@@ -598,6 +598,9 @@ Autres repères :
   `waitForStableTimeline` : un rechargement tardif remet la plage par
   défaut, même en plein enregistrement (exemples « jours regroupés » de
   `video-export.spec.mjs`).
+- `navigator.clipboard.readText()` rend des fins de ligne CRLF sous
+  Windows : normaliser (`replace(/\r\n/g, '\n')`) avant de comparer un texte
+  copié — exemple « écran de fin » de `parcours-page.spec.mjs`.
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `@playwright\test\cli.js`, `run-tests.mjs` ou `run_server.py`. Sous Linux :

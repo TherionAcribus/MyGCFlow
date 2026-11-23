@@ -1238,6 +1238,27 @@ function sampleAppearClock() {
     return pointAppearClock.sample('live', (livePausedAt ?? performance.now()) - livePauseOffsetMs);
 }
 
+// Instant de la vidéo en cours de capture (ms), null hors capture : relevé
+// des chapitres (parcours_data.js). En MediaRecorder, temps actif brut — le
+// ralentissement est retiré à l'envoi (recordingChapters).
+export function recordingVideoTimeMs() {
+    if (isRecording) return globalRecordFrame * 1000 / (Number(pkg.options.record.framesPerSec) || 30);
+    if (isMediaRecording) return mrActiveElapsedMs();
+    return null;
+}
+
+// Chapitres de la capture terminée pour l'encodage serveur (JSON), '' sans
+// chapitres. `speed` : accélération appliquée par le post-traitement.
+function recordingChapters(speed = 1) {
+    try {
+        const chapters = lifecycleEngine()?.recordingChapters?.(speed) || [];
+        return chapters.length ? JSON.stringify(chapters) : '';
+    } catch (e) {
+        console.warn('[RECORD END] Chapitres indisponibles :', e);
+        return '';
+    }
+}
+
 // Temps écoulé depuis le démarrage du pipeline MediaRecorder, pauses « onglet
 // masqué » exclues. Progression affichée, filet de sécurité et horloge
 // d'apparition des points partagent cette mesure.
@@ -4842,6 +4863,8 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
         // Vrai quand la vidéo sortira sans la musique demandée : l'écran de
         // fin le dit, au lieu d'une vidéo muette sans explication.
         let musicDropped = false;
+        // Journées du parcours : chapitres intégrés à la vidéo.
+        const chapters = recordingChapters();
         const tryAssembleWithAudio = async () => {
             try {
                 const file = includedMusicFile();
@@ -4861,6 +4884,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                     session: captureSessionId,
                     expected_frames: imageCounter,
                 };
+                if (chapters) body.chapters = chapters;
                 if (audioFileName) {
                     body.audio = audioFileName;
                     body.audio_volume = audioVol;
@@ -4888,6 +4912,7 @@ async function captureNextFrame(capture, pointOptions, flashOptions, infos, sess
                     color_fidelity: normalizeColorFidelity(pkg.options?.record?.colorFidelity),
                     session: captureSessionId,
                     expected_frames: imageCounter,
+                    ...(chapters ? { chapters } : {}),
                 });
             }
         };
@@ -5772,7 +5797,11 @@ function finalizeMediaRecorderVideo(){
                 // Le serveur ne doit accélérer la vidéo que si l'utilisateur a
                 // explicitement demandé la normalisation. Auparavant, décocher
                 // l'option n'avait aucun effet dans le chemin ffmpeg.
-                fd.append('slowdown', String(serverNormalizationFactor(slowdown, doNormalize)));
+                const speed = serverNormalizationFactor(slowdown, doNormalize);
+                fd.append('slowdown', String(speed));
+                // Journées du parcours : chapitres intégrés à la vidéo.
+                const chapters = recordingChapters(speed);
+                if (chapters) fd.append('chapters', chapters);
                 fd.append('fps', String(normalizeRecordingFps(pkg.options?.record?.fps)));
                 // Fidélité de couleur de l'encodage final (cf. color_fidelity.mjs).
                 fd.append('color_fidelity', normalizeColorFidelity(pkg.options?.record?.colorFidelity));

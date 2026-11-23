@@ -36,6 +36,7 @@ from capture import (
 )
 import folder_picker
 import paths
+import video_chapters
 from localization import get_locale
 from settings_manager import AUDIO_FADE_MAX_SECONDS, PLAYLIST_MAX, get_settings_manager
 from task_manager import TaskAlreadyRunning, task_manager
@@ -170,6 +171,8 @@ def start_create_video():
                 # dans la vidéo (secondes ; 0 = fin du fichier / de la vidéo).
                 audio_end=_param('audio_end', 0),
                 audio_fade_out_end=_param('audio_fade_out_end', 0),
+                # Journées d'un parcours : chapitres intégrés au MP4.
+                chapters=video_chapters.parse_chapters(_param('chapters')),
                 exclusive=True,
             )
         except TaskAlreadyRunning as exc:
