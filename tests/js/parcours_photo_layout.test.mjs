@@ -160,6 +160,36 @@ test('près de l’étape : côté vers le centre, gardée dans l’écran, fond
     assert.deepEqual(photoFrameAt(timeline(), 20, normalizePhotoDisplay({ layout: 'none' }), VIEW).cards, []);
 });
 
+test('côté auto : gardé tant que la pile est montrée, même si la caméra déplace l’étape', () => {
+    const tl = timeline();
+    const display = normalizePhotoDisplay({ tilt: false });
+    const memo = { timeline: null, sides: new Map() };
+    let at = [500, 300];
+    const view = { ...VIEW, stopPixel: () => at, sideMemo: memo };
+    let [card] = photoFrameAt(tl, 20, display, view).cards;
+    assert.ok(card.x > 500 && card.y < 300);
+    // L'étape glisse au-delà du seuil de droite : la photo suivante de la
+    // même étape reste à droite.
+    at = [800, 450];
+    [card] = photoFrameAt(tl, 30, display, view).cards;
+    assert.equal(card.photoId, 2);
+    assert.ok(card.x > 800 && card.y < 450);
+    // Sans mémoire, elle basculait à gauche.
+    [card] = photoFrameAt(tl, 30, display, { ...view, sideMemo: undefined }).cards;
+    assert.ok(card.x < 800);
+    // Pile terminée : oubliée ; la suivante choisit son côté à son arrivée.
+    assert.deepEqual(photoFrameAt(tl, 60, display, view).cards, []);
+    assert.equal(memo.sides.size, 0);
+    [card] = photoFrameAt(tl, 90, display, view).cards;
+    assert.ok(card.x < 800);
+    // Nouvelle chronologie : mémoire repartie de zéro.
+    const other = timeline();
+    at = [500, 300];
+    [card] = photoFrameAt(other, 20, display, view).cards;
+    assert.equal(memo.timeline, other);
+    assert.ok(card.x > 500);
+});
+
 test('emplacement fixe : ancre et marge, haute résolution', () => {
     const display = normalizePhotoDisplay({ layout: 'fixed', anchor: 'bottom-center', frame: 'plain', tilt: false });
     let [card] = photoFrameAt(timeline(), 20, display, VIEW).cards;

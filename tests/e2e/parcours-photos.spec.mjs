@@ -279,6 +279,12 @@ test('photos en chemin : le géocacheur s’arrête à la position de la photo l
   expect(slot).toMatchObject({ photoId: photo.id, route: true, stop: null });
   expect(after.timeline.quanta).toBe(before + 15);
   await expect(page.locator('#parcoursPhotoPlacesHint')).toContainText('montrées en chemin');
+  // Préchargée comme une photo d'étape : miniature d'office, pleine taille
+  // attendue avant un enregistrement (jusqu'au 2026-11-23, ni l'une ni
+  // l'autre : elle pouvait manquer dans la vidéo).
+  await expect.poll(async () => (await snapshot(page)).photosThumbs).toBe(1);
+  expect(await page.evaluate(() => window.parcoursPhotosReady())).toBe(true);
+  expect((await snapshot(page)).photosMissing).toBe(0);
 
   // En lecture : arrêté au point de la photo pendant tout le créneau, la
   // carte postale peinte ; reparti après.

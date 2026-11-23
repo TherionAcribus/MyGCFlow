@@ -360,7 +360,11 @@ function anchorCenter(anchor, width, height, cardW, cardH, margin) {
 
 // Côté de la carte autour de l'étape : réglé, ou vers le centre de l'écran
 // (haut-droite tant que l'étape est près du centre : avec la caméra qui
-// suit, la carte ne bascule pas d'un côté à l'autre).
+// suit, la carte ne bascule pas d'un côté à l'autre). En `auto`, le côté
+// est choisi à la première image d'une pile puis gardé tant qu'elle est
+// montrée (`view.sideMemo`) : la caméra, lissée, déplace encore l'étape à
+// l'écran à l'arrivée et au départ — la carte sautait d'un côté à l'autre
+// quand l'étape franchissait un seuil.
 function stopSide(side, p, width, height) {
     if (side !== 'auto') {
         const [v, h] = side.split('-');
@@ -379,7 +383,9 @@ function insideScreen(p, width, height) {
 //   pointPixel([lon, lat]) — idem pour un point (photo en chemin) ;
 //   aspectOf(id)   — proportions de la photo montrée (photoAspect) ;
 //   panoramaOf(id) — vrai pour un panorama (isPanorama) ;
-//   captionOf(slot) — légende déjà composée ('' : aucune).
+//   captionOf(slot) — légende déjà composée ('' : aucune) ;
+//   sideMemo       — facultatif, { timeline, sides } gardé d'une image à
+//                    l'autre : côté `auto` de chaque pile montrée (stopSide).
 // Retour : { cards: [{ photoId, slot, x, y, w, h, frame, scale, rotation,
 // alpha, dx, dy, effectScale, kenBurns, caption, captionAlpha, leader }] },
 // dans l'ordre de dessin (vignettes de la bande d'abord). x, y : centre ;
@@ -440,12 +446,31 @@ export function photoFrameAt(timeline, qf, display, view) {
         return out;
     }
 
+    // Côtés `auto` mémorisés par pile (clé : rang de sa première photo),
+    // oubliés quand la pile n'est plus montrée ou que la chronologie change.
+    const memo = display.side === 'auto' ? view.sideMemo : null;
+    if (memo && memo.timeline !== timeline) {
+        memo.timeline = timeline;
+        memo.sides = new Map();
+    }
+    const activePiles = new Set();
+    const sideOf = (p, key) => {
+        if (!memo) return stopSide(display.side, p, width, height);
+        activePiles.add(key);
+        let side = memo.sides.get(key);
+        if (!side) {
+            side = stopSide(display.side, p, width, height);
+            memo.sides.set(key, side);
+        }
+        return side;
+    };
+
     // Centre d'une boîte boxW × boxH : à l'ancre (emplacement fixe) ou à
     // côté de l'étape, gardée dans l'écran.
-    const placeBox = (boxW, boxH, stop) => {
+    const placeBox = (boxW, boxH, stop, key) => {
         if (display.layout === PHOTO_LAYOUT_FIXED) return anchorCenter(display.anchor, width, height, boxW, boxH, margin);
         const p = stop || [width / 2, height / 2];
-        const { sx, sy } = stopSide(display.side, p, width, height);
+        const { sx, sy } = sideOf(p, key);
         const gap = STOP_GAP * ratio;
         return [
             clamp(p[0] + sx * (gap + boxW / 2), boxW / 2 + margin / 2, width - boxW / 2 - margin / 2),
@@ -472,17 +497,20 @@ export function photoFrameAt(timeline, qf, display, view) {
         // Repère de la pile : l'étape, ou le point d'arrêt d'une photo en chemin.
         const stop = (first.route ? view.pointPixel?.(first.at) : view.stopPixel?.(first.stop)) || null;
         const cards = pile.map(cardOf);
+        // Pile encore montrée (affichage, sortie ou descente vers sa
+        // vignette) : elle seule a besoin d'une pose près de l'étape.
+        const shownPile = qf <= last.toQ + Math.max(PHOTO_FADE_Q, display.pin ? PIN_LAND_Q : 0);
         // Pose de chaque photo pendant son affichage : seule à côté de
         // l'étape (ou à l'ancre), ou dans la pile.
         let pileCenter = null;
-        if (display.stack) {
+        if (display.stack && shownPile) {
             const spread = 2 * STACK_SPREAD * size;
             pileCenter = placeBox(Math.max(...cards.map((c) => c.cardW)) + spread,
-                Math.max(...cards.map((c) => c.cardH)) + spread, stop);
+                Math.max(...cards.map((c) => c.cardH)) + spread, stop, first.order);
         }
         const poseOf = (k) => {
             if (!pileCenter) {
-                const [x, y] = placeBox(cards[k].cardW, cards[k].cardH, stop);
+                const [x, y] = placeBox(cards[k].cardW, cards[k].cardH, stop, first.order);
                 return { x, y, rotation: tilt(pile[k]), scale: 1 };
             }
             const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
@@ -520,8 +548,9 @@ export function photoFrameAt(timeline, qf, display, view) {
             const end = endOf(slot);
             if (display.pin && qf >= end) {
                 const land = clamp((qf - end) / PIN_LAND_Q, 0, 1);
-                const from = poseOf(k);
                 const to = pinOf(k);
+                // Posée : plus de pose de départ à calculer.
+                const from = land >= 1 ? to : poseOf(k);
                 const t = eased('slide', land);
                 card.x = from.x + (to.x - from.x) * t;
                 card.y = from.y + (to.y - from.y) * t;
@@ -552,6 +581,9 @@ export function photoFrameAt(timeline, qf, display, view) {
         });
         if (top && display.leader && pileCenter) setLeader(top, stop);
         if (topPin) setLeader(topPin, stop);
+    }
+    if (memo) {
+        for (const key of memo.sides.keys()) if (!activePiles.has(key)) memo.sides.delete(key);
     }
     out.cards.push(...pinned, ...landing, ...shown);
     return out;

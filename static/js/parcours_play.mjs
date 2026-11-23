@@ -971,8 +971,17 @@ export function createParcoursPlayDraw(deps) {
         return `${CONFIG.BASE_URL}/api/parcours/${S().selectedId}/photos/${photo.id}/${thumb ? 'thumb' : 'file'}`;
     }
 
+    // Index des photos par id, refait quand la liste est remplacée (un
+    // changement de légende ou de cadrage remplace le tableau) : appelé
+    // plusieurs fois par carte et par image, une recherche linéaire coûtait
+    // ~7 ms par image avec 300 vignettes sur la carte.
+    let photoIndex = { photos: null, byId: new Map() };
     function photoById(id) {
-        return (S().inputs?.photos || []).find((photo) => photo.id === id) || null;
+        const photos = S().inputs?.photos || null;
+        if (photoIndex.photos !== photos) {
+            photoIndex = { photos, byId: new Map((photos || []).map((photo) => [photo.id, photo])) };
+        }
+        return photoIndex.byId.get(id) || null;
     }
 
     function loadPhotoImage(id, thumb) {
@@ -1019,20 +1028,21 @@ export function createParcoursPlayDraw(deps) {
     // pleines tailles ne le sont que près de la tête, sauf `all`
     // (enregistrement : toute la chronologie est filmée, tout doit être
     // prêt).
+    //
+    // Les photos sont celles des créneaux de la chronologie (photoSlots) :
+    // étapes ET photos en chemin. Avant le 2026-11-23, seules celles des
+    // étapes (`photoByStop`) l'étaient — une photo en chemin n'avait pas de
+    // miniature et n'était pas attendue avant un enregistrement : elle
+    // pouvait manquer dans la vidéo.
     function preloadPhotos(all = false) {
-        const { timeline, inputs, photoByStop } = S();
-        const byId = new Map();
-        for (const photo of inputs?.photos || []) byId.set(photo.id, photo);
-        for (const ids of photoByStop.values()) {
-            for (const id of ids) if (byId.has(id)) loadPhotoImage(id, true);
-        }
+        const { timeline } = S();
+        const ids = new Set(photoSlots(timeline).map((slot) => slot.photoId));
+        for (const id of ids) if (photoById(id)) loadPhotoImage(id, true);
         // Photos des cartons : quelques-unes, en pleine taille dès l'ouverture
         // (le carton d'ouverture est la première image de la lecture).
-        for (const id of cardPhotoIds()) if (byId.has(id)) loadPhotoImage(id, false);
+        for (const id of cardPhotoIds()) if (photoById(id)) loadPhotoImage(id, false);
         if (all) {
-            for (const ids of photoByStop.values()) {
-                for (const id of ids) if (byId.has(id)) loadPhotoImage(id, false);
-            }
+            for (const id of ids) if (photoById(id)) loadPhotoImage(id, false);
         } else {
             ensurePhotosNear();
         }
@@ -1106,8 +1116,34 @@ export function createParcoursPlayDraw(deps) {
             },
             aspectOf: (id) => photoAspect(photoById(id)),
             panoramaOf: (id) => isPanorama(photoById(id)),
-            captionOf: photoCaptionFor,
+            captionOf: memoCaption,
+            sideMemo,
         };
+    }
+
+    // Côté `auto` de chaque pile montrée, gardé d'une image à l'autre
+    // (photoFrameAt).
+    const sideMemo = { timeline: null, sides: new Map() };
+
+    // Légendes composées, par créneau : avec les vignettes laissées sur la
+    // carte ou la bande, toutes les photos passées sont remises en page à
+    // chaque image — composer chaque légende (dates localisées comprises)
+    // coûtait ~10 ms par image pour 300 photos. Refaites quand la
+    // chronologie, les photos, les appareils, le gabarit ou le format des
+    // heures changent.
+    let captionMemo = { key: null, texts: new Map() };
+    function memoCaption(slot) {
+        const { photoDisplay, timeline, inputs, playback } = S();
+        const key = [timeline, inputs?.photos, inputs?.cameras, photoDisplay.caption, playback.hours];
+        if (!captionMemo.key || key.some((value, i) => value !== captionMemo.key[i])) {
+            captionMemo = { key, texts: new Map() };
+        }
+        let text = captionMemo.texts.get(slot.order);
+        if (text === undefined) {
+            text = photoCaptionFor(slot);
+            captionMemo.texts.set(slot.order, text);
+        }
+        return text;
     }
 
     // Légende d'une photo selon le gabarit des réglages. L'heure est celle de

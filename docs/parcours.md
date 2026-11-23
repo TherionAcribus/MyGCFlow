@@ -895,7 +895,10 @@ marque ni modèle partagent la clé `UNKNOWN_CAMERA` (« ? », ligne
 - elle est dessinée dans le `postrender` de la couche de la tête, donc
   filmée. L'image est servie par le serveur local (même origine) : le
   canevas reste exportable, ce que vérifie un export du spec e2e ;
-- les photos sont préchargées fenêtré autour de la position de lecture :
+- les photos sont préchargées fenêtré autour de la position de lecture —
+  celles des créneaux de la chronologie (`photoSlots`), photos en chemin
+  comprises (avant le 2026-11-23, seules celles des étapes : une photo en
+  chemin pouvait manquer dans la vidéo) :
   les miniatures (vignettes épinglées sur la carte) toutes d'office, les
   pleines tailles seulement pour les créneaux proches de la tête (~4 jours
   d'avance, un peu derrière pour l'effacement et les retours) — ouvrir un
@@ -995,7 +998,7 @@ envoyée entière à chaque changement :
 | Clé | Valeurs (défaut en premier) |
 |---|---|
 | `layout` | `stop` (près de l'étape), `fixed` (emplacement fixe), `strip` (bande), `none` (aucune photo) |
-| `side` | près de l'étape : `auto` (vers le centre de l'écran ; haut-droite près du centre, pour que la caméra qui suit ne la fasse pas basculer), `top-right`, `top-left`, `bottom-right`, `bottom-left` |
+| `side` | près de l'étape : `auto` (vers le centre de l'écran ; haut-droite près du centre, pour que la caméra qui suit ne la fasse pas basculer ; choisi à la première image d'une pile et gardé tant qu'elle est montrée — `sideMemo` —, la caméra lissée déplaçant encore l'étape à l'arrivée et au départ), `top-right`, `top-left`, `bottom-right`, `bottom-left` |
 | `anchor` | emplacement fixe : `top-right` et les 7 autres ancres des images, à 16 px du bord |
 | `leader` | trait de l'étape vers la carte (près de l'étape, emplacement fixe) : `false` |
 | `stack` | pile (près de l'étape, emplacement fixe) : les photos d'une étape se posent les unes sur les autres, décalées et inclinées selon leur rang, et la pile s'efface d'un bloc après la dernière : `false` |
@@ -1023,7 +1026,12 @@ envoyée entière à chaque changement :
   cartes du quantum (centre, taille, cadre, rotation, opacité, effet, zoom
   lent, légende, trait) en px du canevas ; `parcours_photo_draw.mjs` les
   peint dans le `postrender` de la couche de la tête : filmées, et à la
-  bonne échelle en capture haute résolution (`ratio`).
+  bonne échelle en capture haute résolution (`ratio`). Avec les vignettes
+  sur la carte ou la bande, TOUTES les photos passées sont remises en page
+  à chaque image : légendes mémorisées par créneau (`memoCaption`,
+  parcours_play.mjs) et photos indexées par id — composer les légendes et
+  chercher les photos linéairement coûtait ~17 ms par image pour 300
+  photos (mesuré sous Node, 2026-11-23).
 - **Bande** : la photo entre en grand au-dessus de la bande (en dessous pour
   une bande en haut), puis rejoint sa case en rétrécissant pendant le
   dernier tiers de son temps (4 quanta au plus) ; la bande défile vers la
