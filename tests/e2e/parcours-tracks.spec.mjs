@@ -13,6 +13,7 @@ import {
   createWeekend,
   deleteAllParcours,
   importFixture,
+  openEnrichSection,
   openParcoursPage,
   snapshot,
 } from './parcours-helpers.mjs';
@@ -33,16 +34,28 @@ test.afterEach(async ({ request }) => {
 async function openReady(page) {
   await openParcoursPage(page);
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  await openEnrichSection(page, 'tracks');
 }
 
 test('trace : heures de passage comme ancres, vrai chemin, fuseau réglable', async ({ page, request }) => {
   const errors = collectErrors(page);
   await createWeekend(request);
-  await openReady(page);
-  await expect(page.locator('#parcoursTracksCard')).toBeVisible();
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  // Section « Traces GPS » repliée par défaut, son état lisible en en-tête.
+  const section = page.locator('#parcoursTracksCard');
+  await expect(section).toBeVisible();
+  await expect(section).not.toHaveAttribute('open', '');
+  await expect(page.locator('#parcoursTracksHint')).toBeVisible();
+  await expect(page.locator('#parcoursTracksHint')).toHaveText('Aucune trace pour ce parcours.');
+  await expect(page.locator('#btnParcoursAddTracks')).toBeHidden();
 
+  // Un envoi (ici sans passer par le bouton, comme un fichier glissé sur la
+  // page) ouvre la section pour montrer sa progression.
   await page.locator('#parcoursTrackInput').setInputFiles(TRACE);
+  await expect(section).toHaveAttribute('open', '');
   await expect.poll(async () => (await snapshot(page)).tracks.length, { timeout: 30_000 }).toBe(1);
+  await expect(page.locator('#parcoursTracksHint')).toHaveText('1 trace, 3 étapes calées sur une trace');
   let state = await snapshot(page);
   // Simplifiée à l'import, mais gardée telle quelle en heure.
   expect(state.tracks[0].pointCount).toBeLessThan(461);

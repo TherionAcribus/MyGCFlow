@@ -13,6 +13,7 @@ import {
   createWeekend,
   deleteAllParcours,
   importFixture,
+  openEnrichSection,
   openParcoursPage,
   snapshot,
 } from './parcours-helpers.mjs';
@@ -43,6 +44,9 @@ test('demande limitée au parcours, export reçu puis validé dans la page', asy
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
   const card = page.locator('#parcoursCollectCard');
   await expect(card).toBeVisible();
+  // Section repliée : le compte reste lisible dans son en-tête.
+  await expect(page.locator('#parcoursCollectHint')).toHaveText('5 caches dans ce parcours, dont 5 jamais relues.');
+  await openEnrichSection(page, 'collect');
   await expect(page.locator('#parcoursCollectSummary')).toContainText('5');
   await expect(page.locator('#parcoursCollectReady')).toBeHidden();
 
@@ -131,6 +135,7 @@ test('demande limitée au parcours, export reçu puis validé dans la page', asy
 test('annuler la demande', async ({ page, request }) => {
   await openParcoursPage(page);
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  await openEnrichSection(page, 'collect');
   await page.locator('#parcoursCollectAll').check();
   await page.locator('#btnParcoursCollectPrepare').click();
   await expect(page.locator('#parcoursCollectReady')).toBeVisible();

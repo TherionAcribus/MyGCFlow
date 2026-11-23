@@ -52,6 +52,12 @@ test('page sans parcours : mode actif, état vide, aucune erreur', async ({ page
   await expect(page.locator('#parcoursSummary')).toContainText('Ouvrez ou créez un parcours');
   // Outils des étapes (annuler, poser un lieu, exporter…) : rien sur quoi agir.
   await expect(page.locator('#parcoursStopsTools')).toBeHidden();
+  // Aucun parcours : formulaire de création ouvert d'office, sans « Fermer »
+  // ni « Nouveau parcours » ; pas de section d'enrichissement.
+  await expect(page.locator('#parcoursFormSection')).toBeVisible();
+  await expect(page.locator('#btnParcoursNew')).toBeHidden();
+  await expect(page.locator('#btnParcoursEditCancel')).toBeHidden();
+  await expect(page.locator('.parcours-area-enrich')).toBeHidden();
   // Date manquante (base sans trouvailles : rien de proposé ; ou saisie en
   // cours) : pas d'erreur de plage annoncée. La base du run peut garder les
   // trouvailles d'un spec précédent : la date est vidée ici.
@@ -250,6 +256,38 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   await expect(page.locator('.parcours-day-diagnostic').first()).toContainText('ordre de saisie des logs retenu');
   await expect(page.locator('.parcours-stop[data-stop-key="GCPAR04"]')).toContainText('souvent loguée après coup');
   await expect(page.locator('.parcours-stop-index').last()).toHaveText('5');
+
+  // Un parcours existe : le formulaire se replie derrière « Nouveau
+  // parcours », qui le rouvre ; « Fermer » le replie.
+  await expect(page.locator('#parcoursFormSection')).toBeHidden();
+  await page.locator('#btnParcoursNew').click();
+  await expect(page.locator('#parcoursFormSection')).toBeVisible();
+  await expect(page.locator('#parcoursName')).toBeFocused();
+  await expect(page.locator('#btnParcoursNew')).toBeHidden();
+  await page.locator('#btnParcoursEditCancel').click();
+  await expect(page.locator('#parcoursFormSection')).toBeHidden();
+  await expect(page.locator('#btnParcoursNew')).toBeVisible();
+
+  // Disposition. Panneau latéral (défaut à 1280 px) : une colonne, étapes
+  // sous la liste, avant « Enrichir le parcours » — elles venaient après
+  // quatre cartes. Grands réglages (panneau sous la carte, large) : étapes à
+  // droite de la liste. Disposition retenue par le localStorage du test.
+  const box = (selector) => page.locator(selector).evaluate((node) => {
+    const { top, left } = node.getBoundingClientRect();
+    return { top, left };
+  });
+  await expect(page.locator('#mapTabsContainer')).toHaveClass(/layout-sidebar/);
+  const [list, stops, enrich] = await Promise.all(
+    ['.parcours-area-list', '.parcours-area-stops', '.parcours-area-enrich'].map(box));
+  expect(stops.left).toBe(list.left);
+  expect(stops.top).toBeGreaterThan(list.top);
+  expect(enrich.top).toBeGreaterThan(stops.top);
+  await page.locator('#layoutPresets [data-layout="tabs"]').click();
+  await page.evaluate(() => document.activeElement.blur());
+  await expect.poll(async () => (await box('.parcours-area-stops')).left - (await box('.parcours-area-list')).left)
+    .toBeGreaterThan(100);
+  await page.locator('#layoutPresets [data-layout="sidebar"]').click();
+  await page.evaluate(() => document.activeElement.blur());
 
   // Synthèse du minutage : étapes et journées, pas les quanta du moteur
   // (« 178 jours · 10 jours/s » pour un week-end).

@@ -23,6 +23,11 @@ export function createParcoursList(deps) {
     // traces (contrairement à supprimer puis recréer).
     let editingParcoursId = null;
 
+    // Formulaire de création ouvert par « Nouveau parcours ». Sans parcours
+    // enregistré ou en modification, il s'affiche de toute façon ; sinon il
+    // reste replié — il occupait le haut de l'onglet, au-dessus des étapes.
+    let formOpen = false;
+
     // Séjours loin de chez soi et grosses journées (parcours_suggest.py),
     // hors plages déjà enregistrées.
     let suggestions = [];
@@ -58,12 +63,14 @@ export function createParcoursList(deps) {
         if (!list) return;
         if (listing.length === 0) {
             const empty = document.createElement('div');
-            empty.className = 'text-muted small';
+            empty.className = 'text-muted small p-3';
             empty.id = 'parcoursListEmpty';
             empty.textContent = t('Aucun parcours pour l’instant : créez-en un ci-dessous.');
             list.replaceChildren(empty);
+            syncParcoursForm();
             return;
         }
+        syncParcoursForm();
         list.replaceChildren(...listing.map((item) => {
             const row = document.createElement('div');
             row.className = 'list-group-item d-flex align-items-center gap-2 parcours-list-item';
@@ -234,6 +241,7 @@ export function createParcoursList(deps) {
             showToast(error.message, 'error');
             return;
         }
+        formOpen = false;
         await deps.refreshParcoursList({ select: S().selectedId });
         showToast(t('Parcours importé'), 'success');
     }
@@ -304,15 +312,41 @@ export function createParcoursList(deps) {
         el('parcoursName')?.focus();
     }
 
+    // Fin d'une modification : le formulaire se replie (il ne reste ouvert
+    // que s'il n'y a aucun parcours).
     function cancelEditParcours() {
         if (editingParcoursId === null) return;
         editingParcoursId = null;
+        formOpen = false;
         syncParcoursForm();
     }
 
-    // Libellés du formulaire selon le mode : création ou modification.
+    function openCreateForm() {
+        cancelEditParcours();
+        formOpen = true;
+        syncParcoursForm();
+        el('parcoursName')?.focus();
+    }
+
+    // « Annuler la modification » ou « Fermer » (création, des parcours
+    // existent déjà).
+    function closeForm() {
+        if (editingParcoursId !== null) cancelEditParcours();
+        formOpen = false;
+        syncParcoursForm();
+    }
+
+    // Libellés du formulaire selon le mode (création ou modification), et
+    // visibilité : replié derrière « Nouveau parcours » dès qu'un parcours
+    // existe.
     function syncParcoursForm() {
         const editing = editingParcoursId !== null;
+        const hasParcours = S().listing.length > 0;
+        const shown = !hasParcours || editing || formOpen;
+        const section = el('parcoursFormSection');
+        if (section) section.hidden = !shown;
+        const newBtn = el('btnParcoursNew');
+        if (newBtn) newBtn.hidden = shown;
         const title = el('parcoursFormTitle');
         if (title) title.textContent = editing ? t('Modifier le parcours') : t('Nouveau parcours');
         const submit = el('btnParcoursCreate');
@@ -321,7 +355,10 @@ export function createParcoursList(deps) {
                 + (editing ? t('Enregistrer') : t('Créer le parcours'));
         }
         const cancel = el('btnParcoursEditCancel');
-        if (cancel) cancel.hidden = !editing;
+        if (cancel) {
+            cancel.hidden = !editing && !hasParcours;
+            cancel.textContent = editing ? t('Annuler la modification') : t('Fermer');
+        }
     }
 
     function fillFormDefaults() {
@@ -372,7 +409,8 @@ export function createParcoursList(deps) {
             updateRangeHint();
         });
         end?.addEventListener('change', updateRangeHint);
-        el('btnParcoursEditCancel')?.addEventListener('click', cancelEditParcours);
+        el('btnParcoursEditCancel')?.addEventListener('click', closeForm);
+        el('btnParcoursNew')?.addEventListener('click', openCreateForm);
         el('btnParcoursImport')?.addEventListener('click', () => el('parcoursImportInput')?.click());
         el('parcoursImportInput')?.addEventListener('change', (event) => {
             const file = event.target.files?.[0];
@@ -411,6 +449,7 @@ export function createParcoursList(deps) {
                         body: JSON.stringify(payload),
                     });
                     el('parcoursName').value = '';
+                    formOpen = false;
                     await deps.refreshParcoursList({ select: body.parcours.id });
                 }
             } catch (error) {
@@ -513,8 +552,10 @@ export function createParcoursList(deps) {
 
     function applySuggestion(item) {
         // Une suggestion remplit le formulaire de création, pas une
-        // modification.
+        // modification ; il reste ouvert.
         cancelEditParcours();
+        formOpen = true;
+        syncParcoursForm();
         const name = el('parcoursName');
         const start = el('parcoursStart');
         const end = el('parcoursEnd');

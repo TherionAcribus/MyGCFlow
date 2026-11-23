@@ -4,18 +4,30 @@
 <div id="data" class="col-12 tab-pane fade show active">
     {% include '_mode_switch.html' %}
 
-    <div class="row g-3">
+    <!-- Grille à trois zones (ui_improvements.css, .parcours-data-grid) :
+         parcours, étapes, enrichissements. Large : étapes à droite ; étroit
+         (panneau latéral, fenêtre < 992 px) : étapes juste sous la liste,
+         avant les enrichissements. -->
+    <div class="parcours-data-grid">
         <!-- Parcours enregistrés + création -->
-        <div class="col-12 col-lg-5">
-            <h5 class="gc-section-title">
-                <i class="ti ti-route text-muted me-1"></i>{{ _("Mes parcours") }}
-            </h5>
-            <div class="card mb-3">
+        <div class="parcours-area-list">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <h5 class="gc-section-title mb-0">
+                    <i class="ti ti-route text-muted me-1"></i>{{ _("Mes parcours") }}
+                </h5>
+                <!-- Formulaire replié dès qu'un parcours existe
+                     (parcours_list.mjs, syncFormVisibility). -->
+                <button type="button" id="btnParcoursNew" class="btn btn-sm btn-outline-primary ms-auto" hidden>
+                    <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Nouveau parcours") }}
+                </button>
+            </div>
+            <div class="card">
                 <div id="parcoursList" class="list-group list-group-flush parcours-list" aria-live="polite">
                     <div class="text-muted small p-3">{{ _("Chargement…") }}</div>
                 </div>
             </div>
 
+            <div id="parcoursFormSection">
             <h5 class="gc-section-title">
                 <i class="ti ti-plus text-muted me-1"></i><span id="parcoursFormTitle">{{ _("Nouveau parcours") }}</span>
             </h5>
@@ -55,164 +67,165 @@
                         <button type="submit" id="btnParcoursCreate" class="btn btn-sm btn-primary">
                             <i class="ti ti-plus me-1" aria-hidden="true"></i>{{ _("Créer le parcours") }}
                         </button>
-                        <button type="button" id="btnParcoursEditCancel" class="btn btn-sm btn-link" hidden>
-                            {{ _("Annuler la modification") }}
-                        </button>
                         <input type="file" id="parcoursImportInput" class="visually-hidden" accept=".json,application/json"
                                aria-label="{{ _('Export de parcours à importer') }}">
                         <button type="button" id="btnParcoursImport" class="btn btn-sm btn-link">
                             <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Importer un export") }}
                         </button>
+                        <!-- « Annuler la modification », ou « Fermer » le
+                             formulaire de création quand des parcours existent. -->
+                        <button type="button" id="btnParcoursEditCancel" class="btn btn-sm btn-link" hidden>
+                            {{ _("Annuler la modification") }}
+                        </button>
                     </form>
                 </div>
             </div>
+            </div>
+        </div>
+
+        <!-- Enrichir le parcours ouvert : sections repliées par défaut, état
+             d'ouverture retenu par ce navigateur (parcours_data.js,
+             bindEnrichSections) ; un résumé d'état reste lisible replié. La
+             zone disparaît sans parcours ouvert (aucune section affichée). -->
+        <div class="parcours-area-enrich">
+            <h5 class="gc-section-title">
+                <i class="ti ti-sparkles text-muted me-1"></i>{{ _("Enrichir le parcours") }}
+            </h5>
 
             <!-- Traces GPS du parcours ouvert (lot 5, parcours_tracks.py / .mjs) -->
-            <div id="parcoursTracksCard" hidden>
-                <h5 class="gc-section-title mt-3">
-                    <i class="ti ti-route text-muted me-1"></i>{{ _("Traces GPS") }}
-                </h5>
-                <div class="card">
-                    <div class="card-body">
-                        <div id="parcoursTrackSummary" class="fw-medium mb-1" aria-live="polite"></div>
-                        <div class="form-hint text-muted mb-2">
-                            {{ _("Une étape à moins de 100 m d'une trace prend son heure de passage (celle où vous vous êtes attardé), et le trajet entre deux étapes calées suit la trace. Une trace partielle suffit.") }}
-                        </div>
-                        <input type="file" id="parcoursTrackInput" class="visually-hidden" multiple
-                               accept=".gpx,application/gpx+xml" aria-label="{{ _('Traces à ajouter') }}">
-                        <button type="button" id="btnParcoursAddTracks" class="btn btn-sm btn-outline-primary">
-                            <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Ajouter des traces (.gpx)") }}
-                        </button>
-                        <button type="button" id="btnParcoursTracksStop" class="btn btn-sm btn-outline-danger ms-1" hidden>
-                            <i class="ti ti-player-stop me-1" aria-hidden="true"></i>{{ _("Arrêter") }}
-                        </button>
-                        <span id="parcoursTrackStatus" class="small text-muted ms-2" aria-live="polite"></span>
-                        <div class="gpx-dropzone__hint">
-                            <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}
-                        </div>
-                        <div id="parcoursTracks" class="mt-2"></div>
-                        <div class="mt-2">
-                            <label class="form-label small mb-1" for="parcoursUtcOffset">{{ _("Heure locale des traces (enregistrées en UTC)") }}</label>
-                            <select id="parcoursUtcOffset" class="form-select form-select-sm"></select>
-                            <div id="parcoursUtcOffsetWarn" class="alert alert-warning small py-1 px-2 mt-2 mb-0" role="alert" hidden>
-                                <i class="ti ti-world-latitude me-1" aria-hidden="true"></i><span id="parcoursUtcOffsetWarnText"></span>
-                            </div>
+            <details id="parcoursTracksCard" class="stats-form-section parcours-enrich" data-enrich-key="tracks" hidden>
+                <summary class="gc-subsection-title"><i class="ti ti-route text-muted me-1" aria-hidden="true"></i>{{ _("Traces GPS") }}<span id="parcoursTracksHint" class="stats-form-summary-hint"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+                <div class="stats-form-section-body">
+                    <div id="parcoursTrackSummary" class="fw-medium mb-1" aria-live="polite"></div>
+                    <div class="form-hint text-muted mb-2">
+                        {{ _("Une étape à moins de 100 m d'une trace prend son heure de passage (celle où vous vous êtes attardé), et le trajet entre deux étapes calées suit la trace. Une trace partielle suffit.") }}
+                    </div>
+                    <input type="file" id="parcoursTrackInput" class="visually-hidden" multiple
+                           accept=".gpx,application/gpx+xml" aria-label="{{ _('Traces à ajouter') }}">
+                    <button type="button" id="btnParcoursAddTracks" class="btn btn-sm btn-outline-primary">
+                        <i class="ti ti-upload me-1" aria-hidden="true"></i>{{ _("Ajouter des traces (.gpx)") }}
+                    </button>
+                    <button type="button" id="btnParcoursTracksStop" class="btn btn-sm btn-outline-danger ms-1" hidden>
+                        <i class="ti ti-player-stop me-1" aria-hidden="true"></i>{{ _("Arrêter") }}
+                    </button>
+                    <span id="parcoursTrackStatus" class="small text-muted ms-2" aria-live="polite"></span>
+                    <div class="gpx-dropzone__hint">
+                        <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}
+                    </div>
+                    <div id="parcoursTracks" class="mt-2"></div>
+                    <div class="mt-2">
+                        <label class="form-label small mb-1" for="parcoursUtcOffset">{{ _("Heure locale des traces (enregistrées en UTC)") }}</label>
+                        <select id="parcoursUtcOffset" class="form-select form-select-sm"></select>
+                        <div id="parcoursUtcOffsetWarn" class="alert alert-warning small py-1 px-2 mt-2 mb-0" role="alert" hidden>
+                            <i class="ti ti-world-latitude me-1" aria-hidden="true"></i><span id="parcoursUtcOffsetWarnText"></span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </details>
 
             <!-- Itinéraires réels (lot 6, parcours_routing.py / .mjs) :
                  préférence globale `parcours_routing`, désactivée par défaut. -->
-            <div id="parcoursRoutingCard" hidden>
-                <h5 class="gc-section-title mt-3">
-                    <i class="ti ti-map-route text-muted me-1"></i>{{ _("Itinéraires") }}
-                </h5>
-                <div class="card">
-                    <div class="card-body">
-                        <label class="form-check form-switch mb-1">
-                            <input type="checkbox" id="parcoursRoutingEnabled" class="form-check-input" role="switch">
-                            <span class="form-check-label">{{ _("Suivre les routes et chemins") }}</span>
-                        </label>
-                        <div class="form-hint text-muted mb-2">
-                            {{ _("Les trajets sont calculés par un service en ligne (connexion nécessaire), puis gardés sur cet ordinateur : la vidéo se refait hors ligne. À pied jusqu'à 1,5 km, en voiture au-delà, en ligne droite au-delà de 300 km ; le mode se change depuis chaque étape.") }}
+            <details id="parcoursRoutingCard" class="stats-form-section parcours-enrich" data-enrich-key="routing" hidden>
+                <summary class="gc-subsection-title"><i class="ti ti-map-route text-muted me-1" aria-hidden="true"></i>{{ _("Itinéraires") }}<span id="parcoursRoutingHint" class="stats-form-summary-hint"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+                <div class="stats-form-section-body">
+                    <label class="form-check form-switch mb-1">
+                        <input type="checkbox" id="parcoursRoutingEnabled" class="form-check-input" role="switch">
+                        <span class="form-check-label">{{ _("Suivre les routes et chemins") }}</span>
+                    </label>
+                    <div class="form-hint text-muted mb-2">
+                        {{ _("Les trajets sont calculés par un service en ligne (connexion nécessaire), puis gardés sur cet ordinateur : la vidéo se refait hors ligne. À pied jusqu'à 1,5 km, en voiture au-delà, en ligne droite au-delà de 300 km ; le mode se change depuis chaque étape.") }}
+                    </div>
+                    <div id="parcoursRoutingDetails" hidden>
+                        <label class="form-label small mb-1" for="parcoursRoutingProvider">{{ _("Service") }}</label>
+                        <select id="parcoursRoutingProvider" class="form-select form-select-sm mb-2">
+                            <option value="fossgis">{{ _("FOSSGIS (gratuit, sans clé)") }}</option>
+                            <option value="ors">{{ _("openrouteservice (clé gratuite, plus fiable)") }}</option>
+                        </select>
+                        <div id="parcoursOrsKeyRow" class="mb-2" hidden>
+                            <div class="d-flex gap-2">
+                                <input type="password" id="parcoursOrsKey" class="form-control form-control-sm" autocomplete="off"
+                                       aria-label="{{ _('Clé openrouteservice') }}">
+                                <button type="button" id="btnParcoursOrsKeySave" class="btn btn-sm btn-outline-primary">{{ _("Enregistrer") }}</button>
+                            </div>
+                            <div class="form-hint text-muted">
+                                <a href="https://openrouteservice.org/dev/#/signup" target="_blank" rel="noopener">{{ _("Créer une clé gratuite sur openrouteservice.org") }}</a>
+                                — {{ _("2 000 itinéraires par jour. La clé reste sur cet ordinateur.") }}
+                            </div>
                         </div>
-                        <div id="parcoursRoutingDetails" hidden>
-                            <label class="form-label small mb-1" for="parcoursRoutingProvider">{{ _("Service") }}</label>
-                            <select id="parcoursRoutingProvider" class="form-select form-select-sm mb-2">
-                                <option value="fossgis">{{ _("FOSSGIS (gratuit, sans clé)") }}</option>
-                                <option value="ors">{{ _("openrouteservice (clé gratuite, plus fiable)") }}</option>
-                            </select>
-                            <div id="parcoursOrsKeyRow" class="mb-2" hidden>
-                                <div class="d-flex gap-2">
-                                    <input type="password" id="parcoursOrsKey" class="form-control form-control-sm" autocomplete="off"
-                                           aria-label="{{ _('Clé openrouteservice') }}">
-                                    <button type="button" id="btnParcoursOrsKeySave" class="btn btn-sm btn-outline-primary">{{ _("Enregistrer") }}</button>
-                                </div>
-                                <div class="form-hint text-muted">
-                                    <a href="https://openrouteservice.org/dev/#/signup" target="_blank" rel="noopener">{{ _("Créer une clé gratuite sur openrouteservice.org") }}</a>
-                                    — {{ _("2 000 itinéraires par jour. La clé reste sur cet ordinateur.") }}
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <button type="button" id="btnParcoursRoutesRecompute" class="btn btn-sm btn-outline-secondary">
-                                    <i class="ti ti-arrow-back-up me-1" aria-hidden="true"></i>{{ _("Recalculer les itinéraires") }}
-                                </button>
-                                <button type="button" id="btnParcoursRoutesRetry" class="btn btn-sm btn-outline-primary" hidden>
-                                    <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réessayer") }}
-                                </button>
-                                <button type="button" id="btnParcoursRoutesCancel" class="btn btn-sm btn-outline-danger" hidden>
-                                    {{ _("Annuler") }}
-                                </button>
-                                <span id="parcoursRoutingStatus" class="small text-muted" aria-live="polite"></span>
-                                <progress id="parcoursRoutesProgress" class="parcours-routes-progress" max="1" value="0" hidden></progress>
-                            </div>
-                            <div class="form-hint text-muted mt-2 small">
-                                {{ _("Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS (routing.openstreetmap.de) ou openrouteservice (HeiGIT).") }}
-                            </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" id="btnParcoursRoutesRecompute" class="btn btn-sm btn-outline-secondary">
+                                <i class="ti ti-arrow-back-up me-1" aria-hidden="true"></i>{{ _("Recalculer les itinéraires") }}
+                            </button>
+                            <button type="button" id="btnParcoursRoutesRetry" class="btn btn-sm btn-outline-primary" hidden>
+                                <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Réessayer") }}
+                            </button>
+                            <button type="button" id="btnParcoursRoutesCancel" class="btn btn-sm btn-outline-danger" hidden>
+                                {{ _("Annuler") }}
+                            </button>
+                            <span id="parcoursRoutingStatus" class="small text-muted" aria-live="polite"></span>
+                            <progress id="parcoursRoutesProgress" class="parcours-routes-progress" max="1" value="0" hidden></progress>
+                        </div>
+                        <div class="form-hint text-muted mt-2 small">
+                            {{ _("Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS (routing.openstreetmap.de) ou openrouteservice (HeiGIT).") }}
                         </div>
                     </div>
                 </div>
-            </div>
+            </details>
 
             <!-- Compléter depuis geocaching.com (MyGCFlow_Plan_Parcours.md
                  § 15.3) : demande de collecte limitée aux caches du parcours,
                  lue par le favori « Mes logs ». Piloté par parcours_collect.js. -->
-            <div id="parcoursCollectCard" hidden>
-                <h5 class="gc-section-title mt-3">
-                    <i class="ti ti-cloud-download text-muted me-1"></i>{{ _("Compléter depuis geocaching.com") }}
-                </h5>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="form-hint text-muted mb-2">
-                            {{ _("Le favori « MyGCFlow — Mes logs » relit sur geocaching.com les caches de ce parcours, et elles seules : points favoris donnés, coordonnées corrigées, fiches des DNF. Rien n'est importé avant votre validation.") }}
-                        </div>
-                        <div id="parcoursCollectSummary" class="small mb-2" aria-live="polite"></div>
-                        <div id="parcoursCollectChoose">
-                            <div class="d-flex flex-wrap gap-3 mb-2">
-                                <label class="form-check mb-0">
-                                    <input type="radio" name="parcoursCollectMode" id="parcoursCollectUnread" value="unread" class="form-check-input" checked>
-                                    <span class="form-check-label">{{ _("Caches jamais relues") }}</span>
-                                </label>
-                                <label class="form-check mb-0">
-                                    <input type="radio" name="parcoursCollectMode" id="parcoursCollectAll" value="all" class="form-check-input">
-                                    <span class="form-check-label">{{ _("Toutes les caches") }}</span>
-                                </label>
-                            </div>
-                            <div id="parcoursCollectOther" class="form-hint text-warning mb-2" hidden></div>
-                            <button type="button" id="btnParcoursCollectPrepare" class="btn btn-sm btn-outline-primary">
-                                <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Préparer la collecte") }}
-                            </button>
-                        </div>
-                        <div id="parcoursCollectReady" class="alert alert-info py-2 px-3 mb-0" hidden>
-                            <div id="parcoursCollectReadyText" class="mb-1"></div>
-                            <div class="small mb-2">
-                                {{ _("Ouvrez") }}
-                                <a href="https://www.geocaching.com" target="_blank" rel="noopener noreferrer">geocaching.com</a>{{ _(", connectez-vous, puis cliquez ce favori.") }}
-                            </div>
-                            <div class="small mb-2">
-                                {{ _("Pas encore installé ? Glissez-le dans la barre de favoris de votre navigateur :") }}
-                                <a id="parcoursCollectBookmarklet" class="btn btn-sm btn-primary ms-1" href="#" draggable="false" aria-disabled="true" tabindex="-1">
-                                    <i class="ti ti-bookmark me-1" aria-hidden="true"></i><span id="parcoursCollectBookmarkletLabel">{{ _("Préparation du favori…") }}</span>
-                                </a>
-                            </div>
-                            <div id="parcoursCollectProgress" class="small fw-bold mb-2" aria-live="polite" hidden></div>
-                            <button type="button" id="btnParcoursCollectCancel" class="btn btn-sm btn-outline-secondary">{{ _("Annuler la demande") }}</button>
-                        </div>
-                        <div id="parcoursCollectPending" class="alert alert-success py-2 px-3 mb-0 mt-2" hidden>
-                            <div id="parcoursCollectPendingText" class="mb-2"></div>
-                            <button type="button" id="btnParcoursCollectApply" class="btn btn-sm btn-primary">
-                                <i class="ti ti-check me-1" aria-hidden="true"></i>{{ _("Valider l'import") }}
-                            </button>
-                        </div>
-                        <div id="parcoursCollectStatus" class="small text-muted mt-2" aria-live="polite"></div>
+            <details id="parcoursCollectCard" class="stats-form-section parcours-enrich" data-enrich-key="collect" hidden>
+                <summary class="gc-subsection-title"><i class="ti ti-cloud-download text-muted me-1" aria-hidden="true"></i>{{ _("Compléter depuis geocaching.com") }}<span id="parcoursCollectHint" class="stats-form-summary-hint"></span><i class="ti ti-chevron-right stats-form-chevron" aria-hidden="true"></i></summary>
+                <div class="stats-form-section-body">
+                    <div class="form-hint text-muted mb-2">
+                        {{ _("Le favori « MyGCFlow — Mes logs » relit sur geocaching.com les caches de ce parcours, et elles seules : points favoris donnés, coordonnées corrigées, fiches des DNF. Rien n'est importé avant votre validation.") }}
                     </div>
+                    <div id="parcoursCollectSummary" class="small mb-2" aria-live="polite"></div>
+                    <div id="parcoursCollectChoose">
+                        <div class="d-flex flex-wrap gap-3 mb-2">
+                            <label class="form-check mb-0">
+                                <input type="radio" name="parcoursCollectMode" id="parcoursCollectUnread" value="unread" class="form-check-input" checked>
+                                <span class="form-check-label">{{ _("Caches jamais relues") }}</span>
+                            </label>
+                            <label class="form-check mb-0">
+                                <input type="radio" name="parcoursCollectMode" id="parcoursCollectAll" value="all" class="form-check-input">
+                                <span class="form-check-label">{{ _("Toutes les caches") }}</span>
+                            </label>
+                        </div>
+                        <div id="parcoursCollectOther" class="form-hint text-warning mb-2" hidden></div>
+                        <button type="button" id="btnParcoursCollectPrepare" class="btn btn-sm btn-outline-primary">
+                            <i class="ti ti-player-play me-1" aria-hidden="true"></i>{{ _("Préparer la collecte") }}
+                        </button>
+                    </div>
+                    <div id="parcoursCollectReady" class="alert alert-info py-2 px-3 mb-0" hidden>
+                        <div id="parcoursCollectReadyText" class="mb-1"></div>
+                        <div class="small mb-2">
+                            {{ _("Ouvrez") }}
+                            <a href="https://www.geocaching.com" target="_blank" rel="noopener noreferrer">geocaching.com</a>{{ _(", connectez-vous, puis cliquez ce favori.") }}
+                        </div>
+                        <div class="small mb-2">
+                            {{ _("Pas encore installé ? Glissez-le dans la barre de favoris de votre navigateur :") }}
+                            <a id="parcoursCollectBookmarklet" class="btn btn-sm btn-primary ms-1" href="#" draggable="false" aria-disabled="true" tabindex="-1">
+                                <i class="ti ti-bookmark me-1" aria-hidden="true"></i><span id="parcoursCollectBookmarkletLabel">{{ _("Préparation du favori…") }}</span>
+                            </a>
+                        </div>
+                        <div id="parcoursCollectProgress" class="small fw-bold mb-2" aria-live="polite" hidden></div>
+                        <button type="button" id="btnParcoursCollectCancel" class="btn btn-sm btn-outline-secondary">{{ _("Annuler la demande") }}</button>
+                    </div>
+                    <div id="parcoursCollectPending" class="alert alert-success py-2 px-3 mb-0 mt-2" hidden>
+                        <div id="parcoursCollectPendingText" class="mb-2"></div>
+                        <button type="button" id="btnParcoursCollectApply" class="btn btn-sm btn-primary">
+                            <i class="ti ti-check me-1" aria-hidden="true"></i>{{ _("Valider l'import") }}
+                        </button>
+                    </div>
+                    <div id="parcoursCollectStatus" class="small text-muted mt-2" aria-live="polite"></div>
                 </div>
-            </div>
+            </details>
         </div>
 
         <!-- Étapes du parcours ouvert -->
-        <div class="col-12 col-lg-7">
+        <div class="parcours-area-stops">
             <h5 class="gc-section-title">
                 <i class="ti ti-map-pin text-muted me-1"></i>{{ _("Étapes") }}
             </h5>

@@ -372,7 +372,12 @@ Autres repères :
   `tests/e2e/parcours-helpers.mjs` (`cleanUp` supprime les parcours — et
   avec eux ajustements et lieux —, vide les logs, remet
   `parcours_animation` (`days_per_second: 10`) et `parcours_playback`) ;
-  relevé `getParcoursSnapshot()`, signal `mygcflowParcoursLoaded`. Après
+  relevé `getParcoursSnapshot()`, signal `mygcflowParcoursLoaded`. Onglet
+  Données : Traces GPS, Itinéraires et geocaching.com sont des `<details>`
+  repliés — `openEnrichSection(page, 'tracks' | 'routing' | 'collect')`
+  avant tout clic ou `toBeVisible` (un `toBeHidden` y passerait à tort) ; le
+  formulaire de création est replié dès qu'un parcours existe
+  (`#btnParcoursNew` le rouvre). Après
   un ajustement (PATCH puis reconstruction), attendre que
   `adjustmentRevision` augmente avant de lire l'ordre. `parcours_playback`
   accepte un patch partiel : une nouvelle sous-clé doit entrer dans la

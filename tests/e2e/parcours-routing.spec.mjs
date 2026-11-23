@@ -16,6 +16,7 @@ import {
   createWeekend,
   deleteAllParcours,
   importFixture,
+  openEnrichSection,
   openParcoursPage,
   snapshot,
 } from './parcours-helpers.mjs';
@@ -72,6 +73,7 @@ async function openRouted(page) {
   await openParcoursPage(page);
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
   await expect.poll(async () => (await snapshot(page)).routing.state, { timeout: 30_000 }).toBe('ready');
+  await openEnrichSection(page, 'routing');
   return snapshot(page);
 }
 
@@ -168,6 +170,7 @@ test('interruption : « Réessayer » reprend le calcul sans ignorer le cache', 
   const providerBefore = requests.length;
   delayMs = 2500;
   await openParcoursPage(page);
+  await openEnrichSection(page, 'routing');
   await expect.poll(async () => (await snapshot(page)).routing.state).toBe('loading');
   await expect.poll(async () => requests.length).toBeGreaterThan(providerBefore);
   await page.locator('#btnParcoursRoutesCancel').click();
@@ -198,6 +201,7 @@ test('fournisseur en échec : lignes droites et message, sans boucle de tentativ
   });
   await enableRouting(request, { provider: 'ors', ors_key: '' });
   await openParcoursPage(page);
+  await openEnrichSection(page, 'routing');
   await expect.poll(async () => (await snapshot(page)).routing.state, { timeout: 30_000 }).toBe('error');
   const state = await snapshot(page);
   expect(state.routing.routed).toBe(0);

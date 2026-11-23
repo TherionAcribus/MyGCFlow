@@ -341,6 +341,8 @@ test('parcours suggérés : liste masquée sans séjour, un clic remplit le form
     },
   }));
   await openReady(page);
+  // Un parcours existe : les suggestions vivent dans le formulaire replié.
+  await page.locator('#btnParcoursNew').click();
   const chip = page.locator('#parcoursSuggestionList .parcours-suggestion');
   await expect(chip).toHaveCount(1);
   await expect(chip).toContainText('Haute-Savoie');

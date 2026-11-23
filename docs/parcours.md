@@ -153,6 +153,20 @@ Dans l'onglet Données, chaque étape porte son heure d'arrivée (exacte pour
 une ancre, « ≈ » sinon) et la raison de sa place ; chaque journée, sa
 distance et le verdict sur l'ordre des logs.
 
+Disposition de l'onglet (grille `.parcours-data-grid`, trois zones) :
+« Mes parcours », « Étapes », « Enrichir le parcours ». Large : étapes à
+droite. Étroit — fenêtre < 992 px ou panneau latéral, où le viewport reste
+large — : une colonne, étapes juste sous la liste. Le formulaire de
+création (suggestions et import compris) est replié derrière « Nouveau
+parcours » dès qu'un parcours existe ; il s'ouvre d'office sans parcours
+et en modification (crayon), « Fermer » le replie. « Enrichir le
+parcours » regroupe Traces GPS, Itinéraires et Compléter depuis
+geocaching.com en `<details>` repliés (`data-enrich-key` : `tracks`,
+`routing`, `collect`), avec un état lisible dans l'en-tête ; l'ouverture
+est retenue par le navigateur (`localStorage` `parcours.enrichOpen`). Un
+envoi de traces ouvre leur section, une demande de collecte ou un export
+reçu celle de geocaching.com.
+
 **Plan au repos** : couche vectorielle propre (`parcoursLayer`, zIndex 1060,
 au-dessus des points WebGL pour garder les numéros lisibles), points
 numérotés colorés par nature (trouvaille, Lab, DNF) et une ligne par jour
@@ -602,7 +616,8 @@ Ils n'apparaissent que si un trajet suit un itinéraire.
   sinon le pays, sinon les deux pays principaux. La page y ajoute les dates.
 
 Les six plus récents sont proposés, hors plages déjà enregistrées. Un clic
-remplit le formulaire.
+remplit le formulaire (replié derrière « Nouveau parcours » quand des
+parcours existent).
 
 ## Ajustements manuels (lot 3)
 

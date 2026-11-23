@@ -66,6 +66,16 @@ export async function openParcoursPage(page) {
   await page.waitForFunction(() => window.mygcflowParcoursLoaded === true, null, { timeout: 30_000 });
 }
 
+// Sections « Enrichir le parcours » de l'onglet Données (`tracks`, `routing`,
+// `collect`) : <details> repliés par défaut — les ouvrir avant tout clic ou
+// `toBeVisible` sur leur contenu (un `toBeHidden` y passerait à tort).
+export async function openEnrichSection(page, key) {
+  const section = page.locator(`details[data-enrich-key="${key}"]`);
+  await expect(section).toBeVisible();
+  if (!(await section.evaluate((node) => node.open))) await section.locator('summary').click();
+  await expect(section).toHaveAttribute('open', '');
+}
+
 export function snapshot(page) {
   return page.evaluate(() => window.getParcoursSnapshot());
 }

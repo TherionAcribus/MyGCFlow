@@ -197,6 +197,28 @@ function readLastId() {
     }
 }
 
+// Sections « Enrichir le parcours » (traces, itinéraires, geocaching.com) :
+// repliées par défaut, état d'ouverture retenu par ce navigateur — simple
+// confort, perdu sans stockage.
+const ENRICH_OPEN_KEY = 'parcours.enrichOpen';
+
+function bindEnrichSections() {
+    let state = {};
+    try {
+        state = JSON.parse(localStorage.getItem(ENRICH_OPEN_KEY) || '{}') || {};
+    } catch (_) { /* stockage indisponible ou illisible */ }
+    for (const section of document.querySelectorAll('details[data-enrich-key]')) {
+        const key = section.dataset.enrichKey;
+        if (state[key] === true) section.open = true;
+        section.addEventListener('toggle', () => {
+            state[key] = section.open;
+            try {
+                localStorage.setItem(ENRICH_OPEN_KEY, JSON.stringify(state));
+            } catch (_) { /* stockage indisponible : simple confort perdu */ }
+        });
+    }
+}
+
 function writeLastId(id) {
     try {
         if (id) localStorage.setItem(LAST_ID_KEY, String(id));
@@ -243,6 +265,7 @@ export async function initParcoursPage() {
     const inp = el('inputInfosTemplate');
     if (inp) inp.value = infosTemplate;
     bindForm();
+    bindEnrichSections();
     bindPlayback();
     bindAdjustments();
     photosPanel.bind();

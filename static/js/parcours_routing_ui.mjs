@@ -169,6 +169,12 @@ export function createParcoursRouting(deps) {
                 ? t('Aucun trajet à calculer (trajets sur une trace ou en ligne droite).')
                 : t('${routed} trajets sur ${legs} suivent les routes et chemins.', { routed, legs });
         }
+        // Résumé lisible section repliée (en-tête de la section).
+        const hint = el('parcoursRoutingHint');
+        if (hint) {
+            hint.textContent = cfg.enabled ? status.textContent : t('Désactivés : trajets en ligne droite');
+            hint.classList.toggle('is-warning', cfg.enabled && routeState.state === 'error');
+        }
     }
 
     function bind() {

@@ -4123,6 +4123,46 @@ body[data-mode="parcours"] .rhythm-rate-field {
     display: none !important;
 }
 
+/* Onglet Données de /parcours : parcours, étapes, enrichissements. Large :
+   étapes à droite, sur toute la hauteur (la 2e rangée prend le surplus, sans
+   creuser d'écart sous la liste). Étroit — fenêtre < 992 px, ou panneau
+   latéral, où le viewport reste large — : une colonne, étapes juste sous la
+   liste ; elles passaient après quatre cartes. */
+.parcours-data-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "list stops"
+        "enrich stops";
+    gap: 1rem;
+    align-items: start;
+}
+.parcours-area-list { grid-area: list; }
+.parcours-area-stops { grid-area: stops; }
+.parcours-area-enrich { grid-area: enrich; }
+@media (max-width: 991.98px) {
+    .parcours-data-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+        grid-template-areas: "list" "stops" "enrich";
+    }
+}
+.layout-sidebar .parcours-data-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "list" "stops" "enrich";
+}
+#parcoursFormSection { margin-top: 1rem; }
+/* Sans parcours ouvert, aucune section affichée : le titre part avec elles. */
+.parcours-area-enrich:not(:has(> .parcours-enrich:not([hidden]))) {
+    display: none;
+}
+.parcours-area-enrich > .parcours-enrich {
+    margin-top: 0.5rem;
+    background: var(--color-surface);
+}
+
 .parcours-list {
     max-height: 18rem;
     overflow-y: auto;

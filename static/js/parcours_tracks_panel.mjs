@@ -43,14 +43,16 @@ export function createTracksPanel(deps) {
         card.hidden = !inputs;
         if (!inputs) return;
         const tracks = inputs.tracks || [];
+        const count = tracks.length === 1 ? t('1 trace') : t('${n} traces', { n: tracks.length });
+        const matched = trackMatches.size === 1
+            ? t('1 étape calée sur une trace')
+            : t('${n} étapes calées sur une trace', { n: trackMatches.size });
+        const summaryText = tracks.length ? `${count}, ${matched}` : t('Aucune trace pour ce parcours.');
         const summary = el('parcoursTrackSummary');
-        if (summary) {
-            const count = tracks.length === 1 ? t('1 trace') : t('${n} traces', { n: tracks.length });
-            const matched = trackMatches.size === 1
-                ? t('1 étape calée sur une trace')
-                : t('${n} étapes calées sur une trace', { n: trackMatches.size });
-            summary.textContent = tracks.length ? `${count}, ${matched}` : t('Aucune trace pour ce parcours.');
-        }
+        if (summary) summary.textContent = summaryText;
+        // Résumé lisible section repliée (en-tête de la section).
+        const hint = el('parcoursTracksHint');
+        if (hint) hint.textContent = summaryText;
         const offset = el('parcoursUtcOffset');
         if (offset) {
             if (!offset.options.length) {
@@ -109,6 +111,9 @@ export function createTracksPanel(deps) {
     async function upload(files) {
         const { selectedId } = s();
         if (!selectedId || deps.adjustmentsLocked() || files.length === 0) return;
+        // Fichiers glissés n'importe où : la section repliée montre l'envoi.
+        const card = el('parcoursTracksCard');
+        if (card) card.open = true;
         // Même garde que les photos : la destination est le parcours ouvert
         // au début de l'envoi (partagée dans runUpload).
         await deps.runUpload('track', files);

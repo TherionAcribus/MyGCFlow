@@ -67,13 +67,17 @@ function render() {
     card.hidden = parcoursId == null || !collect;
     if (card.hidden) return;
     const request = collect.request;
+    const summaryText = collect.total
+        ? t('${total} caches dans ce parcours, dont ${unread} jamais relues.',
+            { total: collect.total, unread: collect.unread })
+        : t('Aucune cache de geocaching.com dans ce parcours.');
     const summary = el('parcoursCollectSummary');
-    if (summary) {
-        summary.textContent = collect.total
-            ? t('${total} caches dans ce parcours, dont ${unread} jamais relues.',
-                { total: collect.total, unread: collect.unread })
-            : t('Aucune cache de geocaching.com dans ce parcours.');
-    }
+    if (summary) summary.textContent = summaryText;
+    // Résumé lisible section repliée ; une demande en cours ou un export
+    // reçu ouvrent la section — il y a quelque chose à faire.
+    const hint = el('parcoursCollectHint');
+    if (hint) hint.textContent = pending ? t('Export reçu : à valider') : summaryText;
+    if (request || pending || progress) card.open = true;
     const choose = el('parcoursCollectChoose');
     if (choose) choose.hidden = !!request || !collect.total;
     const other = el('parcoursCollectOther');
