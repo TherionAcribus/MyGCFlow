@@ -52,6 +52,12 @@ test('page sans parcours : mode actif, état vide, aucune erreur', async ({ page
   await expect(page.locator('#parcoursSummary')).toContainText('Ouvrez ou créez un parcours');
   // Outils des étapes (annuler, poser un lieu, exporter…) : rien sur quoi agir.
   await expect(page.locator('#parcoursStopsTools')).toBeHidden();
+  // Date manquante (base sans trouvailles : rien de proposé ; ou saisie en
+  // cours) : pas d'erreur de plage annoncée. La base du run peut garder les
+  // trouvailles d'un spec précédent : la date est vidée ici.
+  await page.locator('#parcoursEnd').fill('');
+  await page.locator('#parcoursEnd').dispatchEvent('change');
+  await expect(page.locator('#parcoursRangeHint')).toHaveText('');
   await expect(page.locator('#mainTabs a[href="#animation"]')).toBeVisible();
   await expect(page.locator('#mainTabs a[href="#stats"]')).toHaveCount(0);
   // Rien à jouer : lecture désactivée, état vide propre à la page.
@@ -213,6 +219,17 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   await page.locator('#parcoursEnd').fill('2025-07-13');
   await page.locator('#parcoursEnd').dispatchEvent('change');
   await expect(page.locator('#parcoursRangeHint')).toHaveText('2 jours');
+  const hintColor = () => page.locator('#parcoursRangeHint').evaluate((node) => getComputedStyle(node).color);
+  const normalColor = await hintColor();
+  // Fin avant le début : message d'erreur, dans une autre couleur que l'aide.
+  await page.locator('#parcoursEnd').fill('2025-07-11');
+  await page.locator('#parcoursEnd').dispatchEvent('change');
+  await expect(page.locator('#parcoursRangeHint')).toHaveText('La date de fin précède la date de début');
+  expect(await hintColor()).not.toBe(normalColor);
+  await page.locator('#parcoursEnd').fill('2025-07-13');
+  await page.locator('#parcoursEnd').dispatchEvent('change');
+  await expect(page.locator('#parcoursRangeHint')).toHaveText('2 jours');
+  expect(await hintColor()).toBe(normalColor);
   await page.locator('#btnParcoursCreate').click();
 
   await expect.poll(async () => (await snapshot(page)).status).toBe('ready');

@@ -344,9 +344,17 @@ export function createParcoursList(deps) {
         const { maxDays } = S();
         const hint = el('parcoursRangeHint');
         if (!hint) return;
-        const days = rangeDayCount(el('parcoursStart')?.value, el('parcoursEnd')?.value);
-        hint.classList.toggle('text-danger', days === 0 || days > maxDays);
-        if (days === 0) hint.textContent = t('La date de fin précède la date de début');
+        const startValue = el('parcoursStart')?.value;
+        const endValue = el('parcoursEnd')?.value;
+        // Date manquante (base sans trouvailles, saisie en cours) : rien à
+        // signaler, le champ requis le dira à l'envoi.
+        const days = startValue && endValue ? rangeDayCount(startValue, endValue) : null;
+        const invalid = days === 0 || days > maxDays;
+        // text-muted l'emporte sur text-danger : retiré pendant l'erreur.
+        hint.classList.toggle('text-danger', invalid);
+        hint.classList.toggle('text-muted', !invalid);
+        if (days === null) hint.textContent = '';
+        else if (days === 0) hint.textContent = t('La date de fin précède la date de début');
         else if (days > maxDays) hint.textContent = t('Un parcours couvre ${max} jours au plus', { max: maxDays });
         else hint.textContent = days === 1 ? t('Une journée') : t('${n} jours', { n: days });
     }
