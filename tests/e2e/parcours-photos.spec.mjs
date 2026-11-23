@@ -2,7 +2,9 @@
 // docs/parcours.md) ; lot 8 : onglet Photos, réglages par photo (§ 14). Fixtures tests/e2e/fixtures/parcours-photos/ :
 // - telephone.jpg : iPhone, géolocalisée à ~15 m de GCPAR01, 12/07/2025 11:20 ;
 // - appareil.jpg  : Canon EOS 80D, sans GPS, 13/07/2025 08:00 (horloge fausse) ;
-// - sans-exif.png : rien.
+// - sans-exif.png : rien ;
+// - boitier-a.jpg, boitier-b.jpg : deux Canon EOS 80D, numéros de série
+//   083021000111 et 083021000222, 13/07/2025 08:00, sans GPS.
 // Le runtime e2e range les photos dans son propre dossier de données ; elles
 // partent avec leur parcours (cleanUp, parcours-helpers.mjs).
 import { expect, test } from '@playwright/test';
@@ -105,6 +107,37 @@ test('photos : rattachement par position, heure comme ancre, rattachement manuel
   await page.locator(`.parcours-photo-thumb[data-photo-id="${id('sans-exif.png')}"]`).click();
   await page.locator('.parcours-photo-delete').click();
   await expect.poll(async () => (await snapshot(page)).photos.length).toBe(2);
+  expect(errors).toEqual([]);
+});
+
+test('deux boîtiers du même modèle : une horloge chacun, et le recalage du modèle en repli', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(
+    [files[1], path.join(PHOTOS, 'boitier-a.jpg'), path.join(PHOTOS, 'boitier-b.jpg')]);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(3);
+  const MODEL = 'Canon EOS 80D';
+  const A = `${MODEL}#083021000111`;
+  const B = `${MODEL}#083021000222`;
+  const row = (key) => page.locator(`.parcours-camera[data-camera="${key}"]`);
+  await expect(page.locator('.parcours-camera')).toHaveCount(3);
+  await expect(row(A)).toContainText('Canon EOS 80D (n° 083021000111) : horloge non recalée');
+
+  // Boîtier A recalé : B n'en hérite pas.
+  await row(A).locator('.parcours-camera-offset').fill('150');
+  await row(A).locator('.parcours-camera-apply').click();
+  await expect.poll(async () => (await snapshot(page)).cameras).toEqual([{ camera: A, offsetMinutes: 150 }]);
+  await expect(row(A)).toContainText('recalée (+2 h 30)');
+  await expect(row(B)).toContainText('non recalée');
+
+  // Le modèle (photo sans numéro de série) recalé : B en hérite, A garde le sien.
+  await row(MODEL).locator('.parcours-camera-offset').fill('60');
+  await row(MODEL).locator('.parcours-camera-apply').click();
+  await expect(row(B)).toContainText('recalée comme le modèle (+1 h 00)');
+  await expect(row(B).locator('.parcours-camera-clear')).toHaveCount(0);
+  await expect(row(A)).toContainText('recalée (+2 h 30)');
   expect(errors).toEqual([]);
 });
 

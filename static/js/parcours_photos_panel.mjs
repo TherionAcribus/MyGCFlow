@@ -23,6 +23,7 @@ import {
     minutesToTime,
 } from './parcours_reconstruct.mjs';
 import {
+    cameraKey,
     cameraOffsets,
     hasPosition,
     photoClock,
@@ -238,25 +239,42 @@ export function createPhotosPanel(deps) {
         }
 
         // Appareils : décalage d'horloge (téléphones géolocalisés : à l'heure).
+        // Une ligne par clé d'appareil (un boîtier, ou un modèle sans numéro
+        // de série) ; un modèle recalé garde sa ligne tant qu'un boîtier de ce
+        // modèle en hérite, pour pouvoir l'oublier.
         const cameras = el('parcoursCameras');
         if (cameras) {
-            const names = [...new Set(photos.filter((p) => p.camera && !hasPosition(p)).map((p) => p.camera))].sort();
-            cameras.replaceChildren(...names.map((name) => {
+            const shown = photos.filter((p) => p.camera && !hasPosition(p));
+            const keys = new Set(shown.map(cameraKey));
+            for (const p of shown) if (offsets.has(p.camera)) keys.add(p.camera);
+            const nameOf = new Map();
+            for (const p of shown) {
+                nameOf.set(cameraKey(p), p.cameraSerial
+                    ? t('${camera} (n° ${serial})', { camera: p.camera, serial: p.cameraSerial })
+                    : p.camera);
+            }
+            const modelOf = new Map(shown.map((p) => [cameraKey(p), p.camera]));
+            cameras.replaceChildren(...[...keys].sort().map((key) => {
+                const name = nameOf.get(key) || key;
+                const model = modelOf.get(key) || key;
+                const inherited = !offsets.has(key) && model !== key && offsets.has(model);
                 const row = document.createElement('div');
                 row.className = 'mb-2 parcours-camera';
-                row.dataset.camera = name;
+                row.dataset.camera = key;
                 const label = document.createElement('div');
                 label.className = 'small mb-1';
-                label.textContent = offsets.has(name)
-                    ? t('${camera} : horloge recalée (${offset})', { camera: name, offset: formatOffset(offsets.get(name)) })
-                    : t('${camera} : horloge non recalée, heures ignorées', { camera: name });
+                label.textContent = offsets.has(key)
+                    ? t('${camera} : horloge recalée (${offset})', { camera: name, offset: formatOffset(offsets.get(key)) })
+                    : inherited
+                        ? t('${camera} : horloge recalée comme le modèle (${offset})', { camera: name, offset: formatOffset(offsets.get(model)) })
+                        : t('${camera} : horloge non recalée, heures ignorées', { camera: name });
                 const controls = document.createElement('div');
                 controls.className = 'd-flex align-items-center gap-2 flex-wrap';
                 const input = document.createElement('input');
                 input.type = 'number';
                 input.step = '1';
                 input.className = 'form-control form-control-sm parcours-camera-offset';
-                input.value = offsets.has(name) ? String(offsets.get(name)) : '0';
+                input.value = String(offsets.get(key) ?? (inherited ? offsets.get(model) : 0));
                 input.setAttribute('aria-label', t('Décalage en minutes'));
                 const unit = document.createElement('span');
                 unit.className = 'small text-muted';
@@ -265,12 +283,12 @@ export function createPhotosPanel(deps) {
                     t('Recaler l’horloge'), { text: t('Recaler l’horloge') });
                 apply.addEventListener('click', () => {
                     const value = Math.round(Number(input.value));
-                    if (Number.isFinite(value)) setCameraOffset(name, value);
+                    if (Number.isFinite(value)) setCameraOffset(key, value);
                 });
                 controls.append(input, unit, apply);
-                if (offsets.has(name)) {
+                if (offsets.has(key)) {
                     const clear = deps.button('btn btn-sm btn-link parcours-camera-clear', 'ti-x', t('Oublier ce recalage'));
-                    clear.addEventListener('click', () => setCameraOffset(name, null));
+                    clear.addEventListener('click', () => setCameraOffset(key, null));
                     controls.append(clear);
                 }
                 row.append(label, controls);
@@ -398,7 +416,9 @@ export function createPhotosPanel(deps) {
                 photo.name,
                 clock ? `${formatDay(clock.date, { day: 'numeric', month: 'short' })} ${minutesToTime(clock.minutes)}` : t('sans heure'),
                 hasPosition(photo) ? t('géolocalisée') : t('sans position'),
-                photo.camera || '',
+                photo.camera && photo.cameraSerial
+                    ? t('${camera} (n° ${serial})', { camera: photo.camera, serial: photo.cameraSerial })
+                    : photo.camera || '',
             ].filter(Boolean).join(' · ');
         }
 
@@ -463,7 +483,7 @@ export function createPhotosPanel(deps) {
             const calibrate = deps.button('btn btn-sm btn-outline-primary parcours-photo-calibrate', 'ti-clock',
                 t('Caler l’horloge de l’appareil sur cette étape'),
                 { text: t('Caler l’horloge sur l’étape (${offset})', { offset: formatOffset(offset) }) });
-            calibrate.addEventListener('click', () => setCameraOffset(photo.camera, offset));
+            calibrate.addEventListener('click', () => setCameraOffset(cameraKey(photo), offset));
             actions.push(calibrate);
         }
         if (timeline && photoSlots(timeline).some((slot) => slot.photoId === photo.id)) {

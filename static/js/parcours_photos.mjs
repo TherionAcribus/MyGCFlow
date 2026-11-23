@@ -14,7 +14,7 @@
 //
 // Heure de confiance : celle d'un téléphone (photo géolocalisée : l'horloge
 // suit le réseau) ou d'un appareil dont l'utilisateur a recalé l'horloge
-// (`cameras[].offsetMinutes`, même 0). Une photo rattachée par position ou à
+// (`cameras[].offsetMinutes`, même 0 ; clé : `cameraKey`). Une photo rattachée par position ou à
 // la main, à heure de confiance, devient une ANCRE de son étape (raison
 // `photo`) — sauf si l'étape a déjà une heure sûre (épinglée, Lab).
 //
@@ -39,7 +39,7 @@ export const MATCH_TIME = 'time';
 
 const TAKEN_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
 
-// Décalages par appareil : Map nom d'appareil → minutes.
+// Décalages par appareil : Map clé d'appareil → minutes.
 export function cameraOffsets(cameras) {
     const map = new Map();
     for (const c of Array.isArray(cameras) ? cameras : []) {
@@ -48,12 +48,30 @@ export function cameraOffsets(cameras) {
     return map;
 }
 
+// Clé d'appareil d'une photo (celle d'un recalage) : « marque modèle »,
+// suivie de « #numéro » quand l'EXIF donne le numéro de série du boîtier —
+// deux appareils du même modèle ont ainsi chacun leur horloge. null sans
+// appareil.
+export function cameraKey(photo) {
+    if (!photo?.camera) return null;
+    return photo.cameraSerial ? `${photo.camera}#${photo.cameraSerial}` : photo.camera;
+}
+
+// Décalage d'horloge d'une photo : celui de son boîtier, sinon celui du
+// modèle (photos sans numéro de série, ou envoyées avant sa lecture : un
+// boîtier recalé ainsi le reste) ; undefined si aucun.
+export function photoCameraOffset(photo, offsets = new Map()) {
+    const key = cameraKey(photo);
+    if (!key) return undefined;
+    return offsets.has(key) ? offsets.get(key) : offsets.get(photo.camera);
+}
+
 // Heure corrigée d'une photo : { date: 'AAAA-MM-JJ', minutes } (décalage de
 // l'appareil appliqué, la date suit si l'heure passe minuit), ou null.
 export function photoClock(photo, offsets = new Map()) {
     const m = TAKEN_RE.exec(String(photo?.takenAt || ''));
     if (!m) return null;
-    const offset = (photo.camera && offsets.get(photo.camera)) || 0;
+    const offset = photoCameraOffset(photo, offsets) || 0;
     const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6]))
         + offset * 60000;
     const d = new Date(ms);
@@ -67,7 +85,7 @@ export function hasPosition(photo) {
 
 export function photoTimeTrusted(photo, offsets = new Map()) {
     if (!TAKEN_RE.test(String(photo?.takenAt || ''))) return false;
-    return hasPosition(photo) || (!!photo.camera && offsets.has(photo.camera));
+    return hasPosition(photo) || photoCameraOffset(photo, offsets) !== undefined;
 }
 
 // Étapes candidates : toutes sauf les bases (on ne photographie pas « le

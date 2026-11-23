@@ -4,7 +4,8 @@
 
 1. **l'EXIF est lu** — heure murale de l'appareil (`DateTimeOriginal`),
    décalage horaire s'il est noté (`OffsetTimeOriginal`), position GPS,
-   marque et modèle. La normalisation qui suit le retire : il faut le lire
+   marque, modèle et numéro de série du boîtier (`BodySerialNumber`, pour
+   distinguer deux appareils du même modèle). La normalisation qui suit le retire : il faut le lire
    avant ;
 2. l'image est **normalisée** comme celles de l'onglet Images
    (image_library.normalize_image : redressée, réduite à 2048 px, HEIC
@@ -39,6 +40,10 @@ MAX_PHOTOS = 300
 THUMB_SIDE = 320
 THUMB_QUALITY = 80
 CAMERA_MAX_LENGTH = 120
+SERIAL_MAX_LENGTH = 40
+# Clé d'appareil d'un recalage : « marque modèle », suivie de « #numéro »
+# quand le boîtier a un numéro de série (cameraKey de parcours_photos.mjs).
+CAMERA_KEY_MAX_LENGTH = CAMERA_MAX_LENGTH + 1 + SERIAL_MAX_LENGTH
 # Décalage d'horloge borné à ±2 jours : au-delà, ce n'est plus une horloge
 # mal réglée mais une photo d'une autre sortie.
 OFFSET_RANGE_MINUTES = 2 * 24 * 60
@@ -56,6 +61,7 @@ _TAG_MODEL = 272
 _TAG_DATETIME = 306
 _TAG_DATETIME_ORIGINAL = 36867
 _TAG_OFFSET_TIME_ORIGINAL = 36881
+_TAG_BODY_SERIAL_NUMBER = 0xA431
 _EXIF_DATETIME = re.compile(r'(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})')
 _EXIF_OFFSET = re.compile(r'([+-])(\d{2}):(\d{2})')
 _FILE_RE = re.compile(r'[0-9a-f]{16}(?:\.thumb)?\.(?:jpg|png)')
@@ -87,10 +93,10 @@ def _clean_text(value) -> str:
 
 
 def read_metadata(data: bytes) -> dict:
-    """{taken_at, offset_minutes, lat, lon, camera} lus dans l'EXIF ; chaque
-    valeur absente ou illisible vaut None. Ne lève jamais : une photo sans
-    EXIF reste une photo (rattachement manuel)."""
-    meta = {'taken_at': None, 'offset_minutes': None, 'lat': None, 'lon': None, 'camera': None}
+    """{taken_at, offset_minutes, lat, lon, camera, serial} lus dans l'EXIF ;
+    chaque valeur absente ou illisible vaut None. Ne lève jamais : une photo
+    sans EXIF reste une photo (rattachement manuel)."""
+    meta = {'taken_at': None, 'offset_minutes': None, 'lat': None, 'lon': None, 'camera': None, 'serial': None}
     try:
         with Image.open(io.BytesIO(data)) as img:
             exif = img.getexif()
@@ -118,6 +124,11 @@ def read_metadata(data: bytes) -> dict:
     make, model = _clean_text(exif.get(_TAG_MAKE)), _clean_text(exif.get(_TAG_MODEL))
     camera = model if make and model.lower().startswith(make.lower()) else f'{make} {model}'.strip()
     meta['camera'] = camera[:CAMERA_MAX_LENGTH] or None
+    # Numéro de série : seulement avec un appareil nommé (il complète sa
+    # clé) ; « 0000… » est un champ laissé vide par certains boîtiers.
+    serial = _clean_text(sub.get(_TAG_BODY_SERIAL_NUMBER))
+    if meta['camera'] and serial.strip('0'):
+        meta['serial'] = serial[:SERIAL_MAX_LENGTH]
     return meta
 
 
@@ -159,6 +170,7 @@ def photo_to_dict(row: ParcoursPhoto) -> dict:
         'lat': row.latitude,
         'lon': row.longitude,
         'camera': row.camera,
+        'cameraSerial': row.camera_serial,
         'width': row.width,
         'height': row.height,
         'stopKey': row.stop_key,
@@ -208,7 +220,7 @@ def save_photo(session, parcours_id: int, data: bytes, name: str = '') -> dict:
         row = ParcoursPhoto(
             parcours_id=parcours.id, file=file, original_name=(name or '')[:255],
             taken_at=meta['taken_at'], offset_minutes=meta['offset_minutes'],
-            latitude=meta['lat'], longitude=meta['lon'], camera=meta['camera'],
+            latitude=meta['lat'], longitude=meta['lon'], camera=meta['camera'], camera_serial=meta['serial'],
             width=width, height=height, created_at=datetime.now(),
         )
         session.add(row)
@@ -298,9 +310,10 @@ def delete_photo(session, parcours_id: int, photo_id: int) -> None:
 
 
 def set_camera_offset(session, parcours_id: int, camera, offset) -> dict:
-    """Décalage de l'horloge d'un appareil (minutes, null : l'efface)."""
+    """Décalage de l'horloge d'un appareil (minutes, null : l'efface) ;
+    `camera` est sa clé (CAMERA_KEY_MAX_LENGTH)."""
     parcours = parcours_store.get(session, parcours_id)
-    if not isinstance(camera, str) or not camera.strip() or len(camera) > CAMERA_MAX_LENGTH:
+    if not isinstance(camera, str) or not camera.strip() or len(camera) > CAMERA_KEY_MAX_LENGTH:
         raise ParcoursError('camera-invalid')
     row = session.query(ParcoursCamera).filter_by(parcours_id=parcours.id, camera=camera).one_or_none()
     if offset is None:

@@ -18,7 +18,8 @@ from models import ParcoursCamera, ParcoursPhoto
 HOST = "http://127.0.0.1:51730"
 
 
-def photo_bytes(color=(200, 10, 10), *, taken=None, offset=None, gps=None, make=None, model=None, fmt='JPEG'):
+def photo_bytes(color=(200, 10, 10), *, taken=None, offset=None, gps=None, make=None, model=None, serial=None,
+                fmt='JPEG'):
     img = Image.new('RGB', (64, 48), color)
     exif = Image.Exif()
     if make:
@@ -30,6 +31,8 @@ def photo_bytes(color=(200, 10, 10), *, taken=None, offset=None, gps=None, make=
         sub[36867] = taken
     if offset:
         sub[36881] = offset
+    if serial:
+        sub[0xA431] = serial
     if gps:
         lat, lon = gps
         g = exif.get_ifd(0x8825)
@@ -68,9 +71,19 @@ class MetadataTests(unittest.TestCase):
         meta = parcours_photos.read_metadata(photo_bytes(make='Canon', model='Canon EOS 80D'))
         self.assertEqual(meta['camera'], 'Canon EOS 80D')
 
+    def test_body_serial_number(self):
+        read = lambda **kw: parcours_photos.read_metadata(photo_bytes(**kw))['serial']
+        self.assertEqual(read(make='Canon', model='Canon EOS 80D', serial='012345678901'), '012345678901')
+        # Champ laissé à zéro par certains boîtiers, ou numéro sans appareil
+        # nommé : rien à distinguer.
+        self.assertIsNone(read(make='Canon', model='Canon EOS 80D', serial='0000000000'))
+        self.assertIsNone(read(serial='012345678901'))
+        self.assertEqual(len(read(make='Canon', model='EOS', serial='9' * 60)), parcours_photos.SERIAL_MAX_LENGTH)
+
     def test_missing_or_invalid_exif_gives_none(self):
         meta = parcours_photos.read_metadata(photo_bytes(taken='2025:02:30 10:00:00', gps=(0, 0)))
-        self.assertEqual(meta, {'taken_at': None, 'offset_minutes': None, 'lat': None, 'lon': None, 'camera': None})
+        self.assertEqual(meta, {'taken_at': None, 'offset_minutes': None, 'lat': None, 'lon': None, 'camera': None,
+                                'serial': None})
         self.assertIsNone(parcours_photos.read_metadata(b'pas une image')['taken_at'])
 
 
@@ -186,6 +199,19 @@ class ApiTests(unittest.TestCase):
                          'camera-invalid')
         cleared = self.call('PUT', url, json={'camera': 'Canon EOS 80D', 'offsetMinutes': None}).get_json()
         self.assertEqual(cleared['cameras'], [])
+        # Clé d'un boîtier : modèle et numéro de série (cameraKey côté client).
+        key = 'C' * parcours_photos.CAMERA_MAX_LENGTH + '#' + '1' * parcours_photos.SERIAL_MAX_LENGTH
+        self.assertEqual(self.call('PUT', url, json={'camera': key, 'offsetMinutes': 5}).get_json()['cameras'],
+                         [{'camera': key, 'offsetMinutes': 5}])
+        self.assertEqual(self.call('PUT', url, json={'camera': key + '1', 'offsetMinutes': 5}).get_json()['error'],
+                         'camera-invalid')
+
+    def test_upload_keeps_the_body_serial_number(self):
+        photo = self.upload(photo_bytes(taken='2025:07:12 10:00:00', make='Canon', model='Canon EOS 80D',
+                                        serial='012345678901')).get_json()['photo']
+        self.assertEqual((photo['camera'], photo['cameraSerial']), ('Canon EOS 80D', '012345678901'))
+        self.assertIsNone(self.upload(photo_bytes((1, 2, 3), make='Apple', model='iPhone 13'))
+                          .get_json()['photo']['cameraSerial'])
 
     def test_deleting_the_parcours_deletes_its_photos(self):
         self.upload(photo_bytes())

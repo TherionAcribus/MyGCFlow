@@ -819,6 +819,19 @@ ou « Caler l'horloge sur l'étape », proposé pour une photo sans position
 rattachée à une étape à heure sûre (épinglée, Lab) : décalage = heure de
 l'étape − heure de la photo.
 
+**Clé d'appareil** (`cameraKey`, parcours_photos.mjs) : « marque modèle »,
+suivie de « #numéro de série » quand l'EXIF donne celui du boîtier
+(`BodySerialNumber`, colonne `camera_serial`, migration v23) — deux
+appareils du même modèle ont chacun leur horloge. Le numéro n'est lu qu'à
+l'envoi (l'EXIF ne survit pas à la normalisation) : les photos envoyées
+avant n'en ont pas, et un boîtier sans recalage propre prend celui de son
+modèle (`photoCameraOffset`) — un parcours commencé avant garde ainsi ses
+heures. La carte Appareils montre une ligne par clé, et garde celle du
+modèle tant qu'un boîtier en hérite (« recalée comme le modèle »). Tous
+les appareils n'écrivent pas ce champ (beaucoup de Sony et de Fujifilm le
+rangent dans leurs notes de fabricant, illisibles ici ; les téléphones,
+jamais) : ceux-là restent regroupés par modèle.
+
 **Lecture et vidéo** :
 - chaque photo ajoute 15 quanta (1,5 s) au temps d'écran de son étape (4
   photos au plus en temps cumulé, partagé au-delà) ;

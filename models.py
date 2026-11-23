@@ -360,6 +360,7 @@ class ParcoursPhoto(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     camera = db.Column(db.String(120))                     # « marque modèle »
+    camera_serial = db.Column(db.String(40))               # BodySerialNumber, si présent
     width = db.Column(db.Integer)
     height = db.Column(db.Integer)
     # Étape rattachée à la main (null : rattachement automatique, calculé).
@@ -377,12 +378,14 @@ class ParcoursPhoto(db.Model):
 
 class ParcoursCamera(db.Model):
     """Décalage de l'horloge d'un appareil photo pour un parcours (lot 4) :
-    minutes à ajouter à l'heure de ses photos."""
+    minutes à ajouter à l'heure de ses photos. `camera` est la clé
+    d'appareil : « marque modèle », suivie de « #numéro de série » quand
+    l'EXIF le donne (cameraKey de parcours_photos.mjs)."""
     __tablename__ = 'parcours_camera'
 
     id = db.Column(db.Integer, primary_key=True)
     parcours_id = db.Column(db.Integer, db.ForeignKey('parcours.id'), nullable=False)
-    camera = db.Column(db.String(120), nullable=False)
+    camera = db.Column(db.String(200), nullable=False)
     offset_minutes = db.Column(db.Integer, nullable=False, default=0)
 
     __table_args__ = (

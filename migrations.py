@@ -403,6 +403,15 @@ def _v22_lecture_parcours(db):
             conn.exec_driver_sql("ALTER TABLE parcours ADD COLUMN playback TEXT")
 
 
+def _v23_numero_serie_appareil_photo(db):
+    # Parcours : numéro de série du boîtier (EXIF BodySerialNumber), pour
+    # distinguer deux appareils du même modèle. Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_photo)")}
+        if "camera_serial" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours_photo ADD COLUMN camera_serial VARCHAR(40)")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -426,6 +435,7 @@ MIGRATIONS = [
     (20, _v20_waypoints_fiche_cache),
     (21, _v21_position_etape_parcours),
     (22, _v22_lecture_parcours),
+    (23, _v23_numero_serie_appareil_photo),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

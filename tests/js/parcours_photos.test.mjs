@@ -6,7 +6,9 @@ import {
     MATCH_GPS,
     MATCH_MANUAL,
     MATCH_TIME,
+    cameraKey,
     cameraOffsets,
+    photoCameraOffset,
     matchPhotos,
     photoAnchors,
     photoClock,
@@ -42,6 +44,29 @@ test('heure de confiance : téléphone géolocalisé ou appareil recalé', () =>
     assert.equal(photoTimeTrusted(photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Canon' }), offsets), true);
     assert.equal(photoTimeTrusted(photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Nikon' }), offsets), false);
     assert.equal(photoTimeTrusted(photo(1, { lat: 45, lon: 5 })), false);
+});
+
+test('deux boîtiers du même modèle : une horloge chacun, repli sur le modèle', () => {
+    const a = photo(1, { takenAt: '2025-07-12T10:00:00', camera: 'Canon EOS 80D', cameraSerial: '111' });
+    const b = photo(2, { takenAt: '2025-07-12T10:00:00', camera: 'Canon EOS 80D', cameraSerial: '222' });
+    const old = photo(3, { takenAt: '2025-07-12T10:00:00', camera: 'Canon EOS 80D' });  // sans numéro
+    assert.equal(cameraKey(a), 'Canon EOS 80D#111');
+    assert.equal(cameraKey(old), 'Canon EOS 80D');
+    assert.equal(cameraKey(photo(4)), null);
+    // Boîtier A recalé seul : B reste non recalé.
+    let offsets = cameraOffsets([{ camera: 'Canon EOS 80D#111', offsetMinutes: 30 }]);
+    assert.equal(photoClock(a, offsets).minutes, 10 * 60 + 30);
+    assert.equal(photoClock(b, offsets).minutes, 10 * 60);
+    assert.equal(photoTimeTrusted(b, offsets), false);
+    assert.equal(photoTimeTrusted(old, offsets), false);
+    // Recalage du modèle (photos d'avant le numéro de série) : hérité par
+    // les boîtiers qui n'en ont pas à eux.
+    offsets = cameraOffsets([{ camera: 'Canon EOS 80D#111', offsetMinutes: 30 }, { camera: 'Canon EOS 80D', offsetMinutes: -60 }]);
+    assert.equal(photoCameraOffset(a, offsets), 30);
+    assert.equal(photoCameraOffset(b, offsets), -60);
+    assert.equal(photoCameraOffset(old, offsets), -60);
+    assert.equal(photoTimeTrusted(b, offsets), true);
+    assert.equal(photoCameraOffset(photo(4), offsets), undefined);
 });
 
 test('rattachement : manuel, par position (même jour), par l’heure, ou rien', () => {
