@@ -907,6 +907,15 @@ affichées : une photo qui sort du filtre (rattachée sous « Non
 rattachées ») la quitte. Les conteneurs masqués par `hidden` n'ont pas de
 `d-flex` (AGENTS.md) : leur `display` vient de la feuille de style.
 
+**Photos d'une étape ailleurs dans la page** (`stopPhotoStrip`,
+parcours_data.js) : la bulle d'une étape sur la carte (4 vignettes au
+plus) et sa ligne dans la liste des étapes (5, sous le texte — hors du
+bouton, qui n'en contient pas d'autre) montrent ses photos, celles que
+montre la lecture (masquées exclues), puis « +n ». Un clic ouvre la photo
+dans l'onglet Photos (`showPhoto` du panneau : bulle fermée, sélection
+vidée, filtre « Toutes » si le courant la cachait, vignette et détail
+amenés en vue).
+
 **Glisser-déposer** (`bindFileDrop`, parcours_data.js) : des fichiers déposés
 n'importe où sur la page vont au parcours ouvert — les images aux photos
 (l'onglet Photos s'ouvre), les `.gpx` aux traces, une musique à Animation >

@@ -306,6 +306,9 @@ export function createParcoursPlan(deps) {
             line.textContent = facts;
             wrap.append(line);
         }
+        // Ses photos : un clic ouvre la photo dans l'onglet Photos.
+        const photos = deps.photoStrip?.(stop.key, { max: 4 });
+        if (photos) wrap.append(photos);
         const done = (action) => () => {
             deps.hidePopup();
             action();

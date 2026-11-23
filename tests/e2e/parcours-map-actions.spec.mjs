@@ -4,6 +4,9 @@
 // parcours-helpers.mjs — journée 1 : GCPAR03, GCPAR01, GCPAR02 ; journée 2 :
 // GCPAR04, GCPAR05.
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   cleanUp,
   clearLogs,
@@ -14,6 +17,8 @@ import {
   openParcoursPage,
   snapshot,
 } from './parcours-helpers.mjs';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 test.beforeEach(async ({ page, request }) => {
   await deleteAllParcours(request);
@@ -123,6 +128,45 @@ test('bulle d’une étape : épingler l’heure, la retirer, exclure, ouvrir le
   // Autre étape cliquée : le panneau de la précédente se referme.
   await clickStop(page, 'GCPAR01');
   await expect(page.locator('.parcours-stop-edit[data-edit-key="GCPAR03"]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('photos d’une étape : vignettes dans sa bulle et dans la liste, ouvertes dans l’onglet Photos', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  // La photo du téléphone se rattache seule à GCPAR01 (position).
+  const [parcours] = (await (await request.get('/api/parcours')).json()).parcours;
+  const phone = path.join(HERE, 'fixtures', 'parcours-photos', 'telephone.jpg');
+  const sent = await request.post(`/api/parcours/${parcours.id}/photos`, {
+    multipart: { photo: { name: 'telephone.jpg', mimeType: 'image/jpeg', buffer: readFileSync(phone) } },
+  });
+  const { photo } = await sent.json();
+  await openReady(page);
+  await expect.poll(async () => (await snapshot(page)).photoStops).toEqual({ GCPAR01: [photo.id] });
+
+  // Liste des étapes (onglet Données) : la vignette sous GCPAR01 seulement.
+  const row = page.locator('.parcours-stop[data-stop-key="GCPAR01"]');
+  await expect(row.locator('.parcours-stop-photo')).toHaveCount(1);
+  await expect(page.locator('.parcours-stop[data-stop-key="GCPAR02"] .parcours-stop-photo')).toHaveCount(0);
+
+  // Bulle de la carte : la vignette, qui ouvre la photo dans l'onglet Photos
+  // — même filtrée par « Non rattachées », la grille revient à « Toutes ».
+  await page.locator('a[href="#photos"]').click();
+  await page.locator('#parcoursPhotoFilters [data-photo-filter="unlinked"]').click();
+  await expect(page.locator('.parcours-photo-thumb')).toHaveCount(0);
+  const bubble = await clickStop(page, 'GCPAR01');
+  await bubble.locator(`.parcours-stop-photo[data-photo-id="${photo.id}"]`).click();
+  await expect(page.locator('#gcPopup.is-visible')).toHaveCount(0);
+  await expect(page.locator('#photos')).toHaveClass(/active/);
+  await expect(page.locator('#parcoursPhotoDetail')).toBeVisible();
+  await expect(page.locator('#parcoursPhotoInfo')).toContainText('telephone.jpg');
+  await expect(page.locator('#parcoursPhotoFilters [data-photo-filter="all"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator(`.parcours-photo-thumb[data-photo-id="${photo.id}"]`)).toHaveClass(/is-active/);
+
+  // Depuis la liste des étapes, de même.
+  await page.locator('a[href="#data"]').click();
+  await row.locator('.parcours-stop-photo').click();
+  await expect(page.locator('#photos')).toHaveClass(/active/);
+  await expect(page.locator('#parcoursPhotoInfo')).toContainText('telephone.jpg');
   expect(errors).toEqual([]);
 });
 

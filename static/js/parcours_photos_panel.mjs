@@ -32,6 +32,7 @@ import {
     pairOffset,
     photoClock,
     photoGridGroups,
+    photoInFilter,
     photoTimeTrusted,
     suggestPhotoPlaces,
     withTrackPositions,
@@ -260,9 +261,14 @@ export function createPhotosPanel(deps) {
         const summary = el('parcoursPhotoSummary');
         if (summary) {
             const linked = photos.filter((photo) => photoMatches.get(photo.id)?.key).length;
-            summary.textContent = photos.length
-                ? t('${n} photos, ${linked} rattachées à une étape', { n: photos.length, linked })
-                : t('Aucune photo pour ce parcours.');
+            if (!photos.length) summary.textContent = t('Aucune photo pour ce parcours.');
+            else if (photos.length === 1) {
+                summary.textContent = linked ? t('1 photo, rattachée à une étape') : t('1 photo, non rattachée');
+            } else {
+                summary.textContent = linked === 1
+                    ? t('${n} photos, 1 rattachée à une étape', { n: photos.length })
+                    : t('${n} photos, ${linked} rattachées à une étape', { n: photos.length, linked });
+            }
         }
 
         // Appareils : décalage d'horloge (téléphones géolocalisés : à l'heure).
@@ -1115,5 +1121,23 @@ export function createPhotosPanel(deps) {
         });
     }
 
-    return { bind, render, upload, linkPhoto };
+    // Ouvre le détail d'une photo depuis ailleurs (bulle d'une étape, liste
+    // des étapes) : sélection vidée, filtre « Toutes » si le filtre courant
+    // la cache, vignette et détail amenés en vue.
+    function showPhoto(id) {
+        const photo = photoById(id);
+        if (!photo) return;
+        selectedIds.clear();
+        pairFor = null;
+        photoDetailId = id;
+        if (!photoInFilter(photo, s().photoMatches?.get(id), photoFilter)) photoFilter = PHOTO_FILTER_ALL;
+        photosDirty = true;
+        render();
+        requestAnimationFrame(() => {
+            el('parcoursPhotos')?.querySelector(`[data-photo-id="${id}"]`)?.scrollIntoView({ block: 'nearest' });
+            el('parcoursPhotoDetail')?.scrollIntoView({ block: 'nearest' });
+        });
+    }
+
+    return { bind, render, upload, linkPhoto, showPhoto };
 }

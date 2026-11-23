@@ -502,7 +502,17 @@ export function createStopsPanel(deps) {
             editKey = editKey === stop.key ? null : stop.key;
             render();
         });
-        item.append(time, badge, icon, text);
+        // Ses photos sous le texte (hors du bouton : un bouton n'en contient
+        // pas d'autre) — un clic ouvre la photo dans l'onglet Photos.
+        const photos = deps.photoStrip?.(stop.key, { max: 5 });
+        if (photos) {
+            const body = document.createElement('div');
+            body.className = 'flex-grow-1 min-w-0';
+            body.append(text, photos);
+            item.append(time, badge, icon, body);
+        } else {
+            item.append(time, badge, icon, text);
+        }
         if (deps.playFromStop) {
             const play = button('btn btn-sm btn-ghost-secondary parcours-stop-play', 'ti-player-play',
                 t('Lire depuis ici'));

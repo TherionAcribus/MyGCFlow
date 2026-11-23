@@ -1130,6 +1130,48 @@ const photosPanel = createPhotosPanel({
     applyTimeline: () => applyTimeline(),
 });
 
+// Photos d'une étape en vignettes cliquables (bulle de la carte, liste des
+// étapes) : celles que montre la lecture (masquées exclues), `max` au plus
+// puis « +n ». Un clic ouvre la photo dans l'onglet Photos. null sans photo.
+function stopPhotoStrip(stopKey, { max = 4 } = {}) {
+    const ids = photoByStop.get(stopKey) || [];
+    if (!ids.length || !selectedId) return null;
+    const strip = document.createElement('div');
+    strip.className = 'parcours-stop-photos';
+    for (const id of ids.slice(0, max)) {
+        const photo = (inputs?.photos || []).find((p) => p.id === id);
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'parcours-stop-photo';
+        open.dataset.photoId = String(id);
+        open.title = photo?.caption || photo?.name || '';
+        open.setAttribute('aria-label', t('Ouvrir la photo ${name} dans l’onglet Photos', { name: photo?.name || '' }));
+        const img = document.createElement('img');
+        img.src = `${CONFIG.BASE_URL}/api/parcours/${selectedId}/photos/${id}/thumb`;
+        img.alt = '';
+        img.loading = 'lazy';
+        open.append(img);
+        open.addEventListener('click', (event) => {
+            event.stopPropagation();
+            openPhoto(id);
+        });
+        strip.append(open);
+    }
+    if (ids.length > max) {
+        const more = document.createElement('span');
+        more.className = 'parcours-stop-photos-more small text-muted';
+        more.textContent = `+${ids.length - max}`;
+        strip.append(more);
+    }
+    return strip;
+}
+
+function openPhoto(id) {
+    pkg.hideMapPopup?.();
+    pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#photos"]'));
+    photosPanel.showPhoto(id);
+}
+
 // --- Traces GPS (lot 5) ---------------------------------------------------------
 
 const tracksPanel = createTracksPanel({
@@ -1248,6 +1290,7 @@ const stopsPanel = createStopsPanel({
     customIcons: CUSTOM_ICONS,
     getMap: () => pkg.getMap?.(),
     showDataTab: () => pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]')),
+    photoStrip: stopPhotoStrip,
     // « Lire depuis ici » : l'étape directement, la journée depuis sa nuit
     // (le carton « Jour n » s'affiche donc aussi). `timeline.days` ne liste
     // que les journées avec étapes : le rang se relit par la première étape.
@@ -1355,6 +1398,7 @@ const planMap = createParcoursPlan({
     hidePopup: () => pkg.hideMapPopup?.(),
     showPopup: (coordinate, render) => pkg.showMapPopup?.(coordinate, render),
     showDataTab: () => pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]')),
+    photoStrip: stopPhotoStrip,
 });
 
 function renderLayer(options) { planMap.render(options); }

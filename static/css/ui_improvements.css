@@ -4542,6 +4542,45 @@ body[data-mode="parcours"] .rhythm-rate-field {
     color: var(--tblr-primary, #0072c6);
 }
 
+/* Photos d'une étape (bulle de la carte, liste des étapes) : vignettes
+   cliquables qui ouvrent la photo dans l'onglet Photos. */
+.parcours-stop-photos {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.parcours-stop-photo {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--tblr-border-color, #dce1e7);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--tblr-bg-surface-secondary, #f1f3f5);
+}
+
+.parcours-bubble .parcours-stop-photo {
+    width: 48px;
+    height: 48px;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.parcours-stop-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.parcours-stop-photo:hover,
+.parcours-stop-photo:focus-visible {
+    outline: 2px solid var(--tblr-primary, #0072c6);
+    outline-offset: 1px;
+}
+
 /* Photo favorite : étoile dans le coin haut droit. */
 .parcours-photo-favorite-badge {
     position: absolute;
