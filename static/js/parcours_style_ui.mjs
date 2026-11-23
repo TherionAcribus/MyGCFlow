@@ -86,10 +86,13 @@ export function createParcoursStyleUI(deps) {
             const input = el(id);
             if (input) input.disabled = themed;
         }
-        // Pastilles : points du thème masqués, leur graphisme (icône, vectoriel)
-        // ne se voit pas — on le dit à côté du commutateur.
+        // Pastilles : points du thème masqués, leur graphisme (icône,
+        // vectoriel, apparition, persistance) ne se voit pas — son bloc est
+        // masqué (classe sur #points, ui_improvements.css) et un bandeau le
+        // remplace, avec de quoi passer aux points du thème.
         const themeHint = el('parcoursThemePointsHint');
         if (themeHint) themeHint.hidden = themed;
+        el('points')?.classList.toggle('parcours-stops-render', !themed);
         const favoriteMark = el('parcoursStyleFavoriteMark');
         if (favoriteMark) favoriteMark.checked = style.favorite_mark;
         const favoriteBurst = el('parcoursStyleFavoriteBurst');

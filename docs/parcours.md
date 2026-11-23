@@ -265,10 +265,14 @@ d'allouer à chaque image. Mesuré : dessin médian 1,1 → 0,2 ms/image.
     lecture. La couche WebGL des points du thème est masquée (moteur ›
     `hidesPoints`, lu par `mainPointsHidden` de mapgl.js) mais garde ses
     features : flashs, compteurs et étendue en dépendent. Le graphisme des
-    points (Icône / Vectoriel) n'y a donc aucun effet visible : un
-    avertissement sous le commutateur le dit et propose de passer en
-    `theme` (`#parcoursThemePointsHint`, 2026-11-21 — sans lui, « Icône »
-    semblait ne rien afficher).
+    points du thème (Icône / Vectoriel, apparition animée, persistance —
+    les pastilles ont leur propre apparition) n'y a donc aucun effet
+    visible : son bloc (`#pointsThemeBlock`, `#iconeOptions`) est masqué
+    par la classe `parcours-stops-render` de `#points`, et un bandeau le
+    remplace, qui propose de passer en `theme` (`#parcoursThemePointsHint`,
+    2026-11-21 — sans lui, « Icône » semblait ne rien afficher ; bloc
+    masqué depuis le 2026-11-23). Sur /parcours, la carte « Étapes du
+    parcours » ouvre l'onglet Points, avant ce bloc.
   - `theme` : les points du thème (onglet Points) sont affichés ; le plan
     et la lecture n'y ajoutent que le numéro, dans une petite pastille en
     haut à droite (`themeNumberBadge`, posée d'après le rayon approché du

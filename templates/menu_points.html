@@ -2,163 +2,298 @@
 <!-- Graphisme des points avec UX améliorée -->
 
 <div id="points">
-    <h5 class="gc-section-title">
-        <i class="ti ti-dots-circle-horizontal text-muted me-1"></i>{{ _("Graphisme des points") }}{{ profile_scope_badge() }}
-    </h5>
-
-    <!-- Section principale -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <div class="d-flex align-items-center gap-2">
-                <span id="labelPointModeIcone" class="point-mode-label">{{ _("Icône") }}</span>
-                <div class="form-check form-switch point-mode-switch mb-0">
-                    <input class="form-check-input" type="checkbox" id="switchIconeVectoriel" role="switch"
-                           aria-labelledby="labelPointModeVectoriel">
-                </div>
-                <label class="form-check-label point-mode-label" for="switchIconeVectoriel" id="labelPointModeVectoriel">{{ _("Vectoriel") }}</label>
-            </div>
-            {% if mode == 'parcours' %}
-            <!-- Rendu « pastilles » : la couche des points du thème est
-                 masquée, ces réglages n'ont rien à montrer (parcours_data.js,
-                 syncParcoursStyleUI). -->
-            <div id="parcoursThemePointsHint" class="alert alert-info py-2 px-3 mt-2 mb-0 small" role="status" hidden>
-                <div class="flex-fill">
-                    {{ _("Les étapes sont dessinées en « Pastilles du parcours » : le graphisme des points (icônes ou vectoriel) ne s'applique qu'au rendu « Points du thème ».") }}
-                    <button type="button" id="btnParcoursUseThemePoints" class="btn btn-link btn-sm p-0 align-baseline">{{ _("Utiliser les points du thème") }}</button>
-                </div>
-            </div>
-            {% endif %}
-            <div class="form-check form-switch mt-2">
-                <input class="form-check-input" type="checkbox" id="switchPointAppear" role="switch" aria-describedby="helpPointAppear">
-                <label class="form-check-label" for="switchPointAppear">{{ _("Apparition animée des points") }}</label>
-            </div>
-            <small id="helpPointAppear" class="form-hint text-muted">{{ _("Chaque nouveau point surgit avec un léger rebond pendant l'animation.") }}</small>
-
-            <label class="form-label mt-3" for="selectPointRecentGlow">{{ _("Persistance des points récents") }}</label>
-            <select id="selectPointRecentGlow" class="form-select" aria-describedby="helpPointRecentGlow">
-                <option value="0">{{ _("Aucune") }}</option>
-                <option value="7">{{ _("7 derniers jours") }}</option>
-                <option value="30">{{ _("30 derniers jours") }}</option>
-                <option value="90">{{ _("90 derniers jours") }}</option>
-            </select>
-            {% if mode == 'evolution' %}
-            <small id="helpPointRecentGlow" class="form-hint text-muted">{{ _("Les Geocaches apparues récemment restent plus claires, puis rejoignent le style normal : on suit ainsi le déplacement de l'activité.") }}</small>
-            {% else %}
-            <small id="helpPointRecentGlow" class="form-hint text-muted">{{ _("Les caches trouvées récemment restent plus claires, puis rejoignent le style normal : on suit ainsi le déplacement de l'activité.") }}</small>
-            {% endif %}
+    {% if mode == 'parcours' %}
+    <!-- Parcours : pastilles numérotées du plan (points.parcours_style du
+         thème, parcours_style.mjs, docs/parcours.md). Les couleurs des
+         lieux et des bases servent aussi pendant la lecture. Piloté par
+         parcours_data.js (bindParcoursStyle). -->
+    <div id="parcoursStopsCard" class="card mb-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">
+                <i class="ti ti-map-pins text-muted me-1"></i>{{ _("Étapes du parcours") }}
+            </h6>
         </div>
-    </div>
-
-    <!-- Sous-menu Vectoriel -->
-    <div id="vectorielOptions" class="point-options">
-        <div class="row g-3">
-            <!-- Section Centre du point -->
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card card-accent card-accent-primary h-100">
-                    <div class="card-header">
-                        <h6 class="card-title m-0">
-                            <i class="ti ti-circle-filled text-primary me-1"></i>{{ _("Centre du point") }}
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <!-- Taille du centre -->
-                        <label class="form-label" for="sliderSizePoint">{{ _("Taille du centre") }}</label>
-                        <div class="row g-2 align-items-center">
-                            <div class="col-7">
-                                <input type="range" class="form-range" id="sliderSizePoint" min="1" max="10" aria-label="{{ _('Taille du centre') }}">
-                            </div>
-                            <div class="col-5">
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="inputSizePoint" min="1" max="10" aria-label="{{ _('Taille en pixels') }}">
-                                    <span class="input-group-text">{{ _("px") }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Couleur du centre -->
-                        <label class="form-label mt-3">{{ _("Couleur du centre") }}</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointGc" value="gc" aria-labelledby="fillColorPointGcLabel">
-                            <label class="form-check-label" id="fillColorPointGcLabel" for="fillColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointNone" value="none" aria-labelledby="fillColorPointNoneLabel">
-                            <label class="form-check-label" id="fillColorPointNoneLabel" for="fillColorPointNone">{{ _("Transparent") }}</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointFix" value="fix" aria-labelledby="fillColorPointFixLabel">
-                            <label class="form-check-label" id="fillColorPointFixLabel" for="fillColorPointFix">{{ _("Couleur unique") }}</label>
-                        </div>
-
-                        <!-- Color Picker Centre -->
-                        <div class="mt-2">
-                            <label class="form-label" for="pointCenterColor">{{ _("Choisir la couleur") }}</label>
-                            <input type="color" class="form-control form-control-color" id="pointCenterColor" value="#ffffff" aria-label="{{ _('Choisir la couleur du centre') }}">
-                        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="parcoursStyleRender">{{ _("Rendu des étapes") }}</label>
+                    <select id="parcoursStyleRender" class="form-select" aria-describedby="helpParcoursStops">
+                        <option value="stops">{{ _("Pastilles du parcours") }}</option>
+                        <option value="theme">{{ _("Points du thème") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="parcoursStyleNumbers">{{ _("Numéros des étapes") }}</label>
+                    <select id="parcoursStyleNumbers" class="form-select" aria-describedby="helpParcoursStops">
+                        <option value="trip">{{ _("Sur tout le parcours") }}</option>
+                        <option value="day">{{ _("Par journée") }}</option>
+                        <option value="none">{{ _("Aucun") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="parcoursStyleSize">{{ _("Taille des pastilles") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control" id="parcoursStyleSize" min="7" max="18" step="1">
+                        <span class="input-group-text">{{ _("px") }}</span>
                     </div>
                 </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="parcoursStyleColorBy">{{ _("Couleur des étapes") }}</label>
+                    <select id="parcoursStyleColorBy" class="form-select" aria-describedby="helpParcoursStops">
+                        <option value="kind">{{ _("Par nature d'étape") }}</option>
+                        <option value="day">{{ _("Par journée") }}</option>
+                        <option value="type">{{ _("Par type de cache") }}</option>
+                    </select>
+                </div>
             </div>
-
-            <!-- Section Forme du point -->
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card card-accent card-accent-success h-100">
-                    <div class="card-header">
-                        <h6 class="card-title m-0">
-                            <i class="ti ti-shape text-success me-1"></i>{{ _("Forme du point") }}
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <label class="form-label" for="selectShape">{{ _("Forme des points") }}</label>
-                        <select id="selectShape" class="form-select" aria-label="{{ _('Forme des points') }}">
-                            <option value="circle">{{ _("Cercle") }}</option>
-                            <option value="triangle">{{ _("Triangle") }}</option>
+            <!-- Palette des journées (points.parcours_style.day_palette, 2 à 12
+                 couleurs) : couleur par journée et trait aux couleurs des
+                 journées. Cases remplies par parcours_data.js. -->
+            <div id="parcoursStyleDayPalette" class="mt-3" hidden>
+                <div class="parcours-day-palette">
+                    <span class="form-label mb-0">{{ _("Couleurs des journées") }}</span>
+                    <span class="parcours-day-swatches"></span>
+                    <button type="button" id="btnParcoursPaletteAdd" class="btn btn-sm btn-ghost-secondary btn-icon"
+                            title="{{ _('Ajouter une couleur') }}" aria-label="{{ _('Ajouter une couleur') }}">
+                        <i class="ti ti-plus" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" id="btnParcoursPaletteRemove" class="btn btn-sm btn-ghost-secondary btn-icon"
+                            title="{{ _('Retirer la dernière couleur') }}" aria-label="{{ _('Retirer la dernière couleur') }}">
+                        <i class="ti ti-minus" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" id="btnParcoursPaletteReset" class="btn btn-sm btn-ghost-secondary">
+                        <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Palette par défaut") }}
+                    </button>
+                </div>
+                <small class="form-hint text-muted">{{ _("Une couleur par journée, dans l'ordre des dates ; après la dernière, la palette reprend au début.") }}</small>
+            </div>
+            <div class="parcours-style-colors mt-3">
+                <div data-kind-color>
+                    <label class="form-label" for="parcoursStyleColorFind">{{ _("Trouvailles") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorFind" value="#0072c6">
+                </div>
+                <div data-kind-color>
+                    <label class="form-label" for="parcoursStyleColorLab">{{ _("Étapes Lab") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorLab" value="#f59f00">
+                </div>
+                <div data-kind-color>
+                    <label class="form-label" for="parcoursStyleColorDnf">{{ _("DNF") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorDnf" value="#868e96">
+                </div>
+                <div>
+                    <label class="form-label" for="parcoursStyleColorPlace">{{ _("Lieux") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorPlace" value="#ae3ec9">
+                </div>
+                <div>
+                    <label class="form-label" for="parcoursStyleColorBase">{{ _("Bases") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorBase" value="#343a40">
+                </div>
+                <button type="button" id="btnParcoursStyleColorsReset" class="btn btn-sm btn-ghost-secondary align-self-end">
+                    <i class="ti ti-refresh me-1"></i>{{ _("Couleurs par défaut") }}
+                </button>
+            </div>
+            <small id="helpParcoursStops" class="form-hint text-muted">{{ _("Le même rendu au repos, pendant la lecture et dans la vidéo. Pastilles : numéro au centre. Points du thème : le graphisme réglé ci-dessous, numéro dans une petite pastille à côté. Couleur par journée ou par type de cache (couleurs Geocaching) : les DNF passent en pastille creuse. Les lieux et les bases gardent toujours leur couleur ; le texte des numéros passe en sombre sur une couleur claire.") }}</small>
+            <!-- Pendant la lecture (points.parcours_style.play_*) : étape en
+                 cours, étapes passées, aperçu de la suite. -->
+            <div class="mt-3 pt-3 border-top">
+                <h6 class="mb-2">{{ _("Pendant la lecture") }}</h6>
+                <label class="form-check mb-2">
+                    <input id="parcoursStylePlayCurrent" class="form-check-input" type="checkbox" aria-describedby="helpParcoursPlay">
+                    <span class="form-check-label">{{ _("Entourer l'étape en cours") }}</span>
+                </label>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="parcoursStylePlayPast">{{ _("Étapes passées") }}</label>
+                        <select id="parcoursStylePlayPast" class="form-select" aria-describedby="helpParcoursPlay">
+                            <option value="normal">{{ _("Inchangées") }}</option>
+                            <option value="dim">{{ _("Atténuées") }}</option>
+                            <option value="dim_days">{{ _("Atténuées les journées précédentes") }}</option>
                         </select>
                     </div>
                 </div>
+                <label class="form-check mt-2 mb-0">
+                    <input id="parcoursStylePlayPreview" class="form-check-input" type="checkbox" aria-describedby="helpParcoursPlay">
+                    <span class="form-check-label">{{ _("Aperçu des étapes à venir de la journée") }}</span>
+                </label>
+                <small id="helpParcoursPlay" class="form-hint text-muted">{{ _("L'anneau suit le géocacheur d'étape en étape. Les étapes passées atténuées et l'aperçu de la suite (pâle, relié par un fil) demandent le rendu « Pastilles du parcours » : en points du thème, les points apparaissent seuls.") }}</small>
             </div>
+            <!-- Points favoris donnés (points.parcours_style.favorite_*) : lus
+                 sur geocaching.com par « Compléter depuis geocaching.com ». -->
+            <div class="mt-3 pt-3 border-top">
+                <h6 class="mb-2">{{ _("Points favoris donnés") }}</h6>
+                <label class="form-check mb-2">
+                    <input id="parcoursStyleFavoriteMark" class="form-check-input" type="checkbox" aria-describedby="helpParcoursFavorite">
+                    <span class="form-check-label">{{ _("Marquer d'un cœur les étapes où j'ai donné un PF") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursStyleFavoriteBurst" class="form-check-input" type="checkbox" aria-describedby="helpParcoursFavorite">
+                    <span class="form-check-label">{{ _("Envol de cœurs à l'arrivée sur l'étape") }}</span>
+                </label>
+                <small id="helpParcoursFavorite" class="form-hint text-muted">{{ _("Au repos, pendant la lecture et dans la vidéo. Les PF donnés viennent de geocaching.com : onglet Données, « Compléter depuis geocaching.com ». La balise {pf} de la ligne d'infos les compte.") }}</small>
+            </div>
+        </div>
+    </div>
+    <!-- Rendu « pastilles » (défaut) : le graphisme des points du thème
+         (icône, vectoriel, apparition, persistance) ne se voit pas — son
+         bloc est masqué et ce bandeau le remplace (parcours_style_ui.mjs). -->
+    <div id="parcoursThemePointsHint" class="alert alert-info py-2 px-3 mb-3 small" role="status" hidden>
+        <div class="flex-fill">
+            {{ _("Les étapes sont dessinées en « Pastilles du parcours » : le graphisme des points (icônes ou vectoriel) ne s'applique qu'au rendu « Points du thème ».") }}
+            <button type="button" id="btnParcoursUseThemePoints" class="btn btn-link btn-sm p-0 align-baseline">{{ _("Utiliser les points du thème") }}</button>
+        </div>
+    </div>
+    {% endif %}
 
-            <!-- Section Bordure du point -->
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card card-accent card-accent-warning h-100">
-                    <div class="card-header">
-                        <h6 class="card-title m-0">
-                            <i class="ti ti-border-outer text-warning me-1"></i>{{ _("Bordure du point") }}
-                        </h6>
+    <!-- Graphisme des points du thème ; sur /parcours, masqué en rendu
+         « pastilles » (parcours_style_ui.mjs). -->
+    <div id="pointsThemeBlock">
+        <h5 class="gc-section-title">
+            <i class="ti ti-dots-circle-horizontal text-muted me-1"></i>{{ _("Graphisme des points") }}{{ profile_scope_badge() }}
+        </h5>
+
+        <!-- Section principale -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2">
+                    <span id="labelPointModeIcone" class="point-mode-label">{{ _("Icône") }}</span>
+                    <div class="form-check form-switch point-mode-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="switchIconeVectoriel" role="switch"
+                               aria-labelledby="labelPointModeVectoriel">
                     </div>
-                    <div class="card-body">
-                        <!-- Taille de la bordure -->
-                        <label class="form-label" for="sliderSizeBorder">{{ _("Épaisseur de la bordure (0 = aucune)") }}</label>
-                        <div class="row g-2 align-items-center">
-                            <div class="col-7">
-                                <input type="range" class="form-range" id="sliderSizeBorder" min="0" max="10" aria-label="{{ _('Épaisseur de la bordure') }}">
-                            </div>
-                            <div class="col-5">
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="inputSizeBorder" min="0" max="10" aria-label="{{ _('Épaisseur en pixels') }}">
-                                    <span class="input-group-text">{{ _("px") }}</span>
+                    <label class="form-check-label point-mode-label" for="switchIconeVectoriel" id="labelPointModeVectoriel">{{ _("Vectoriel") }}</label>
+                </div>
+                <div class="form-check form-switch mt-2">
+                    <input class="form-check-input" type="checkbox" id="switchPointAppear" role="switch" aria-describedby="helpPointAppear">
+                    <label class="form-check-label" for="switchPointAppear">{{ _("Apparition animée des points") }}</label>
+                </div>
+                <small id="helpPointAppear" class="form-hint text-muted">{{ _("Chaque nouveau point surgit avec un léger rebond pendant l'animation.") }}</small>
+
+                <label class="form-label mt-3" for="selectPointRecentGlow">{{ _("Persistance des points récents") }}</label>
+                <select id="selectPointRecentGlow" class="form-select" aria-describedby="helpPointRecentGlow">
+                    <option value="0">{{ _("Aucune") }}</option>
+                    <option value="7">{{ _("7 derniers jours") }}</option>
+                    <option value="30">{{ _("30 derniers jours") }}</option>
+                    <option value="90">{{ _("90 derniers jours") }}</option>
+                </select>
+                {% if mode == 'evolution' %}
+                <small id="helpPointRecentGlow" class="form-hint text-muted">{{ _("Les Geocaches apparues récemment restent plus claires, puis rejoignent le style normal : on suit ainsi le déplacement de l'activité.") }}</small>
+                {% else %}
+                <small id="helpPointRecentGlow" class="form-hint text-muted">{{ _("Les caches trouvées récemment restent plus claires, puis rejoignent le style normal : on suit ainsi le déplacement de l'activité.") }}</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sous-menu Vectoriel -->
+        <div id="vectorielOptions" class="point-options">
+            <div class="row g-3">
+                <!-- Section Centre du point -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card card-accent card-accent-primary h-100">
+                        <div class="card-header">
+                            <h6 class="card-title m-0">
+                                <i class="ti ti-circle-filled text-primary me-1"></i>{{ _("Centre du point") }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Taille du centre -->
+                            <label class="form-label" for="sliderSizePoint">{{ _("Taille du centre") }}</label>
+                            <div class="row g-2 align-items-center">
+                                <div class="col-7">
+                                    <input type="range" class="form-range" id="sliderSizePoint" min="1" max="10" aria-label="{{ _('Taille du centre') }}">
+                                </div>
+                                <div class="col-5">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" id="inputSizePoint" min="1" max="10" aria-label="{{ _('Taille en pixels') }}">
+                                        <span class="input-group-text">{{ _("px") }}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Couleur de la bordure -->
-                        <label class="form-label mt-3">{{ _("Couleur de la bordure") }}</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointGc" value="gc" aria-labelledby="borderColorPointGcLabel">
-                            <label class="form-check-label" id="borderColorPointGcLabel" for="borderColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointNone" value="none" aria-labelledby="borderColorPointNoneLabel">
-                            <label class="form-check-label" id="borderColorPointNoneLabel" for="borderColorPointNone">{{ _("Transparent") }}</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointFix" value="fix" aria-labelledby="borderColorPointFixLabel">
-                            <label class="form-check-label" id="borderColorPointFixLabel" for="borderColorPointFix">{{ _("Couleur unique") }}</label>
-                        </div>
+                            <!-- Couleur du centre -->
+                            <label class="form-label mt-3">{{ _("Couleur du centre") }}</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointGc" value="gc" aria-labelledby="fillColorPointGcLabel">
+                                <label class="form-check-label" id="fillColorPointGcLabel" for="fillColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointNone" value="none" aria-labelledby="fillColorPointNoneLabel">
+                                <label class="form-check-label" id="fillColorPointNoneLabel" for="fillColorPointNone">{{ _("Transparent") }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fillColorPoint" id="fillColorPointFix" value="fix" aria-labelledby="fillColorPointFixLabel">
+                                <label class="form-check-label" id="fillColorPointFixLabel" for="fillColorPointFix">{{ _("Couleur unique") }}</label>
+                            </div>
 
-                        <!-- Color Picker Bordure -->
-                        <div class="mt-2">
-                            <label class="form-label" for="pointBorderColor">{{ _("Choisir la couleur") }}</label>
-                            <input type="color" class="form-control form-control-color" id="pointBorderColor" value="#000000" aria-label="{{ _('Choisir la couleur de la bordure') }}">
+                            <!-- Color Picker Centre -->
+                            <div class="mt-2">
+                                <label class="form-label" for="pointCenterColor">{{ _("Choisir la couleur") }}</label>
+                                <input type="color" class="form-control form-control-color" id="pointCenterColor" value="#ffffff" aria-label="{{ _('Choisir la couleur du centre') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Forme du point -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card card-accent card-accent-success h-100">
+                        <div class="card-header">
+                            <h6 class="card-title m-0">
+                                <i class="ti ti-shape text-success me-1"></i>{{ _("Forme du point") }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label" for="selectShape">{{ _("Forme des points") }}</label>
+                            <select id="selectShape" class="form-select" aria-label="{{ _('Forme des points') }}">
+                                <option value="circle">{{ _("Cercle") }}</option>
+                                <option value="triangle">{{ _("Triangle") }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Bordure du point -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card card-accent card-accent-warning h-100">
+                        <div class="card-header">
+                            <h6 class="card-title m-0">
+                                <i class="ti ti-border-outer text-warning me-1"></i>{{ _("Bordure du point") }}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Taille de la bordure -->
+                            <label class="form-label" for="sliderSizeBorder">{{ _("Épaisseur de la bordure (0 = aucune)") }}</label>
+                            <div class="row g-2 align-items-center">
+                                <div class="col-7">
+                                    <input type="range" class="form-range" id="sliderSizeBorder" min="0" max="10" aria-label="{{ _('Épaisseur de la bordure') }}">
+                                </div>
+                                <div class="col-5">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" id="inputSizeBorder" min="0" max="10" aria-label="{{ _('Épaisseur en pixels') }}">
+                                        <span class="input-group-text">{{ _("px") }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Couleur de la bordure -->
+                            <label class="form-label mt-3">{{ _("Couleur de la bordure") }}</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointGc" value="gc" aria-labelledby="borderColorPointGcLabel">
+                                <label class="form-check-label" id="borderColorPointGcLabel" for="borderColorPointGc">{{ _("Couleurs GC (par type)") }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointNone" value="none" aria-labelledby="borderColorPointNoneLabel">
+                                <label class="form-check-label" id="borderColorPointNoneLabel" for="borderColorPointNone">{{ _("Transparent") }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="borderColorPoint" id="borderColorPointFix" value="fix" aria-labelledby="borderColorPointFixLabel">
+                                <label class="form-check-label" id="borderColorPointFixLabel" for="borderColorPointFix">{{ _("Couleur unique") }}</label>
+                            </div>
+
+                            <!-- Color Picker Bordure -->
+                            <div class="mt-2">
+                                <label class="form-label" for="pointBorderColor">{{ _("Choisir la couleur") }}</label>
+                                <input type="color" class="form-control form-control-color" id="pointBorderColor" value="#000000" aria-label="{{ _('Choisir la couleur de la bordure') }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -256,138 +391,6 @@
     </div>
     {% endif %}
 
-    {% if mode == 'parcours' %}
-    <!-- Parcours : pastilles numérotées du plan (points.parcours_style du
-         thème, parcours_style.mjs, docs/parcours.md). Les couleurs des
-         lieux et des bases servent aussi pendant la lecture. Piloté par
-         parcours_data.js (bindParcoursStyle). -->
-    <div id="parcoursStopsCard" class="card mt-3">
-        <div class="card-header">
-            <h6 class="card-title m-0">
-                <i class="ti ti-map-pins text-muted me-1"></i>{{ _("Étapes du parcours") }}
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-12 col-md-4">
-                    <label class="form-label" for="parcoursStyleRender">{{ _("Rendu des étapes") }}</label>
-                    <select id="parcoursStyleRender" class="form-select" aria-describedby="helpParcoursStops">
-                        <option value="stops">{{ _("Pastilles du parcours") }}</option>
-                        <option value="theme">{{ _("Points du thème") }}</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md-4">
-                    <label class="form-label" for="parcoursStyleNumbers">{{ _("Numéros des étapes") }}</label>
-                    <select id="parcoursStyleNumbers" class="form-select" aria-describedby="helpParcoursStops">
-                        <option value="trip">{{ _("Sur tout le parcours") }}</option>
-                        <option value="day">{{ _("Par journée") }}</option>
-                        <option value="none">{{ _("Aucun") }}</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md-4">
-                    <label class="form-label" for="parcoursStyleSize">{{ _("Taille des pastilles") }}</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" class="form-control" id="parcoursStyleSize" min="7" max="18" step="1">
-                        <span class="input-group-text">{{ _("px") }}</span>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4">
-                    <label class="form-label" for="parcoursStyleColorBy">{{ _("Couleur des étapes") }}</label>
-                    <select id="parcoursStyleColorBy" class="form-select" aria-describedby="helpParcoursStops">
-                        <option value="kind">{{ _("Par nature d'étape") }}</option>
-                        <option value="day">{{ _("Par journée") }}</option>
-                        <option value="type">{{ _("Par type de cache") }}</option>
-                    </select>
-                </div>
-            </div>
-            <!-- Palette des journées (points.parcours_style.day_palette, 2 à 12
-                 couleurs) : couleur par journée et trait aux couleurs des
-                 journées. Cases remplies par parcours_data.js. -->
-            <div id="parcoursStyleDayPalette" class="mt-3" hidden>
-                <div class="parcours-day-palette">
-                    <span class="form-label mb-0">{{ _("Couleurs des journées") }}</span>
-                    <span class="parcours-day-swatches"></span>
-                    <button type="button" id="btnParcoursPaletteAdd" class="btn btn-sm btn-ghost-secondary btn-icon"
-                            title="{{ _('Ajouter une couleur') }}" aria-label="{{ _('Ajouter une couleur') }}">
-                        <i class="ti ti-plus" aria-hidden="true"></i>
-                    </button>
-                    <button type="button" id="btnParcoursPaletteRemove" class="btn btn-sm btn-ghost-secondary btn-icon"
-                            title="{{ _('Retirer la dernière couleur') }}" aria-label="{{ _('Retirer la dernière couleur') }}">
-                        <i class="ti ti-minus" aria-hidden="true"></i>
-                    </button>
-                    <button type="button" id="btnParcoursPaletteReset" class="btn btn-sm btn-ghost-secondary">
-                        <i class="ti ti-refresh me-1" aria-hidden="true"></i>{{ _("Palette par défaut") }}
-                    </button>
-                </div>
-                <small class="form-hint text-muted">{{ _("Une couleur par journée, dans l'ordre des dates ; après la dernière, la palette reprend au début.") }}</small>
-            </div>
-            <div class="parcours-style-colors mt-3">
-                <div data-kind-color>
-                    <label class="form-label" for="parcoursStyleColorFind">{{ _("Trouvailles") }}</label>
-                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorFind" value="#0072c6">
-                </div>
-                <div data-kind-color>
-                    <label class="form-label" for="parcoursStyleColorLab">{{ _("Étapes Lab") }}</label>
-                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorLab" value="#f59f00">
-                </div>
-                <div data-kind-color>
-                    <label class="form-label" for="parcoursStyleColorDnf">{{ _("DNF") }}</label>
-                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorDnf" value="#868e96">
-                </div>
-                <div>
-                    <label class="form-label" for="parcoursStyleColorPlace">{{ _("Lieux") }}</label>
-                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorPlace" value="#ae3ec9">
-                </div>
-                <div>
-                    <label class="form-label" for="parcoursStyleColorBase">{{ _("Bases") }}</label>
-                    <input type="color" class="form-control form-control-color" id="parcoursStyleColorBase" value="#343a40">
-                </div>
-                <button type="button" id="btnParcoursStyleColorsReset" class="btn btn-sm btn-ghost-secondary align-self-end">
-                    <i class="ti ti-refresh me-1"></i>{{ _("Couleurs par défaut") }}
-                </button>
-            </div>
-            <small id="helpParcoursStops" class="form-hint text-muted">{{ _("Le même rendu au repos, pendant la lecture et dans la vidéo. Pastilles : numéro au centre. Points du thème : le graphisme réglé ci-dessus, numéro dans une petite pastille à côté. Couleur par journée ou par type de cache (couleurs Geocaching) : les DNF passent en pastille creuse. Les lieux et les bases gardent toujours leur couleur ; le texte des numéros passe en sombre sur une couleur claire.") }}</small>
-            <!-- Pendant la lecture (points.parcours_style.play_*) : étape en
-                 cours, étapes passées, aperçu de la suite. -->
-            <div class="mt-3 pt-3 border-top">
-                <h6 class="mb-2">{{ _("Pendant la lecture") }}</h6>
-                <label class="form-check mb-2">
-                    <input id="parcoursStylePlayCurrent" class="form-check-input" type="checkbox" aria-describedby="helpParcoursPlay">
-                    <span class="form-check-label">{{ _("Entourer l'étape en cours") }}</span>
-                </label>
-                <div class="row g-3">
-                    <div class="col-12 col-md-6">
-                        <label class="form-label" for="parcoursStylePlayPast">{{ _("Étapes passées") }}</label>
-                        <select id="parcoursStylePlayPast" class="form-select" aria-describedby="helpParcoursPlay">
-                            <option value="normal">{{ _("Inchangées") }}</option>
-                            <option value="dim">{{ _("Atténuées") }}</option>
-                            <option value="dim_days">{{ _("Atténuées les journées précédentes") }}</option>
-                        </select>
-                    </div>
-                </div>
-                <label class="form-check mt-2 mb-0">
-                    <input id="parcoursStylePlayPreview" class="form-check-input" type="checkbox" aria-describedby="helpParcoursPlay">
-                    <span class="form-check-label">{{ _("Aperçu des étapes à venir de la journée") }}</span>
-                </label>
-                <small id="helpParcoursPlay" class="form-hint text-muted">{{ _("L'anneau suit le géocacheur d'étape en étape. Les étapes passées atténuées et l'aperçu de la suite (pâle, relié par un fil) demandent le rendu « Pastilles du parcours » : en points du thème, les points apparaissent seuls.") }}</small>
-            </div>
-            <!-- Points favoris donnés (points.parcours_style.favorite_*) : lus
-                 sur geocaching.com par « Compléter depuis geocaching.com ». -->
-            <div class="mt-3 pt-3 border-top">
-                <h6 class="mb-2">{{ _("Points favoris donnés") }}</h6>
-                <label class="form-check mb-2">
-                    <input id="parcoursStyleFavoriteMark" class="form-check-input" type="checkbox" aria-describedby="helpParcoursFavorite">
-                    <span class="form-check-label">{{ _("Marquer d'un cœur les étapes où j'ai donné un PF") }}</span>
-                </label>
-                <label class="form-check mb-0">
-                    <input id="parcoursStyleFavoriteBurst" class="form-check-input" type="checkbox" aria-describedby="helpParcoursFavorite">
-                    <span class="form-check-label">{{ _("Envol de cœurs à l'arrivée sur l'étape") }}</span>
-                </label>
-                <small id="helpParcoursFavorite" class="form-hint text-muted">{{ _("Au repos, pendant la lecture et dans la vidéo. Les PF donnés viennent de geocaching.com : onglet Données, « Compléter depuis geocaching.com ». La balise {pf} de la ligne d'infos les compte.") }}</small>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
     {% if mode == 'poses' %}
     <!-- Mes poses : animation des points (points.poses_effects du thème,

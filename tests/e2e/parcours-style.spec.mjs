@@ -170,14 +170,23 @@ test('rendu des étapes : pastilles ou points du thème, identique au repos et e
   await page.locator('#btnQuickStop').click();
   await expect.poll(async () => (await snapshot(page)).running).toBe(false);
 
-  // En pastilles, le graphisme des points (icône / vectoriel) ne se voit pas :
-  // l'avertissement sous le commutateur bascule vers les points du thème.
+  // En pastilles, le graphisme des points du thème (icône / vectoriel,
+  // apparition, persistance) ne se voit pas : son bloc est masqué, un
+  // bandeau le remplace et bascule vers les points du thème. La carte des
+  // étapes vient en tête de l'onglet.
   await openStyleSubtab(page, '#tabPoints');
+  const top = (selector) => page.locator(selector).evaluate((node) => node.getBoundingClientRect().top);
   await expect(page.locator('#parcoursThemePointsHint')).toBeVisible();
+  await expect(page.locator('#pointsThemeBlock')).toBeHidden();
+  await expect(page.locator('#switchPointAppear')).toBeHidden();
+  expect(await top('#parcoursStopsCard')).toBeLessThan(await top('#parcoursThemePointsHint'));
   await page.locator('#btnParcoursUseThemePoints').click();
   await expect.poll(async () => (await snapshot(page)).themePoints).toBe(true);
   await expect(page.locator('#parcoursStyleRender')).toHaveValue('theme');
   await expect(page.locator('#parcoursThemePointsHint')).toBeHidden();
+  await expect(page.locator('#pointsThemeBlock')).toBeVisible();
+  await expect(page.locator('#switchIconeVectoriel')).toBeVisible();
+  expect(await top('#parcoursStopsCard')).toBeLessThan(await top('#pointsThemeBlock'));
   snap = await snapshot(page);
   // Numéro dans une petite pastille, décalée en haut à droite du point.
   const badge = snap.stopStyles[day1[0]];
@@ -207,6 +216,8 @@ test('rendu des étapes : pastilles ou points du thème, identique au repos et e
   await page.locator('#parcoursStyleRender').selectOption('stops');
   await expect.poll(async () => (await snapshot(page)).themePoints).toBe(false);
   await expect(page.locator('#parcoursThemePointsHint')).toBeVisible();
+  await expect(page.locator('#pointsThemeBlock')).toBeHidden();
+  await expect(page.locator('#iconeOptions')).toBeHidden();
   expect((await snapshot(page)).stopStyles[day1[0]]).toMatchObject({ label: '1', radius: 11, offset: [0, 0] });
   expect(errors).toEqual([]);
 });
