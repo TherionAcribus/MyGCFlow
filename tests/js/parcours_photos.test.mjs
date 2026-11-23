@@ -59,7 +59,7 @@ test('rattachement : manuel, par position (même jour), par l’heure, ou rien',
     ];
     const matches = matchPhotos(ordered, photos, offsets);
     assert.deepEqual(matches.get(1), { key: 'C', source: MATCH_MANUAL });
-    assert.deepEqual(matches.get(2), { key: null, source: MATCH_MANUAL });
+    assert.deepEqual(matches.get(2), { key: null, source: null, lostKey: 'ZZZ' });
     assert.equal(matches.get(3).key, 'B');
     assert.equal(matches.get(3).source, MATCH_GPS);
     assert.ok(matches.get(3).distanceM < 60);
@@ -67,6 +67,31 @@ test('rattachement : manuel, par position (même jour), par l’heure, ou rien',
     assert.deepEqual(matches.get(5), { key: null, source: null });
     assert.deepEqual(matches.get(6), { key: 'B', source: MATCH_TIME });
     assert.deepEqual(matches.get(7), { key: null, source: null });
+});
+
+test('étape choisie à la main puis retirée : rattachement automatique en attendant son retour', () => {
+    const ordered = reconstructParcours({ days: DAYS });
+    const offsets = cameraOffsets([{ camera: 'Canon', offsetMinutes: 0 }]);
+    const b = ordered.days[0].stops.find((s) => s.key === 'B');
+    const hhmm = `${String(Math.floor(b.arrivalMin / 60)).padStart(2, '0')}:${String(Math.round(b.arrivalMin % 60)).padStart(2, '0')}`;
+    const photos = [
+        photo(1, { stopKey: 'place:9', lat: 45, lon: at(10.5), takenAt: '2025-07-12T11:00:00' }),  // 50 m de B
+        photo(2, { stopKey: 'place:9', camera: 'Canon', takenAt: `2025-07-12T${hhmm}:00` }),
+        photo(3, { stopKey: 'place:9', lat: 45, lon: at(5), takenAt: '2025-07-12T12:00:00' }),     // loin de tout
+    ];
+    const matches = matchPhotos(ordered, photos, offsets);
+    assert.equal(matches.get(1).key, 'B');
+    assert.equal(matches.get(1).source, MATCH_GPS);
+    assert.equal(matches.get(1).lostKey, 'place:9');
+    assert.deepEqual(matches.get(2), { key: 'B', source: MATCH_TIME, lostKey: 'place:9' });
+    assert.deepEqual(matches.get(3), { key: null, source: null, lostKey: 'place:9' });
+    // Rattachée par position, elle cale son étape comme une autre ; hors de
+    // tout, elle est proposée comme lieu.
+    assert.deepEqual([...photoAnchors(ordered, photos, matches, offsets)], [['B', 11 * 60]]);
+    assert.deepEqual(suggestPhotoPlaces(photos, matches, offsets).map((p) => p.photoIds), [[3]]);
+    // L'étape revient : la photo la retrouve.
+    const back = reconstructParcours({ days: [{ ...DAYS[0], stops: [...DAYS[0].stops, stop('place:9', 30)] }] });
+    assert.deepEqual(matchPhotos(back, photos, offsets).get(3), { key: 'place:9', source: MATCH_MANUAL });
 });
 
 test('ancres : position ou manuel, heure de confiance, la plus tôt par étape', () => {

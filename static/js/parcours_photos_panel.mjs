@@ -231,8 +231,13 @@ export function createPhotosPanel(deps) {
                 cell.classList.toggle('is-hidden', !!photo.hidden);
                 cell.dataset.photoId = String(photo.id);
                 const hiddenNote = t('masquée dans la vidéo');
-                const label = `${photo.name} — ${matchLabel(match, deps.stopByKey(match?.key))}`;
-                cell.title = photo.hidden ? `${label} — ${hiddenNote}` : label;
+                const lostNote = t('étape choisie retirée du parcours');
+                cell.title = [
+                    photo.name,
+                    matchLabel(match, deps.stopByKey(match?.key)),
+                    match?.lostKey ? lostNote : '',
+                    photo.hidden ? hiddenNote : '',
+                ].filter(Boolean).join(' — ');
                 const img = document.createElement('img');
                 img.src = photoUrl(photo, true);
                 img.alt = photo.name || '';
@@ -346,9 +351,18 @@ export function createPhotosPanel(deps) {
         label.htmlFor = select.id = 'parcoursPhotoStop';
         const auto = document.createElement('option');
         auto.value = '';
-        const autoMatch = photo.stopKey ? null : match;
+        // Étape choisie à la main puis retirée du parcours : gardée en
+        // option (sélectionnée) tant que la photo l'attend ; « Automatique »
+        // l'oublie.
+        const autoMatch = photo.stopKey && !match?.lostKey ? null : match;
         auto.textContent = autoMatch?.key ? t('Automatique : ${label}', { label: matchLabel(autoMatch, deps.stopByKey(autoMatch.key)) }) : t('Automatique');
         select.append(auto);
+        if (match?.lostKey) {
+            const lost = document.createElement('option');
+            lost.value = match.lostKey;
+            lost.textContent = t('Étape retirée du parcours');
+            select.append(lost);
+        }
         for (const day of ordered?.days || []) {
             const group = document.createElement('optgroup');
             group.label = formatDay(day.date, { weekday: 'short', day: 'numeric', month: 'short' });
@@ -363,7 +377,14 @@ export function createPhotosPanel(deps) {
         }
         select.value = photo.stopKey || '';
         select.addEventListener('change', () => linkPhoto(photo.id, select.value || null));
-        el('parcoursPhotoLinkRow')?.replaceChildren(label, select);
+        const linkRow = [label, select];
+        if (match?.lostKey) {
+            const hint = document.createElement('div');
+            hint.className = 'form-hint text-muted w-100 parcours-photo-lost';
+            hint.textContent = t('L’étape choisie pour cette photo a été retirée du parcours : la photo suit le rattachement automatique, et retrouvera son étape si elle revient.');
+            linkRow.push(hint);
+        }
+        el('parcoursPhotoLinkRow')?.replaceChildren(...linkRow);
 
         const shown = el('parcoursPhotoShown');
         if (shown) shown.checked = !photo.hidden;

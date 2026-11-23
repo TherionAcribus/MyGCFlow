@@ -792,6 +792,15 @@ Table `parcours_photo`, décalages d'horloge dans `parcours_camera`
 | heure de confiance, sans position | celle dont la visite estimée (± 10 min) contient l'heure, sinon l'arrivée la plus proche à 45 min au plus |
 | sinon | aucune (vignette estompée) |
 
+Une étape choisie à la main qui disparaît du parcours (cache exclue, lieu
+supprimé) n'est pas oubliée : `stopKey` reste stocké, pour que la photo la
+retrouve si elle revient (annulation, cache réincluse). En attendant, la
+photo suit le rattachement automatique (position, heure — elle peut donc
+caler son étape, ou être proposée comme lieu) et son rattachement porte
+`lostKey`. Le détail garde l'étape disparue choisie dans la liste, avec une
+explication ; « Automatique » l'oublie. Avant le 2026-11-23, une telle photo
+restait « non rattachée » sans retour possible et la liste s'affichait vide.
+
 **Heure de confiance** : celle d'un téléphone (photo géolocalisée : son
 horloge suit le réseau), ou d'un appareil recalé. Un recalage à 0 compte
 aussi : c'est l'utilisateur qui dit l'horloge juste. Une photo rattachée à

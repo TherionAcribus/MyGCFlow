@@ -108,6 +108,57 @@ test('photos : rattachement par position, heure comme ancre, rattachement manuel
   expect(errors).toEqual([]);
 });
 
+test('étape choisie retirée du parcours : la photo suit le rattachement automatique, puis la retrouve', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const parcours = await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(files[0]);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+  const [{ id }] = (await snapshot(page)).photos;
+  const matchOf = async () => (await snapshot(page)).photos[0].match;
+  const thumb = page.locator(`.parcours-photo-thumb[data-photo-id="${id}"]`);
+
+  // Rattachée à la main à GCPAR04, que l'on retire ensuite du parcours.
+  await thumb.click();
+  await page.locator('#parcoursPhotoStop').selectOption('GCPAR04');
+  await expect.poll(matchOf).toEqual({ key: 'GCPAR04', source: 'manual' });
+  const exclude = (excluded) => request.patch(`/api/parcours/${parcours.id}/overrides`,
+    { data: { overrides: [{ key: 'GCPAR04', excluded }] } });
+  await exclude(true);
+  await openReady(page);
+  await openPhotosTab(page);
+  // Plus « non rattachée » : la position la rend à GCPAR01, l'étape
+  // disparue reste signalée et choisie dans la liste.
+  await expect.poll(matchOf).toMatchObject({ key: 'GCPAR01', source: 'gps', lostKey: 'GCPAR04' });
+  await expect(thumb).toHaveAttribute('title', /retirée du parcours/);
+  await thumb.click();
+  await expect(page.locator('#parcoursPhotoStop')).toHaveValue('GCPAR04');
+  await expect(page.locator('#parcoursPhotoStop option[value="GCPAR04"]')).toHaveText('Étape retirée du parcours');
+  await expect(page.locator('.parcours-photo-lost')).toBeVisible();
+
+  // Réincluse : la photo retrouve son étape.
+  await exclude(false);
+  await openReady(page);
+  await openPhotosTab(page);
+  await expect.poll(matchOf).toEqual({ key: 'GCPAR04', source: 'manual' });
+  await thumb.click();
+  await expect(page.locator('.parcours-photo-lost')).toHaveCount(0);
+
+  // Retirée de nouveau, « Automatique » oublie l'étape choisie.
+  await exclude(true);
+  await openReady(page);
+  await openPhotosTab(page);
+  await thumb.click();
+  await page.locator('#parcoursPhotoStop').selectOption('');
+  await expect.poll(async () => (await snapshot(page)).photos[0].stopKey).toBe(null);
+  const match = await matchOf();
+  expect(match).toMatchObject({ key: 'GCPAR01', source: 'gps' });
+  expect(match.lostKey).toBeUndefined();
+  await expect(page.locator('.parcours-photo-lost')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('lecture et vidéo : étapes à photos plus longues, carte postale filmée sans bloquer l’export', async ({ page, request }) => {
   test.setTimeout(180_000);
   const errors = collectErrors(page);

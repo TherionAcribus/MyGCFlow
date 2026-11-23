@@ -82,8 +82,14 @@ function candidates(reconstructed) {
     return out;
 }
 
-// Rattachement de chaque photo : Map id → { key, source, distanceM? } ;
-// key null si la photo n'est rattachée à rien.
+// Rattachement de chaque photo : Map id → { key, source, distanceM?,
+// lostKey? } ; key null si la photo n'est rattachée à rien.
+//
+// Une étape choisie à la main qui ne figure plus dans le parcours (cache
+// exclue, lieu supprimé) n'est pas oubliée : `stopKey` reste stocké, pour
+// que la photo la retrouve si elle revient (annulation, cache réincluse).
+// En attendant, la photo suit le rattachement automatique, et `lostKey`
+// signale l'étape disparue.
 export function matchPhotos(reconstructed, photos, offsets = new Map(),
     { radiusM = PHOTO_MATCH_RADIUS_M, windowMin = PHOTO_TIME_WINDOW_MIN } = {}) {
     const all = candidates(reconstructed);
@@ -91,10 +97,11 @@ export function matchPhotos(reconstructed, photos, offsets = new Map(),
     const result = new Map();
     for (const photo of Array.isArray(photos) ? photos : []) {
         if (!photo || !Number.isFinite(photo.id)) continue;
-        if (photo.stopKey) {
-            result.set(photo.id, { key: known.has(photo.stopKey) ? photo.stopKey : null, source: MATCH_MANUAL });
+        if (photo.stopKey && known.has(photo.stopKey)) {
+            result.set(photo.id, { key: photo.stopKey, source: MATCH_MANUAL });
             continue;
         }
+        const lost = photo.stopKey ? { lostKey: photo.stopKey } : null;
         const clock = photoClock(photo, offsets);
         if (hasPosition(photo)) {
             let best = null;
@@ -103,7 +110,7 @@ export function matchPhotos(reconstructed, photos, offsets = new Map(),
                 const m = groundDistanceKm([photo.lon, photo.lat], [c.stop.lon, c.stop.lat]) * 1000;
                 if (m <= radiusM && (!best || m < best.distanceM)) best = { key: c.stop.key, source: MATCH_GPS, distanceM: m };
             }
-            result.set(photo.id, best || { key: null, source: null });
+            result.set(photo.id, { ...(best || { key: null, source: null }), ...lost });
             continue;
         }
         if (clock && photoTimeTrusted(photo, offsets)) {
@@ -115,10 +122,10 @@ export function matchPhotos(reconstructed, photos, offsets = new Map(),
                 const gap = clock.minutes < start ? start - clock.minutes : clock.minutes > end ? clock.minutes - end : 0;
                 if (gap <= windowMin && (!best || gap < best.gap)) best = { key: c.stop.key, source: MATCH_TIME, gap };
             }
-            result.set(photo.id, best ? { key: best.key, source: MATCH_TIME } : { key: null, source: null });
+            result.set(photo.id, { ...(best ? { key: best.key, source: MATCH_TIME } : { key: null, source: null }), ...lost });
             continue;
         }
-        result.set(photo.id, { key: null, source: null });
+        result.set(photo.id, { key: null, source: null, ...lost });
     }
     return result;
 }
@@ -169,7 +176,8 @@ export function photosByStop(photos, matches, offsets = new Map()) {
 // un groupe à moins de radiusM / 2 de sa première photo : toutes sont alors
 // à moins de radiusM du centre, où le lieu sera posé — elles s'y
 // rattacheront seules. Seules les journées du parcours (`dates`) comptent ;
-// les photos masquées, sans heure ou rattachées à la main sont laissées.
+// les photos masquées, sans heure ou rattachées sont laissées — une photo
+// dont l'étape choisie à la main a disparu est proposée comme les autres.
 // → [{ date, lat, lon, minutes (heure de la première photo : géolocalisée,
 // elle est de confiance), photoIds }], dans l'ordre chronologique.
 export function suggestPhotoPlaces(photos, matches, offsets = new Map(),
@@ -177,7 +185,7 @@ export function suggestPhotoPlaces(photos, matches, offsets = new Map(),
     const groups = [];
     const sorted = (Array.isArray(photos) ? photos : [])
         .map((photo) => ({ photo, clock: photoClock(photo, offsets) }))
-        .filter(({ photo, clock }) => photo && !photo.hidden && !photo.stopKey && hasPosition(photo) && clock
+        .filter(({ photo, clock }) => photo && !photo.hidden && hasPosition(photo) && clock
             && !matches.get(photo.id)?.key && (!dates || dates.has(clock.date)))
         .sort((a, b) => (a.clock.date === b.clock.date ? a.clock.minutes - b.clock.minutes : a.clock.date < b.clock.date ? -1 : 1));
     for (const { photo, clock } of sorted) {
