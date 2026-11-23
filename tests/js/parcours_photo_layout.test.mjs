@@ -52,7 +52,7 @@ test('réglages d’affichage : défauts, bornes, valeurs inconnues', () => {
     assert.deepEqual(normalizePhotoDisplay(null), { ...PHOTO_DISPLAY_DEFAULTS });
     const d = normalizePhotoDisplay({
         layout: 'strip', size: 5000, duration: 0.123, max_per_stop: 0, frame: 'doré', tilt: 'oui',
-        caption: '  {etape}\n·  {heure} ', anchor: 'middle-center',
+        caption: '  {etape}\n·  {heure} ', anchor: 'middle-center', overflow: 'all',
     });
     assert.equal(d.layout, 'strip');
     assert.equal(d.size, 600);
@@ -62,8 +62,10 @@ test('réglages d’affichage : défauts, bornes, valeurs inconnues', () => {
     assert.equal(d.tilt, true);
     assert.equal(d.caption, '{etape} · {heure}');
     assert.equal(d.anchor, 'top-right');
+    assert.equal(d.overflow, 'share');
     assert.deepEqual(photoTimelineOptions(normalizePhotoDisplay({ duration: 2.5, max_per_stop: 6 })),
-        { photoQ: 25, maxPhotosPerStop: 6 });
+        { photoQ: 25, maxPhotosPerStop: 6, photoOverflow: 'share' });
+    assert.equal(photoTimelineOptions(normalizePhotoDisplay({ overflow: 'first' })).photoOverflow, 'first');
 });
 
 test('légende : balises, séparateurs orphelins retirés', () => {

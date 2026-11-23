@@ -380,6 +380,7 @@ PARCOURS_PHOTO_ANCHORS = ("top-left", "top-center", "top-right", "middle-left", 
 PARCOURS_PHOTO_STRIP_EDGES = ("bottom", "top")
 PARCOURS_PHOTO_FRAMES = ("postcard", "polaroid", "rounded", "plain")
 PARCOURS_PHOTO_EFFECTS = ("fade", "slide", "zoom")
+PARCOURS_PHOTO_OVERFLOWS = ("share", "first")
 PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "layout": "stop",
     "side": "auto",
@@ -397,6 +398,7 @@ PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "ken_burns": False,
     "duration": 1.5,
     "max_per_stop": 4,
+    "overflow": "share",
     "caption": "{legende}",
 }
 PARCOURS_PHOTO_SIZE_RANGE = (120, 600)
@@ -723,6 +725,7 @@ def coerce_parcours_photo_display(value, current: dict | None = None) -> dict:
         "strip_edge": PARCOURS_PHOTO_STRIP_EDGES,
         "frame": PARCOURS_PHOTO_FRAMES,
         "effect": PARCOURS_PHOTO_EFFECTS,
+        "overflow": PARCOURS_PHOTO_OVERFLOWS,
     }
     flags = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns")
     numbers = {

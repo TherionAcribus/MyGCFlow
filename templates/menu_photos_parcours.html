@@ -215,7 +215,14 @@
                                        aria-describedby="parcoursPhotoMaxHint">
                             </div>
                         </div>
-                        <div id="parcoursPhotoMaxHint" class="form-hint text-muted mb-2">{{ _("Au-delà de ce nombre de photos, une étape ne s'allonge plus : ses photos se partagent ce temps.") }}</div>
+                        <div class="mb-2">
+                            <label class="form-label small mb-1" for="parcoursPhotoOverflow">{{ _("Au-delà du plafond") }}</label>
+                            <select id="parcoursPhotoOverflow" class="form-select form-select-sm" aria-describedby="parcoursPhotoMaxHint">
+                                <option value="share">{{ _("Montrer toutes les photos, plus brièvement") }}</option>
+                                <option value="first">{{ _("Ne montrer que les premières") }}</option>
+                            </select>
+                            <div id="parcoursPhotoMaxHint" class="form-hint text-muted">{{ _("Au-delà de ce nombre de photos, une étape ne s'allonge plus : ses photos se partagent ce temps, ou seules les premières prises sont montrées.") }}</div>
+                        </div>
 
                         <div class="mb-2">
                             <label class="form-label small mb-1" for="parcoursPhotoCaptionTemplate">{{ _("Légende") }}</label>

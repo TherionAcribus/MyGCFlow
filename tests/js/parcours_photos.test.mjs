@@ -168,6 +168,18 @@ test('chronologie : chaque photo ajoute son temps d’écran à l’étape', () 
     assert.equal(a.departQ - a.q, 12 + 15 * 4);
     assert.equal(a.photoQ, 10);
     assert.equal(tl.stops[1].photos.length, 0);
+    // « Seules les premières » : les 4 premières gardent leur temps entier,
+    // les suivantes ne sont pas montrées.
+    const first = buildParcoursTimeline(ordered, {
+        photosByStop: byStop, options: { maxPhotosPerStop: 4, photoOverflow: 'first' },
+    }).stops[0];
+    assert.deepEqual(first.photos, [1, 2, 3, 4]);
+    assert.equal(first.photoQ, 15);
+    assert.equal(first.departQ - first.q, 12 + 15 * 4);
+    // Sous le plafond, rien ne change.
+    const few = new Map([['A', [1, 2]]]);
+    assert.deepEqual(buildParcoursTimeline(ordered, { photosByStop: few, options: { photoOverflow: 'first' } }).stops[0].photos,
+        [1, 2]);
 });
 
 test('lieux proposés : photos géolocalisées hors étapes, groupées par journée et proximité', () => {

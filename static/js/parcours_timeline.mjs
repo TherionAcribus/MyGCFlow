@@ -81,7 +81,8 @@ export const TIMELINE_DEFAULTS = Object.freeze({
     legMaxQ: 30,          // régulier : trajet le plus long
     baseQ: 4,             // départ ou retour à la base : un bref arrêt
     photoQ: 15,           // chaque photo d'une étape (lot 4) : 1,5 s de plus
-    maxPhotosPerStop: 4,  // au-delà, les photos se partagent ce temps
+    maxPhotosPerStop: 4,  // au-delà, les photos se partagent ce temps…
+    photoOverflow: 'share', // … ou seules les premières sont montrées (`first`)
     legQPerSqrtKm: 6,     // régulier : trajet = 6·√km quanta, borné
     nightQ: 20,           // transition entre deux journées
     propQPerMinute: 0.5,  // proportionnel : 1 quantum pour 2 minutes réelles
@@ -215,7 +216,10 @@ export function buildParcoursTimeline(reconstructed, {
             else if (proportional) dwell = quanta((stop.visitMin ?? 0) * o.propQPerMinute, o.propMinStopQ);
             else dwell = o.stopQ;
             // Photos : chacune a son temps d'écran, ajouté à celui de l'étape.
-            const photos = photosByStop?.get?.(stop.key) || [];
+            // Au-delà du plafond, elles se partagent ce temps, ou seules les
+            // premières restent (créneaux, piles, vignettes et repères suivent).
+            const attached = photosByStop?.get?.(stop.key) || [];
+            const photos = o.photoOverflow === 'first' ? attached.slice(0, o.maxPhotosPerStop) : attached;
             const photoQ = photos.length ? o.photoQ * Math.min(photos.length, o.maxPhotosPerStop) / photos.length : 0;
             dwell += photoQ * photos.length;
             stops.push({ ...stop, q, departQ: q + dwell, day: dayIndex, km, photos, photoQ });

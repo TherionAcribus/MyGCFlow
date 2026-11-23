@@ -110,6 +110,38 @@ test('réglages : enregistrés, champs selon le placement, durée et « aucune �
   expect(errors).toEqual([]);
 });
 
+test('au-delà du plafond : partager le temps, ou ne montrer que les premières', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const { parcours, phone, camera } = await withTwoPhotos(page, request);
+  // Les deux photos sur GCPAR01, plafond à 1.
+  await request.patch(`/api/parcours/${parcours.id}/photos/${camera}`, { data: { stopKey: 'GCPAR01' } });
+  await openReady(page);
+  await page.locator('a[href="#photos"]').click();
+  await page.locator('#parcoursPhotoMaxPerStop').fill('1');
+  await page.locator('#parcoursPhotoMaxPerStop').press('Tab');
+  const slotIds = async () => (await snapshot(page)).photoSlots.map((slot) => slot.photoId);
+  // Partagé (défaut) : les deux passent, dans le temps d'une seule.
+  await expect.poll(slotIds).toEqual([phone, camera]);
+  const quanta = (await snapshot(page)).timeline.quanta;
+
+  // Seules les premières : la photo du téléphone (prise la première) reste
+  // seule, avec le même temps d'écran ; l'autre n'a plus de créneau.
+  await expect(page.locator('#parcoursPhotoOverflow')).toHaveValue('share');
+  await page.locator('#parcoursPhotoOverflow').selectOption('first');
+  await expect.poll(slotIds).toEqual([phone]);
+  expect((await snapshot(page)).timeline.quanta).toBe(quanta);
+  await expect.poll(async () => (await savedDisplay(request)).overflow).toBe('first');
+  await page.locator(`.parcours-photo-thumb[data-photo-id="${camera}"]`).click();
+  await expect(page.locator('.parcours-photo-preview')).toHaveCount(0);
+
+  // Relu au chargement.
+  await openReady(page);
+  await page.locator('a[href="#photos"]').click();
+  await expect(page.locator('#parcoursPhotoOverflow')).toHaveValue('first');
+  await expect.poll(slotIds).toEqual([phone]);
+  expect(errors).toEqual([]);
+});
+
 test('placements : près de l’étape avec trait, emplacement fixe, bande de vignettes, légende', async ({ page, request }) => {
   const errors = collectErrors(page);
   const { phone, camera } = await withTwoPhotos(page, request);

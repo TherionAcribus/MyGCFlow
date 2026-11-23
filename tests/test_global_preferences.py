@@ -646,11 +646,13 @@ class SettingsApiTests(unittest.TestCase):
                          ('stop', 220, 1.5, '{legende}', False))
         self.client.put('/api/settings', json={'parcours_photo_display': {
             'layout': 'strip', 'size': 5000, 'duration': 2.26, 'frame': 'cadre-doré', 'tilt': 'non',
-            'caption': '  {etape}\n· {heure} ', 'max_per_stop': True}})
+            'caption': '  {etape}\n· {heure} ', 'max_per_stop': True, 'overflow': 'all'}})
         photo = self.client.get('/api/settings').get_json()['parcours_photo_display']
         self.assertEqual((photo['layout'], photo['size'], photo['duration'], photo['frame'], photo['tilt'],
-                          photo['caption'], photo['max_per_stop']),
-                         ('strip', 600, 2.3, 'postcard', True, '{etape} · {heure}', 4))
+                          photo['caption'], photo['max_per_stop'], photo['overflow']),
+                         ('strip', 600, 2.3, 'postcard', True, '{etape} · {heure}', 4, 'share'))
+        self.client.put('/api/settings', json={'parcours_photo_display': {'overflow': 'first'}})
+        self.assertEqual(self.client.get('/api/settings').get_json()['parcours_photo_display']['overflow'], 'first')
         self.client.put('/api/settings', json={'parcours_photo_display': {
             'effect': 'zoom', 'stack': True, 'pin': True, 'pin_size': 7}})
         photo = self.client.get('/api/settings').get_json()['parcours_photo_display']

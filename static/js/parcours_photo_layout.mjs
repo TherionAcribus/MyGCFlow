@@ -101,6 +101,9 @@ export const PHOTO_SIZE_RANGE = Object.freeze([120, 600]);
 export const PHOTO_PIN_SIZE_RANGE = Object.freeze([40, 160]);
 export const PHOTO_DURATION_RANGE = Object.freeze([0.5, 6]);
 export const PHOTO_MAX_PER_STOP_RANGE = Object.freeze([1, 12]);
+// Au-delà du plafond par étape : `share` (les photos se partagent le temps
+// du plafond), `first` (seules les premières, dans l'ordre de prise de vue).
+export const PHOTO_OVERFLOWS = Object.freeze(['share', 'first']);
 export const PHOTO_CAPTION_TEMPLATE_MAX = 120;
 export const PHOTO_CAPTION_TAGS = Object.freeze(['legende', 'etape', 'heure', 'jour', 'date']);
 
@@ -121,6 +124,7 @@ export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
     ken_burns: false,
     duration: 1.5,
     max_per_stop: 4,
+    overflow: 'share',
     caption: '{legende}',
 });
 
@@ -147,15 +151,21 @@ export function normalizePhotoDisplay(raw) {
         ken_burns: flag('ken_burns'),
         duration: Math.round(numberIn(o.duration, PHOTO_DURATION_RANGE, d.duration) * 10) / 10,
         max_per_stop: Math.round(numberIn(o.max_per_stop, PHOTO_MAX_PER_STOP_RANGE, d.max_per_stop)),
+        overflow: choice('overflow', PHOTO_OVERFLOWS),
         caption: caption !== null && caption.length <= PHOTO_CAPTION_TEMPLATE_MAX ? caption : d.caption,
     };
 }
 
 // Options de buildParcoursTimeline (parcours_timeline.mjs) tirées des
-// réglages : temps d'écran de chaque photo (quanta de 100 ms) et plafond par
-// étape. Sans photos dans la vidéo, la page ne lui en passe aucune.
+// réglages : temps d'écran de chaque photo (quanta de 100 ms), plafond par
+// étape et sort des photos au-delà. Sans photos dans la vidéo, la page ne lui
+// en passe aucune.
 export function photoTimelineOptions(display) {
-    return { photoQ: Math.round(display.duration * 10), maxPhotosPerStop: display.max_per_stop };
+    return {
+        photoQ: Math.round(display.duration * 10),
+        maxPhotosPerStop: display.max_per_stop,
+        photoOverflow: display.overflow,
+    };
 }
 
 // --- Légende ---------------------------------------------------------------------

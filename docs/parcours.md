@@ -918,10 +918,14 @@ envoyée entière à chaque changement :
 | `effect` | `fade`, `slide`, `zoom` (courbes d'`images_render.mjs`) |
 | `ken_burns` | zoom lent (+ 8 %) pendant l'affichage : `false` |
 | `duration`, `max_per_stop` | 1,5 s par photo (0,5-6), 4 photos au plus en temps cumulé par étape (1-12) |
+| `overflow` | au-delà du plafond : `share` (toutes, chacune plus brève), `first` (seules les premières prises, à leur durée entière ; les suivantes n'ont pas de créneau, donc ni pile, ni vignette, ni repère sur la barre) |
 | `caption` | gabarit `{legende}`, `{etape}`, `{heure}`, `{jour}`, `{date}` (120 caractères ; vide : pas de légende) |
 
 - **Chronologie** : `photoSlots` (créneaux : arrivée + 2 quanta, puis une
-  photo après l'autre, fondu de 2 quanta). `duration`, `max_per_stop` et
+  photo après l'autre, fondu de 2 quanta). Avec `overflow: first`,
+  `buildParcoursTimeline` ne garde que les premières photos de l'étape
+  (`stops[].photos`) — les rattachements (`photoStops` du relevé) ne
+  changent pas. `duration`, `max_per_stop`, `overflow` et
   `none` changent le temps d'écran (`photoTimelineOptions`), donc la
   chronologie — appliqués à la fin d'une lecture en cours, comme le rythme.
 - **Mise en page** : `photoFrameAt(timeline, q, réglages, vue)` rend les

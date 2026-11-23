@@ -48,6 +48,7 @@ const PHOTO_DISPLAY_FIELDS = Object.freeze({
     strip_edge: 'parcoursPhotoStripEdge',
     frame: 'parcoursPhotoFrame',
     effect: 'parcoursPhotoEffect',
+    overflow: 'parcoursPhotoOverflow',
 });
 const PHOTO_DISPLAY_FLAGS = Object.freeze({
     leader: 'parcoursPhotoLeader',
@@ -585,7 +586,7 @@ export function createPhotosPanel(deps) {
     function bindPhotoDisplay() {
         renderPhotoDisplay();
         // Valeur complète envoyée (comme parcours_playback) ; la durée, le
-        // plafond et « aucune photo » changent la chronologie.
+        // plafond, son dépassement et « aucune photo » changent la chronologie.
         const save = (patch) => {
             const before = deps.getPhotoDisplay();
             const next = normalizePhotoDisplay({ ...before, ...patch });
@@ -598,6 +599,7 @@ export function createPhotosPanel(deps) {
             renderPhotoDisplay();
             const timing = before.duration !== next.duration
                 || before.max_per_stop !== next.max_per_stop
+                || before.overflow !== next.overflow
                 || (before.layout === PHOTO_LAYOUT_NONE) !== (next.layout === PHOTO_LAYOUT_NONE);
             if (timing) {
                 if (deps.clockRunning()) {
