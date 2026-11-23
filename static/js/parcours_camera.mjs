@@ -32,6 +32,7 @@ export const CAMERA_DEFAULTS = Object.freeze({
     lookAheadQ: 8,       // …et montre ce qui va l'être
     safeShare: 0.7,      // ce cadre tient dans cette part du demi-écran
     overviewShare: 0.85, // la vue d'ensemble finale, dans celle-ci
+    closeQ: 60,          // un rezoom plus bref que ceci n'a pas lieu (road trip)
     holdBackQ: 15,       // un dézoom est tenu ce temps avant de rezoomer…
     holdAheadQ: 2,       // …et anticipé de si peu
     maxZoomPerQ: 0.25,   // vitesse de zoom maximale (niveaux par quantum : 2,5 par seconde)
@@ -95,6 +96,33 @@ function dilate(values, back, ahead) {
         out[i] = max;
     }
     return out;
+}
+
+// Minimum glissant sur [i - back, i + ahead] échantillons.
+function erode(values, back, ahead) {
+    const n = values.length;
+    const out = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        let min = Infinity;
+        for (let k = Math.max(0, i - back); k <= Math.min(n - 1, i + ahead); k++) {
+            if (values[k] < min) min = values[k];
+        }
+        out[i] = min;
+    }
+    return out;
+}
+
+// Fermeture : comble les creux plus étroits que `width` échantillons, sans
+// élargir les bosses (le maximum glissant est repris par le minimum). Le
+// signal est prolongé par ses valeurs de bord : le début de la lecture n'est
+// pas un dézoom, une courte balade avant le premier trajet reste serrée.
+function close(values, width) {
+    const n = values.length;
+    const half = Math.round(width / 2);
+    if (half < 1 || n === 0) return values;
+    const padded = new Float64Array(n + 2 * half);
+    for (let i = 0; i < padded.length; i++) padded[i] = values[clampIndex(i - half, n)];
+    return erode(dilate(padded, half, half), half, half).subarray(half, half + n);
 }
 
 // Vitesse bornée, en ne faisant que monter le signal (dézoomer) : la passe
@@ -174,17 +202,33 @@ function buildTrack(timeline, size, o) {
     const halfW = (w / 2) * o.safeShare;
     const halfH = (h / 2) * o.safeShare;
     const need = new Float64Array(n);
+    // Le même besoin sans la vue d'ensemble : celui du seul chemin.
+    const travel = new Float64Array(n);
+    const needOf = (i, dx, dy) => Math.max(minLog[i], Math.log(Math.max(dx * frame / halfW, dy * frame / halfH, 1e-9)));
     for (let i = 0; i < n; i++) {
         let dx = 0;
         let dy = 0;
+        let tdx = 0;
+        let tdy = 0;
         for (let j = Math.max(0, i - back); j <= Math.min(n - 1, i + ahead); j++) {
             dx = Math.max(dx, Math.abs(tx[j] - cx0[i]) + ex[j]);
             dy = Math.max(dy, Math.abs(ty[j] - cy0[i]) + ey[j]);
+            if (ex[j] || ey[j]) continue;
+            tdx = Math.max(tdx, Math.abs(tx[j] - cx0[i]));
+            tdy = Math.max(tdy, Math.abs(ty[j] - cy0[i]));
         }
-        need[i] = Math.max(minLog[i], Math.log(Math.max(dx * frame / halfW, dy * frame / halfH, 1e-9)));
+        need[i] = needOf(i, dx, dy);
+        travel[i] = ex[i] || ey[i] ? -Infinity : needOf(i, tdx, tdy);
     }
+    // Road trip : pas de rezoom sur une étape coincée entre deux trajets —
+    // la caméra garde le cadre de la route au lieu de pomper à chaque cache.
+    // Seuls les trajets (nuits comprises) bordent un creux à combler : la
+    // vue d'ensemble du début et de la fin laisse la caméra descendre vers
+    // le départ et montrer la dernière étape.
+    const filled = close(travel, perSample(o.closeQ));
+    const closed = need.map((v, i) => Math.max(v, filled[i]));
     // Dézoom tenu : une balade garde un seul cadre, pas un par cache.
-    const held = dilate(need, Math.round(perSample(o.holdBackQ)), Math.round(perSample(o.holdAheadQ)));
+    const held = dilate(closed, Math.round(perSample(o.holdBackQ)), Math.round(perSample(o.holdAheadQ)));
     const limited = limitRate(held, o.maxZoomPerQ * SAMPLE_Q * Math.LN2);
     const logRes = gaussian(limited, o.zoomSigmaQ / SAMPLE_Q);
 
@@ -225,7 +269,7 @@ function timedOptions(o) {
     const scale = QUANTUM_MS / Math.max(1e-3, Number(o.msPerDay) || QUANTUM_MS);
     if (Math.abs(scale - 1) < 1e-9) return o;
     const scaled = { ...o };
-    for (const key of ['centerSigmaQ', 'leadQ', 'lookBackQ', 'lookAheadQ', 'holdBackQ', 'holdAheadQ', 'zoomSigmaQ']) {
+    for (const key of ['centerSigmaQ', 'leadQ', 'lookBackQ', 'lookAheadQ', 'closeQ', 'holdBackQ', 'holdAheadQ', 'zoomSigmaQ']) {
         scaled[key] = o[key] * scale;
     }
     scaled.maxZoomPerQ = o.maxZoomPerQ / scale;

@@ -151,6 +151,50 @@ test('pose : pas de respiration du zoom pendant une balade', () => {
     assert.ok(Math.max(...zooms) - Math.min(...zooms) < 0.25, `${Math.min(...zooms)} → ${Math.max(...zooms)}`);
 });
 
+// Changements de sens du zoom d'au moins `h` niveau(x) entre `from` et `to`.
+function zoomReversals(tl, from, to, h = 0.4) {
+    let reversals = 0;
+    let dir = 0;
+    let ref = cameraPoseAt(tl, from, SIZE).zoom;
+    for (let q = from; q <= to; q += FRAME_Q) {
+        const z = cameraPoseAt(tl, q, SIZE).zoom;
+        if (dir === 0) {
+            if (Math.abs(z - ref) >= h) [dir, ref] = [Math.sign(z - ref), z];
+        } else if ((z - ref) * dir > 0) ref = z;
+        else if (Math.abs(z - ref) >= h) [reversals, dir, ref] = [reversals + 1, -dir, z];
+    }
+    return reversals;
+}
+
+// Road trip : une cache tous les 10-25 km, puis (`walkAt`) une balade.
+function roadTrip(walkAt = null) {
+    const points = [[0, 0], [12, 3], [30, -2], [38, 10], [60, 12], [70, 30], [95, 28], [103, 40], [125, 45], [150, 45]];
+    const stops = [];
+    points.forEach(([x, y], i) => {
+        stops.push(stop(`r${i}`, x, {}, y));
+        if (i !== walkAt) return;
+        [[0.3, 0.1], [0.5, 0.4], [0.9, 0.3], [1.1, 0.7], [1.4, 0.6], [1.7, 0.9], [2.0, 0.7]]
+            .forEach(([dx, dy], k) => stops.push(stop(`w${k}`, x + dx, {}, y + dy)));
+    });
+    return buildParcoursTimeline(reconstructParcours({
+        days: [{ date: '2025-07-12', stops: stops.map((s, i) => ({ ...s, logId: i + 1 })) }],
+    }));
+}
+
+test('pose : en road trip, pas de zoom puis dézoom à chaque cache', () => {
+    const tl = roadTrip();
+    // Avant le 2026-11-23 : 16 changements de sens (un aller-retour par étape).
+    const reversals = zoomReversals(tl, tl.stops[0].departQ, tl.stops[tl.stops.length - 1].q);
+    assert.ok(reversals <= 2, `${reversals} changement(s) de sens`);
+    // Une vraie balade entre deux trajets garde son cadre serré.
+    const walking = roadTrip(4);
+    const walk = walking.stops.filter((s) => s.key.startsWith('w'));
+    const inWalk = cameraPoseAt(walking, walk[3].q, SIZE).zoom;
+    const leg = walking.legs[2];
+    const driving = cameraPoseAt(walking, (leg.startQ + leg.endQ) / 2, SIZE).zoom;
+    assert.ok(inWalk > driving + 1.5, `balade ${inWalk} / route ${driving}`);
+});
+
 test('pose : même résultat quel que soit le chemin (déterministe)', () => {
     const tl = sample();
     const q = tl.legs[1].startQ + 3.4;

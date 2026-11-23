@@ -527,6 +527,14 @@ géocacheur ») :
   ne part pas avant le géocacheur ;
 - zoom : ce que le géocacheur parcourt de 0,4 s avant à 0,8 s après doit
   tenir dans 70 % du demi-écran (900 m de côté au moins, zoom 16 au plus).
+  Un rezoom de moins de 6 s n'a pas lieu (fermeture du besoin de zoom :
+  maximum puis minimum glissants sur 6 s, signal prolongé par ses bords) :
+  en road trip, une étape — même avec photos ou deux ou trois caches
+  proches — garde le cadre de la route au lieu de zoomer puis dézoomer ;
+  une balade plus longue entre deux trajets garde son cadre serré. Seuls
+  les trajets (nuits comprises) bordent un creux comblé : la vue
+  d'ensemble du début et de la fin n'en est pas un, la descente du carton
+  d'ouverture va donc jusqu'au départ même si la première balade est brève.
   Le dézoom est tenu 1,5 s avant de rezoomer (une balade garde un seul
   cadre, pas un par cache), la vitesse est bornée à 2,5 niveaux/s (le
   dézoom d'un long trajet ou de la nuit commence donc un peu avant le
@@ -551,7 +559,11 @@ Avant le 2026-11-18, la caméra lissait des cadres par segment (le trajet
 entier, l'étape) : elle partait vers le trajet suivant pendant l'arrêt
 (jusqu'à 230 px par image), restait fixe pendant que le géocacheur
 traversait l'écran, et le zoom pompait d'une cache à l'autre (jusqu'à
-7,8 niveaux/s). Les réglages sont dans `CAMERA_DEFAULTS` ; les tests
+7,8 niveaux/s). Jusqu'au 2026-11-23, le seul maintien de 1,5 s ne
+couvrait pas une étape entre deux trajets en voiture (1,2 s d'arrêt, dézoom
+du trajet suivant anticipé par la vitesse bornée) : un aller-retour de zoom
+par cache, 16 changements de sens sur un road trip de 10 étapes, plus de
+70 niveaux parcourus en 80 s avec des grappes de caches. Les réglages sont dans `CAMERA_DEFAULTS` ; les tests
 (`tests/js/parcours_camera.test.mjs`) vérifient ces critères de confort.
 
 La pose ne dépend que de la position du moteur : aperçu, saut et vidéo image
