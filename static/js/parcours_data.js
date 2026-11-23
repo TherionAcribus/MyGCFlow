@@ -1475,6 +1475,7 @@ export function getParcoursSnapshot() {
             caption: card.captionAlpha > 0 ? card.caption : '',
             leader: !!card.leader,
             pinned: !!card.pinned,
+            pan: card.pan ?? null,
         })),
         tracks: (inputs?.tracks || []).map((track) => ({ id: track.id, name: track.name, pointCount: track.pointCount })),
         trackTimes: Object.fromEntries([...trackMatches].map(([key, m]) => [key, minutesToTime(m.minutes)])),

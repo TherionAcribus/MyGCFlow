@@ -400,6 +400,7 @@ PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "max_per_stop": 4,
     "overflow": "share",
     "en_route": False,
+    "pano_pan": True,
     "caption": "{legende}",
 }
 PARCOURS_PHOTO_SIZE_RANGE = (120, 600)
@@ -728,7 +729,7 @@ def coerce_parcours_photo_display(value, current: dict | None = None) -> dict:
         "effect": PARCOURS_PHOTO_EFFECTS,
         "overflow": PARCOURS_PHOTO_OVERFLOWS,
     }
-    flags = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns", "en_route")
+    flags = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns", "en_route", "pano_pan")
     numbers = {
         "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
         "pin_size": (PARCOURS_PHOTO_PIN_SIZE_RANGE, int),

@@ -66,6 +66,7 @@ const PHOTO_DISPLAY_FLAGS = Object.freeze({
     tilt: 'parcoursPhotoTilt',
     ken_burns: 'parcoursPhotoKenBurns',
     en_route: 'parcoursPhotoEnRoute',
+    pano_pan: 'parcoursPhotoPanoPan',
 });
 
 // deps : { getState, uploads, button, fetchJson, reloadAdjustments,

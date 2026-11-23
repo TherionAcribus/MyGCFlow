@@ -8,6 +8,8 @@ import {
     PHOTO_FADE_Q,
     cardPhotos,
     isFullFrame,
+    isPanorama,
+    panoramaRect,
     normalizePhotoDisplay,
     photoAspect,
     photoCaptionText,
@@ -255,6 +257,52 @@ test('dessin : cadres, légende, trait, sans erreur sur un contexte factice', ()
     drawPhotoCard(ctx, card, { naturalWidth: 0, naturalHeight: 0 }, {});
     assert.equal(calls.length, 0);
     assert.ok(card.alpha === 1 && PHOTO_FADE_Q > 0);
+});
+
+test('panoramas : fenêtre 16:9 qui parcourt l’image pendant le créneau', () => {
+    assert.equal(isPanorama({ width: 4000, height: 1000 }), true);
+    assert.equal(isPanorama({ width: 4000, height: 2100 }), false);              // moins de 2:1
+    assert.equal(isPanorama({ width: 4000, height: 1000, aspect: '4:3' }), false); // cadrage choisi
+    assert.equal(isPanorama({ width: 4000, height: 1000, zoom: 150 }), false);
+    assert.equal(isPanorama({}), false);
+    assert.deepEqual(round(panoramaRect({ width: 4000, height: 1000 }, 16 / 9, 0)), { x: 0, y: 0, width: 1777.78, height: 1000 });
+    assert.ok(Math.abs(panoramaRect({ width: 4000, height: 1000 }, 16 / 9, 1).x - (4000 - 16000 / 9)) < 1e-9);
+
+    // La photo 1 est un panorama : carte 16:9, fenêtre qui avance avec le temps.
+    const view = { ...VIEW, panoramaOf: (id) => id === 1 };
+    const display = normalizePhotoDisplay({});
+    assert.equal(display.pano_pan, true);
+    const slot = photoSlots(timeline())[0];
+    const at = (q) => photoFrameAt(timeline(), q, display, view).cards.find((c) => c.photoId === 1);
+    const start = at(slot.fromQ + 0.01);
+    const middle = at((slot.fromQ + slot.toQ) / 2);
+    const end = at(slot.toQ);
+    assert.ok(Math.abs(start.w / start.h - 16 / 9) < 1e-9);
+    assert.ok(start.pan < 0.01 && Math.abs(middle.pan - 0.5) < 1e-9 && end.pan === 1, JSON.stringify([start.pan, middle.pan, end.pan]));
+    // Option coupée, ou photo ordinaire : pas de défilement.
+    assert.equal(photoFrameAt(timeline(), slot.fromQ + 5, normalizePhotoDisplay({ pano_pan: false }), view).cards[0].pan, null);
+    const ordinary = photoFrameAt(timeline(), 40, display, view).cards.find((c) => c.photoId === 2);
+    assert.ok(ordinary);
+    assert.equal(ordinary.pan, null);
+
+    // Dessin : la fenêtre source a les proportions de la carte, à la position du défilement.
+    const calls = [];
+    const ctx = new Proxy({}, {
+        get(target, key) {
+            if (key in target) return target[key];
+            if (key === 'measureText') return (text) => ({ width: text.length * 7 });
+            if (key === 'createLinearGradient') return () => ({ addColorStop() {} });
+            return (...args) => calls.push([key, ...args]);
+        },
+        set(target, key, value) {
+            target[key] = value;
+            return true;
+        },
+    });
+    drawPhotoCard(ctx, middle, { naturalWidth: 4000, naturalHeight: 1000 }, { width: 4000, height: 1000 });
+    const [, , sx, sy, sw, sh] = calls.find((c) => c[0] === 'drawImage');
+    assert.ok(Math.abs(sw / sh - 16 / 9) < 1e-6 && sy === 0, JSON.stringify([sx, sy, sw, sh]));
+    assert.ok(Math.abs(sx - (4000 - sw) / 2) < 1e-6);
 });
 
 test('pile : les photos d’une étape s’empilent, la pile s’efface d’un bloc', () => {

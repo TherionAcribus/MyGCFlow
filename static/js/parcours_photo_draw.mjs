@@ -7,7 +7,7 @@
 // ce qui est peint là est filmé tel quel par les deux pipelines
 // d'enregistrement. Aucune dépendance au DOM ni à OpenLayers.
 
-import { photoCropRect } from './parcours_photo_layout.mjs';
+import { panoramaRect, photoCropRect } from './parcours_photo_layout.mjs';
 
 function roundRectPath(ctx, x, y, w, h, r) {
     const radius = Math.max(0, Math.min(r, w / 2, h / 2));
@@ -68,7 +68,9 @@ export function drawPhotoCard(ctx, card, img, photo, { font = 'sans-serif', rati
     if (!img || card.alpha <= 0) return;
     const natural = { width: img.naturalWidth || img.width || 0, height: img.naturalHeight || img.height || 0 };
     if (!natural.width || !natural.height) return;
-    let src = photoCropRect(natural, photo);
+    // Panorama (`pan` posé par photoFrameAt) : fenêtre aux proportions de la
+    // carte, qui glisse le long de l'image.
+    let src = card.pan != null ? panoramaRect(natural, card.w / card.h, card.pan) : photoCropRect(natural, photo);
     if (card.kenBurns && card.kenBurns > 1) {
         const w = src.width / card.kenBurns;
         const h = src.height / card.kenBurns;

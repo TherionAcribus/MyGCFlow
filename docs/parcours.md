@@ -983,6 +983,7 @@ envoyée entière à chaque changement :
 | `duration`, `max_per_stop` | 1,5 s par photo (0,5-6), 4 photos au plus en temps cumulé par étape (1-12) |
 | `overflow` | au-delà du plafond : `share` (toutes, chacune plus brève), `first` (les favorites puis les premières prises, à leur durée entière, montrées dans l'ordre de prise de vue ; les suivantes n'ont pas de créneau, donc ni pile, ni vignette, ni repère sur la barre) |
 | `en_route` | photos prises en chemin (voir ci-dessous) : `false` |
+| `pano_pan` | panoramas parcourus : une photo d'au moins 2:1 sans cadrage choisi (`isPanorama` ; un cadrage ou un zoom prime) est montrée dans une fenêtre 16:9 qui glisse de gauche à droite pendant son créneau (`pan` des cartes, adouci ; `panoramaRect` au dessin) — vignettes et piles gardent la dernière position ; coupé, la photo entière en bande : `true` |
 | `caption` | gabarit `{legende}`, `{etape}`, `{heure}`, `{jour}`, `{date}` (120 caractères ; vide : pas de légende) |
 
 - **Chronologie** : `photoSlots` (créneaux : arrivée + 2 quanta, puis une

@@ -183,6 +183,42 @@ test('photos favorites : cartons d’ouverture, de journée et de fin', async ({
   expect(errors).toEqual([]);
 });
 
+test('panorama : fenêtre 16:9 qui le parcourt pendant son affichage', async ({ page, request }) => {
+  // panorama.jpg : 480 × 120 (4:1), EXIF du téléphone (GCPAR01).
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await page.locator('a[href="#photos"]').click();
+  await page.locator('#parcoursPhotoInput').setInputFiles(path.join(PHOTOS, 'panorama.jpg'));
+  await expect.poll(async () => (await snapshot(page)).photosThumbs, { timeout: 30_000 }).toBe(1);
+  const [{ id }] = (await snapshot(page)).photos;
+  await expect(page.locator('#parcoursPhotoPanoPan')).toBeChecked();
+
+  const state = await showPhoto(page, id);
+  const card = state.photoCards.find((c) => c.photoId === id);
+  expect(card.pan).not.toBeNull();
+  // Carte 16:9 (cadre compris : un peu moins large), pas une bande 4:1.
+  expect(card.width / card.height).toBeGreaterThan(1.4);
+  expect(card.width / card.height).toBeLessThan(1.9);
+  // Plus loin dans le créneau : la fenêtre a avancé.
+  const [slot] = state.photoSlots;
+  await page.evaluate(async (q) => (await import('/static/js/index.js')).seekAnimationToDate(new Date(2000, 0, 1 + q)),
+    Math.floor(slot.toQ) - 1);
+  await expect.poll(async () => (await snapshot(page)).photoCards.find((c) => c.photoId === id)?.pan ?? 0)
+    .toBeGreaterThan(card.pan + 0.3);
+
+  // Option coupée : la photo entière, en bande.
+  await page.locator('#parcoursPhotoPanoPan').uncheck();
+  await expect.poll(async () => (await page.request.get('/api/settings').then((r) => r.json()))
+    .parcours_photo_display.pano_pan).toBe(false);
+  await expect.poll(async () => {
+    const flat = (await snapshot(page)).photoCards.find((c) => c.photoId === id);
+    return flat ? [flat.pan, flat.width / flat.height > 2.5] : null;
+  }).toEqual([null, true]);
+  await page.locator('#btnQuickStop').click();
+  expect(errors).toEqual([]);
+});
+
 test('placements : près de l’étape avec trait, emplacement fixe, bande de vignettes, légende', async ({ page, request }) => {
   const errors = collectErrors(page);
   const { phone, camera } = await withTwoPhotos(page, request);

@@ -34,6 +34,10 @@ function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
 
+function smooth(t) {
+    return t * t * (3 - 2 * t);
+}
+
 function numberIn(value, [min, max], fallback) {
     return Number.isFinite(value) ? clamp(value, min, max) : fallback;
 }
@@ -74,6 +78,28 @@ export function photoCropRect(natural, photo) {
     const x = clamp((crop.focusX / 100) * W - width / 2, 0, W - width);
     const y = clamp((crop.focusY / 100) * H - height / 2, 0, H - height);
     return { x, y, width, height };
+}
+
+// Panoramas : une photo nettement plus large que haute, montrée entière,
+// devenait une bande minuscule. Avec `pano_pan`, elle est montrée dans une
+// fenêtre aux proportions PANORAMA_VIEW_RATIO qui la parcourt de gauche à
+// droite pendant son affichage. Un cadrage choisi (proportions, zoom) prime :
+// la photo n'est plus un panorama.
+export const PANORAMA_MIN_RATIO = 2;
+export const PANORAMA_VIEW_RATIO = 16 / 9;
+
+export function isPanorama(photo) {
+    if (!(photo?.width > 0) || !(photo?.height > 0)) return false;
+    return isFullFrame(photoCrop(photo)) && photo.width / photo.height >= PANORAMA_MIN_RATIO;
+}
+
+// Fenêtre source d'un panorama, en px de l'image : toute la hauteur, aux
+// proportions `viewRatio`, à la position `pan` (0 : bord gauche, 1 : droit).
+export function panoramaRect(natural, viewRatio, pan) {
+    const W = Number(natural?.width) || 0;
+    const H = Number(natural?.height) || 0;
+    const width = Math.min(W, H * viewRatio);
+    return { x: (W - width) * clamp(pan, 0, 1), y: 0, width, height: H };
 }
 
 // Proportions (largeur / hauteur) de la photo telle que montrée, cadrage
@@ -165,6 +191,8 @@ export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
     // Photos prises en chemin, rattachées à aucune étape : montrées à leur
     // position, le géocacheur s'y arrête (routePhotos, legPauses).
     en_route: false,
+    // Panoramas parcourus dans une fenêtre 16:9 (isPanorama, panoramaRect).
+    pano_pan: true,
     caption: '{legende}',
 });
 
@@ -193,6 +221,7 @@ export function normalizePhotoDisplay(raw) {
         max_per_stop: Math.round(numberIn(o.max_per_stop, PHOTO_MAX_PER_STOP_RANGE, d.max_per_stop)),
         overflow: choice('overflow', PHOTO_OVERFLOWS),
         en_route: flag('en_route'),
+        pano_pan: flag('pano_pan'),
         caption: caption !== null && caption.length <= PHOTO_CAPTION_TEMPLATE_MAX ? caption : d.caption,
     };
 }
@@ -349,6 +378,7 @@ function insideScreen(p, width, height) {
 //   stopPixel(i)   — position à l'écran de l'étape i ([x, y] px réels) ;
 //   pointPixel([lon, lat]) — idem pour un point (photo en chemin) ;
 //   aspectOf(id)   — proportions de la photo montrée (photoAspect) ;
+//   panoramaOf(id) — vrai pour un panorama (isPanorama) ;
 //   captionOf(slot) — légende déjà composée ('' : aucune).
 // Retour : { cards: [{ photoId, slot, x, y, w, h, frame, scale, rotation,
 // alpha, dx, dy, effectScale, kenBurns, caption, captionAlpha, leader }] },
@@ -368,7 +398,12 @@ export function photoFrameAt(timeline, qf, display, view) {
     const tilt = (slot) => (display.tilt ? TILT_DEG[slot.order % 2] * Math.PI / 180 : 0);
 
     const cardOf = (slot) => {
-        const aspect = view.aspectOf?.(slot.photoId) || 4 / 3;
+        // Panorama : fenêtre 16:9 qui le parcourt pendant le créneau (adouci).
+        const panorama = !!display.pano_pan && !!view.panoramaOf?.(slot.photoId);
+        const aspect = panorama ? PANORAMA_VIEW_RATIO : (view.aspectOf?.(slot.photoId) || 4 / 3);
+        const pan = panorama
+            ? smooth(clamp((qf - slot.fromQ) / Math.max(1e-9, slot.toQ - slot.fromQ), 0, 1))
+            : null;
         const { w, h } = imageSize(size, aspect);
         const caption = display.caption ? (view.captionOf?.(slot) || '') : '';
         const m = photoFrameMetrics(display.frame, display.size, !!caption);
@@ -380,7 +415,7 @@ export function photoFrameAt(timeline, qf, display, view) {
             photoId: slot.photoId, slot: slot.order, x: 0, y: 0, w, h, frame,
             cardW: w + 2 * frame.side, cardH: h + frame.top + frame.bottom,
             scale: 1, rotation: tilt(slot), alpha: 1, dx: 0, dy: 0, effectScale: 1,
-            kenBurns: null, caption, captionAlpha: 1, leader: null,
+            kenBurns: null, pan, caption, captionAlpha: 1, leader: null,
         };
     };
 

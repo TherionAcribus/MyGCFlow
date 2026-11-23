@@ -48,6 +48,7 @@ import {
     PHOTO_FADE_Q,
     PHOTO_LAYOUT_NONE,
     cardPhotos as pickCardPhotos,
+    isPanorama,
     photoAspect,
     photoCaptionText,
     photoCropRect,
@@ -1104,6 +1105,7 @@ export function createParcoursPlayDraw(deps) {
                 return [m[0] * px + m[2] * py + m[4], m[1] * px + m[3] * py + m[5]];
             },
             aspectOf: (id) => photoAspect(photoById(id)),
+            panoramaOf: (id) => isPanorama(photoById(id)),
             captionOf: photoCaptionFor,
         };
     }

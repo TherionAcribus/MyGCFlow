@@ -659,6 +659,10 @@ class SettingsApiTests(unittest.TestCase):
         self.assertFalse(self.client.get('/api/settings').get_json()['parcours_photo_display']['en_route'])
         self.client.put('/api/settings', json={'parcours_photo_display': {'en_route': True}})
         self.assertTrue(self.client.get('/api/settings').get_json()['parcours_photo_display']['en_route'])
+        # Panoramas parcourus : actif par défaut.
+        self.assertTrue(photo['pano_pan'])
+        self.client.put('/api/settings', json={'parcours_photo_display': {'pano_pan': False}})
+        self.assertFalse(self.client.get('/api/settings').get_json()['parcours_photo_display']['pano_pan'])
         self.client.put('/api/settings', json={'parcours_photo_display': {
             'effect': 'zoom', 'stack': True, 'pin': True, 'pin_size': 7}})
         photo = self.client.get('/api/settings').get_json()['parcours_photo_display']
