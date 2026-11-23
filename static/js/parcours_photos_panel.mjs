@@ -66,6 +66,16 @@ export function createPhotosPanel(deps) {
     const s = () => deps.getState() || {};
     let photoDetailId = null;    // photo dont le panneau est ouvert
     let photosDirty = false;     // panneau à refaire à l'ouverture de l'onglet Photos
+    // Cadrage montré mais pas encore enregistré (`values` : aspect, focusX,
+    // focusY, zoom). Les flèches du clavier déplacent ce brouillon, qui
+    // part en une requête quand la frappe s'arrête (un appui maintenu en
+    // envoyait des dizaines). Les envois se suivent : une réponse ancienne
+    // n'écrase jamais une valeur plus récente.
+    const CROP_SAVE_DELAY_MS = 400;
+    let cropDraft = null;        // { pid, id, values }
+    let cropSent = null;         // dernier brouillon parti
+    let cropTimer = 0;
+    let cropQueue = Promise.resolve();
 
     function photoUrl(photo, thumb = false) {
         return `${CONFIG.BASE_URL}/api/parcours/${s().selectedId}/photos/${photo.id}/${thumb ? 'thumb' : 'file'}`;
@@ -96,34 +106,79 @@ export function createPhotosPanel(deps) {
     // Réglages d'affichage d'une photo (lot 8). Masquer ou montrer change le
     // temps d'écran : reconstruction complète, refusée pendant une lecture.
     // Légende et cadrage ne touchent que le dessin : la photo est remplacée
-    // en mémoire, la carte redessinée.
-    async function patchPhoto(id, patch) {
-        const { selectedId } = s();
-        if (!selectedId) return;
-        const pid = selectedId;
+    // en mémoire, le détail et la carte redessinés — pas la grille, qu'ils
+    // ne changent pas. → true si enregistré.
+    async function patchPhoto(id, patch, pid = s().selectedId) {
+        if (!pid) return false;
         const rebuilds = 'hidden' in patch;
         if (rebuilds && deps.adjustmentsLocked()) {
             renderPhotoDetail();
-            return;
+            return false;
         }
         try {
             const { photo } = await deps.fetchJson(`/api/parcours/${pid}/photos/${id}`, {
                 method: 'PATCH', body: JSON.stringify(patch),
             });
             const { inputs: fresh } = s();
-            if (!fresh || !photo || pid !== s().selectedId) return;
+            if (!fresh || !photo || pid !== s().selectedId) return false;
             const photos = (fresh.photos || []).map((p) => (p.id === photo.id ? photo : p));
             if (rebuilds) {
                 deps.receiveAdjustments({ photos }, pid);
             } else {
                 fresh.photos = photos;
-                render();
+                renderPhotoDetail();
                 deps.getMap()?.render();
             }
+            return true;
         } catch (error) {
             showToast(error.message, 'error');
             renderPhotoDetail();
+            return false;
         }
+    }
+
+    // Brouillon de la photo `id` du parcours ouvert, ou null.
+    function draftOf(id) {
+        return cropDraft?.pid === s().selectedId && cropDraft.id === id ? cropDraft : null;
+    }
+
+    // Cadrage affiché : celui enregistré, le brouillon en attente par-dessus,
+    // puis `extra` (geste en cours, pas encore confié au brouillon).
+    function cropOf(photo, extra = null) {
+        return { ...photoCrop(photo), ...(draftOf(photo.id)?.values || {}), ...(extra || {}) };
+    }
+
+    // Confie un changement de cadrage au brouillon, enregistré après `delay`
+    // sans autre changement (0 : tout de suite, pour un geste terminé). Le
+    // brouillon d'une autre photo part d'abord.
+    function saveCrop(id, values, delay = 0) {
+        const pid = s().selectedId;
+        if (!pid) return;
+        const same = draftOf(id);
+        if (cropDraft && !same) flushCrop();
+        // Toujours un nouvel objet : flushCrop reconnaît ainsi un brouillon
+        // modifié pendant son envoi.
+        cropDraft = { pid, id, values: { ...(same?.values || {}), ...values } };
+        clearTimeout(cropTimer);
+        cropTimer = setTimeout(flushCrop, delay);
+    }
+
+    function flushCrop() {
+        clearTimeout(cropTimer);
+        cropTimer = 0;
+        const draft = cropDraft;
+        if (!draft || draft === cropSent) return cropQueue;
+        cropSent = draft;
+        cropQueue = cropQueue.then(async () => {
+            await patchPhoto(draft.id, draft.values, draft.pid);
+            // Pas modifié entre-temps : enregistré (ou refusé) — le détail
+            // montre de nouveau la photo telle qu'elle est.
+            if (cropDraft === draft) {
+                cropDraft = null;
+                renderPhotoDetail();
+            }
+        });
+        return cropQueue;
     }
 
     async function deletePhoto(id) {
@@ -133,6 +188,10 @@ export function createPhotosPanel(deps) {
             await deps.fetchJson(`/api/parcours/${pid}/photos/${id}`, { method: 'DELETE' });
             deps.evictPhotoImages(id);
             if (photoDetailId === id) photoDetailId = null;
+            if (draftOf(id)) {
+                clearTimeout(cropTimer);
+                cropDraft = null;
+            }
             await deps.reloadAdjustments(pid);
         } catch (error) {
             showToast(error.message, 'error');
@@ -390,7 +449,7 @@ export function createPhotosPanel(deps) {
         if (shown) shown.checked = !photo.hidden;
         const caption = el('parcoursPhotoCaption');
         if (caption && document.activeElement !== caption) caption.value = photo.caption || '';
-        const crop = photoCrop(photo);
+        const crop = cropOf(photo);
         const aspect = el('parcoursPhotoAspect');
         if (aspect) aspect.value = crop.aspect;
         const zoom = el('parcoursPhotoZoom');
@@ -422,7 +481,7 @@ export function createPhotosPanel(deps) {
 
     // Sélecteur du cadrage : la photo entière, la fenêtre gardée par-dessus
     // (le reste assombri). `draft` : cadrage en cours de geste, pas encore
-    // enregistré.
+    // confié au brouillon (cropOf).
     function renderCropPicker(photo, draft = null) {
         const picker = el('parcoursPhotoCropPicker');
         const img = el('parcoursPhotoCropImage');
@@ -437,7 +496,7 @@ export function createPhotosPanel(deps) {
             picker.style.maxWidth = known && photo.height > photo.width ? `${Math.round((240 * photo.width) / photo.height)}px` : '';
             img.src = url;
         }
-        const crop = { ...photoCrop(photo), ...(draft || {}) };
+        const crop = cropOf(photo, draft);
         const natural = { width: photo.width || 1, height: photo.height || 1 };
         const rect = photoCropRect(natural, crop);
         frame.style.left = `${(rect.x / natural.width) * 100}%`;
@@ -576,9 +635,11 @@ export function createPhotosPanel(deps) {
             const value = event.target.value.trim();
             if (photo && value !== (photo.caption || '')) patchPhoto(photo.id, { caption: value });
         });
+        // Proportions, zoom et point focal passent tous par le brouillon :
+        // leurs envois se suivent dans l'ordre des gestes.
         el('parcoursPhotoAspect')?.addEventListener('change', (event) => {
             const photo = current();
-            if (photo) patchPhoto(photo.id, { aspect: event.target.value });
+            if (photo) saveCrop(photo.id, { aspect: event.target.value });
         });
         const zoom = el('parcoursPhotoZoom');
         zoom?.addEventListener('input', () => {
@@ -588,11 +649,12 @@ export function createPhotosPanel(deps) {
         zoom?.addEventListener('change', () => {
             const photo = current();
             const value = Math.round(Number(zoom.value));
-            if (photo && value >= PHOTO_ZOOM_RANGE[0] && value <= PHOTO_ZOOM_RANGE[1]) patchPhoto(photo.id, { zoom: value });
+            if (photo && value >= PHOTO_ZOOM_RANGE[0] && value <= PHOTO_ZOOM_RANGE[1]) saveCrop(photo.id, { zoom: value });
         });
 
         // Point focal : glisser (enregistré au relâchement), ou les flèches
-        // (1 %, Maj = 10 %), comme le sélecteur de l'onglet Images.
+        // (1 %, Maj = 10 %), comme le sélecteur de l'onglet Images — enregistré
+        // quand la frappe s'arrête, ou à la sortie du sélecteur.
         const picker = el('parcoursPhotoCropPicker');
         if (!picker) return;
         const focusAt = (event) => {
@@ -620,7 +682,7 @@ export function createPhotosPanel(deps) {
                 picker.removeEventListener('pointermove', move);
                 picker.removeEventListener('pointerup', up);
                 picker.removeEventListener('pointercancel', up);
-                if (draft) patchPhoto(photo.id, draft);
+                if (draft) saveCrop(photo.id, draft);
             };
             picker.addEventListener('pointermove', move);
             picker.addEventListener('pointerup', up);
@@ -633,10 +695,13 @@ export function createPhotosPanel(deps) {
             if (!dir || !photo) return;
             event.preventDefault();
             const step = event.shiftKey ? 10 : 1;
-            const crop = photoCrop(photo);
+            const crop = cropOf(photo);
             const clamp = (v) => Math.max(0, Math.min(100, v));
-            patchPhoto(photo.id, { focusX: clamp(crop.focusX + dir[0] * step), focusY: clamp(crop.focusY + dir[1] * step) });
+            saveCrop(photo.id, { focusX: clamp(crop.focusX + dir[0] * step), focusY: clamp(crop.focusY + dir[1] * step) },
+                CROP_SAVE_DELAY_MS);
+            renderCropPicker(photo);
         });
+        picker.addEventListener('blur', () => flushCrop());
     }
 
     function bind() {

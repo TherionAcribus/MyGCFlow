@@ -239,9 +239,25 @@ test('affichage par photo : masquée (reste une ancre), légende, cadrage enregi
   await page.keyboard.press('Shift+ArrowRight');
   await expect.poll(async () => (await snapshot(page)).photos[0].crop.focusX).toBe(60);
 
+  // Une rafale de flèches (touche maintenue) : la fenêtre suit tout de
+  // suite, mais une seule requête part, avec la valeur finale.
+  const patches = [];
+  const onRequest = (req) => {
+    if (req.method() === 'PATCH' && req.url().includes(`/photos/${id}`)) patches.push(req.postDataJSON());
+  };
+  page.on('request', onRequest);
+  const windowLeft = () => page.locator('#parcoursPhotoCropWindow').evaluate((node) => node.style.left);
+  const leftBefore = await windowLeft();
+  for (let i = 0; i < 12; i += 1) await page.keyboard.press('ArrowRight');
+  for (let i = 0; i < 3; i += 1) await page.keyboard.press('ArrowDown');
+  expect(await windowLeft()).not.toBe(leftBefore);
+  await expect.poll(async () => (await snapshot(page)).photos[0].crop).toMatchObject({ focusX: 72, focusY: 53 });
+  expect(patches).toEqual([{ focusX: 72, focusY: 53 }]);
+  page.off('request', onRequest);
+
   // Enregistré côté serveur : relu après rechargement.
   const { photos } = await (await request.get(`/api/parcours/${parcours.id}/inputs`)).json();
-  expect(photos[0]).toMatchObject({ hidden: true, caption: 'Vue sur le lac', aspect: '1:1', zoom: 150, focusX: 60, focusY: 50 });
+  expect(photos[0]).toMatchObject({ hidden: true, caption: 'Vue sur le lac', aspect: '1:1', zoom: 150, focusX: 72, focusY: 53 });
   await openReady(page);
   await openPhotosTab(page);
   await page.locator(`.parcours-photo-thumb[data-photo-id="${id}"]`).click();

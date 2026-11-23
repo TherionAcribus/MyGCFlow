@@ -875,9 +875,14 @@ centre, 100 %).
 - **Cadrage** (`photoCropRect`, `parcours_photo_layout.mjs`) : la plus
   grande fenêtre aux proportions voulues, réduite de 1/zoom, centrée sur le
   point focal et gardée dans l'image. Sélecteur sur la vignette (glisser, ou
-  flèches : 1 %, Maj = 10 %), enregistré au relâchement. Légende et cadrage
-  ne touchent que le dessin : la photo est remplacée en mémoire, sans
-  reconstruction.
+  flèches : 1 %, Maj = 10 %), enregistré au relâchement ; au clavier, la
+  fenêtre suit chaque appui mais l'envoi attend 400 ms sans frappe (ou la
+  sortie du sélecteur) — une touche maintenue envoyait une requête par
+  répétition, dans le désordre possible. Proportions, zoom et point focal
+  passent par ce même brouillon (`saveCrop`, parcours_photos_panel.mjs),
+  dont les envois se suivent. Légende et cadrage ne touchent que le
+  dessin : la photo est remplacée en mémoire, sans reconstruction, et seul
+  le détail est redessiné (pas la grille des vignettes).
 
 ### Affichage dans la vidéo (lot 9)
 
