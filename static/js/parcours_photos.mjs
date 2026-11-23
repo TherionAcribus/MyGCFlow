@@ -101,6 +101,44 @@ export function withTrackPositions(photos, positions) {
     });
 }
 
+// --- Recalage par une paire de photos ----------------------------------------
+//
+// Une photo de l'appareil à recaler et une photo de RÉFÉRENCE prise au même
+// moment (téléphone géolocalisé, ou appareil déjà recalé) : la différence de
+// leurs heures est le décalage de l'appareil. Borné comme côté serveur
+// (OFFSET_RANGE_MINUTES de parcours_photos.py) : au-delà, ce n'est plus la
+// même sortie.
+export const PAIR_OFFSET_MAX_MIN = 2 * 24 * 60;
+
+// Décalage (minutes entières) à donner à l'appareil de `photo` pour que son
+// heure soit celle de `reference`, ou null. L'heure de `photo` est prise
+// brute (le décalage est absolu, pas une correction de l'actuel) ; celle de
+// la référence, corrigée.
+export function pairOffset(photo, reference, offsets = new Map()) {
+    const raw = photoClock(photo);
+    const ref = photoClock(reference, offsets);
+    if (!raw || !ref) return null;
+    const days = (Date.parse(`${ref.date}T00:00:00Z`) - Date.parse(`${raw.date}T00:00:00Z`)) / 86400000;
+    const offset = Math.round(days * 24 * 60 + ref.minutes - raw.minutes);
+    return Math.abs(offset) <= PAIR_OFFSET_MAX_MIN ? offset : null;
+}
+
+// Références possibles pour recaler l'appareil de `photo` : les photos à
+// heure de confiance d'un AUTRE appareil (position EXIF, ou appareil recalé),
+// les plus proches de l'heure actuelle de `photo` d'abord (son horloge est
+// fausse, mais rarement de beaucoup).
+export function pairCandidates(photos, photo, offsets = new Map()) {
+    const own = cameraKey(photo);
+    const at = photoClock(photo, offsets);
+    const instant = (c) => Date.parse(`${c.date}T00:00:00Z`) / 60000 + c.minutes;
+    return (Array.isArray(photos) ? photos : [])
+        .filter((p) => p && p.id !== photo?.id && cameraKey(p) !== own && photoTimeTrusted(p, offsets)
+            && pairOffset(photo, p, offsets) !== null)
+        .map((p) => ({ photo: p, gap: at ? Math.abs(instant(photoClock(p, offsets)) - instant(at)) : 0 }))
+        .sort((a, b) => a.gap - b.gap || a.photo.id - b.photo.id)
+        .map((c) => c.photo);
+}
+
 export function photoTimeTrusted(photo, offsets = new Map()) {
     if (!TAKEN_RE.test(String(photo?.takenAt || ''))) return false;
     return hasPosition(photo) || photoCameraOffset(photo, offsets) !== undefined;
@@ -151,13 +189,22 @@ export function matchPhotos(reconstructed, photos, offsets = new Map(),
             continue;
         }
         if (clock && photoTimeTrusted(photo, offsets)) {
+            // Écart à la visite élargie de la marge, puis, à égalité (deux
+            // visites voisines dont les marges se chevauchent), écart à la
+            // visite elle-même : une photo prise à l'arrivée sur une étape
+            // n'est pas donnée à la précédente.
+            const outside = (start, end) => (clock.minutes < start ? start - clock.minutes
+                : clock.minutes > end ? clock.minutes - end : 0);
             let best = null;
             for (const c of all) {
                 if (c.date !== clock.date || !Number.isFinite(c.stop.arrivalMin)) continue;
-                const start = c.stop.arrivalMin - VISIT_MARGIN_MIN;
-                const end = c.stop.arrivalMin + (c.stop.visitMin || 0) + VISIT_MARGIN_MIN;
-                const gap = clock.minutes < start ? start - clock.minutes : clock.minutes > end ? clock.minutes - end : 0;
-                if (gap <= windowMin && (!best || gap < best.gap)) best = { key: c.stop.key, source: MATCH_TIME, gap };
+                const arrival = c.stop.arrivalMin;
+                const leave = arrival + (c.stop.visitMin || 0);
+                const gap = outside(arrival - VISIT_MARGIN_MIN, leave + VISIT_MARGIN_MIN);
+                const core = outside(arrival, leave);
+                if (gap <= windowMin && (!best || gap < best.gap || (gap === best.gap && core < best.core))) {
+                    best = { key: c.stop.key, source: MATCH_TIME, gap, core };
+                }
             }
             result.set(photo.id, { ...(best ? { key: best.key, source: MATCH_TIME } : { key: null, source: null }), ...lost });
             continue;

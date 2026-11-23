@@ -242,6 +242,47 @@ test('appareil sans GPS recalé : situé par la trace, rattaché à l’étape o
   expect(errors).toEqual([]);
 });
 
+test('recalage par une paire : la photo du téléphone prise au même moment donne le décalage', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const parcours = await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(files);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(3);
+  const { photos: listed } = await (await request.get(`/api/parcours/${parcours.id}/inputs`)).json();
+  const canon = listed.find((p) => p.name === 'appareil.jpg').id;     // Canon, 13/07 08:00, sans GPS
+  const phone = listed.find((p) => p.name === 'telephone.jpg').id;    // iPhone géolocalisé, 12/07 11:20
+
+  // La photo du téléphone et celle sans EXIF n'ont pas le bouton.
+  await page.locator(`.parcours-photo-thumb[data-photo-id="${phone}"]`).click();
+  await expect(page.locator('.parcours-photo-pair-open')).toHaveCount(0);
+
+  // Photo de l'appareil : le téléphone est proposé comme référence.
+  await page.locator(`.parcours-photo-thumb[data-photo-id="${canon}"]`).click();
+  await page.locator('.parcours-photo-pair-open').click();
+  const pair = page.locator('#parcoursPhotoPair');
+  await expect(pair).toBeVisible();
+  await expect(pair.locator('.parcours-photo-pair-option')).toHaveCount(1);
+  await expect(pair.locator('.parcours-photo-pair-apply')).toHaveCount(0);
+  await pair.locator(`.parcours-photo-pair-option[data-photo-id="${phone}"]`).click();
+  // 13/07 08:00 → 12/07 11:20 : −20 h 40.
+  await expect(pair.locator('.parcours-photo-pair-result')).toHaveText('Décalage de Canon EOS 80D : −20 h 40');
+  await pair.locator('.parcours-photo-pair-apply').click();
+  await expect.poll(async () => (await snapshot(page)).cameras).toEqual([{ camera: 'Canon EOS 80D', offsetMinutes: -1240 }]);
+  await expect(pair).toBeHidden();
+  // Heure de confiance désormais : rattachée par l'heure à GCPAR01, où le
+  // téléphone l'a précédée.
+  await expect.poll(async () => (await snapshot(page)).photos.find((p) => p.id === canon).match)
+    .toEqual({ key: 'GCPAR01', source: 'time' });
+
+  // « Annuler » referme le sélecteur sans rien changer.
+  await page.locator('.parcours-photo-pair-open').click();
+  await expect(pair).toBeVisible();
+  await pair.locator('.parcours-photo-pair-cancel').click();
+  await expect(pair).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('deux boîtiers du même modèle : une horloge chacun, et le recalage du modèle en repli', async ({ page, request }) => {
   const errors = collectErrors(page);
   await createWeekend(request);

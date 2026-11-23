@@ -12,6 +12,8 @@ import {
     cameraOffsets,
     photoCameraOffset,
     matchPhotos,
+    pairCandidates,
+    pairOffset,
     photoAnchors,
     photoClock,
     photoGridGroups,
@@ -72,6 +74,32 @@ test('deux boîtiers du même modèle : une horloge chacun, repli sur le modèle
     assert.equal(photoCameraOffset(photo(4), offsets), undefined);
 });
 
+test('recalage par une paire : décalage absolu, références d’autres appareils à heure sûre', () => {
+    const camera = photo(1, { takenAt: '2025-07-13T08:00:00', camera: 'Canon EOS 80D' });
+    const phone = photo(2, { takenAt: '2025-07-12T11:20:00', camera: 'Apple iPhone 13', lat: 45, lon: 5 });
+    // 13/07 08:00 → 12/07 11:20 : −20 h 40.
+    assert.equal(pairOffset(camera, phone), -1240);
+    // Décalage absolu : celui déjà posé sur l'appareil n'y entre pas.
+    assert.equal(pairOffset(camera, phone, cameraOffsets([{ camera: 'Canon EOS 80D', offsetMinutes: 30 }])), -1240);
+    // Référence d'un appareil recalé : son heure corrigée compte.
+    const nikon = photo(3, { takenAt: '2025-07-13T07:00:00', camera: 'Nikon' });
+    const offsets = cameraOffsets([{ camera: 'Nikon', offsetMinutes: 60 }]);
+    assert.equal(pairOffset(camera, nikon, offsets), 0);
+    // Au-delà de 2 jours, ou sans heure : pas de décalage.
+    assert.equal(pairOffset(camera, photo(4, { takenAt: '2025-07-01T08:00:00', lat: 45, lon: 5 })), null);
+    assert.equal(pairOffset(camera, photo(5, { lat: 45, lon: 5 })), null);
+
+    const photos = [
+        camera, phone, nikon,
+        photo(6, { takenAt: '2025-07-13T07:59:00', camera: 'Canon EOS 80D' }),      // même appareil
+        photo(7, { takenAt: '2025-07-13T09:00:00', camera: 'Sony' }),               // non recalé
+        photo(8, { takenAt: '2025-07-13T08:10:00', lat: 45, lon: 5 }),              // téléphone sans nom
+    ];
+    // Les plus proches de l'heure actuelle de la photo d'abord.
+    assert.deepEqual(pairCandidates(photos, camera, offsets).map((p) => p.id), [3, 8, 2]);
+    assert.deepEqual(pairCandidates(photos, camera).map((p) => p.id), [8, 2]);
+});
+
 test('rattachement : manuel, par position (même jour), par l’heure, ou rien', () => {
     const ordered = reconstructParcours({ days: DAYS });
     const offsets = cameraOffsets([{ camera: 'Canon', offsetMinutes: 0 }]);
@@ -120,6 +148,25 @@ test('étape choisie à la main puis retirée : rattachement automatique en atte
     // L'étape revient : la photo la retrouve.
     const back = reconstructParcours({ days: [{ ...DAYS[0], stops: [...DAYS[0].stops, stop('place:9', 30)] }] });
     assert.deepEqual(matchPhotos(back, photos, offsets).get(3), { key: 'place:9', source: MATCH_MANUAL });
+});
+
+test('rattachement par l’heure : à égalité dans les marges, la visite la plus proche', () => {
+    // B quitté à 10:30, C atteint à 10:35 : à 10:36, les deux marges de
+    // 10 min contiennent l'heure — c'est C, où l'on vient d'arriver.
+    const ordered = {
+        days: [{
+            date: '2025-07-12',
+            stops: [
+                { ...stop('B', 10), arrivalMin: 10 * 60, visitMin: 30 },
+                { ...stop('C', 20), arrivalMin: 10 * 60 + 35, visitMin: 15 },
+            ],
+        }],
+    };
+    const offsets = cameraOffsets([{ camera: 'Canon', offsetMinutes: 0 }]);
+    const at = (hhmm) => matchPhotos(ordered, [photo(1, { camera: 'Canon', takenAt: `2025-07-12T${hhmm}:00` })], offsets).get(1).key;
+    assert.equal(at('10:36'), 'C');
+    assert.equal(at('10:31'), 'B');
+    assert.equal(at('10:15'), 'B');
 });
 
 test('ancres : position ou manuel, heure de confiance, la plus tôt par étape', () => {

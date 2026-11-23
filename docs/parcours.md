@@ -792,7 +792,7 @@ Table `parcours_photo`, décalages d'horloge dans `parcours_camera`
 | choisie à la main (`stopKey`) | celle-là |
 | géolocalisée | la plus proche à moins de 150 m, le jour de la photo (bases exclues) |
 | sans GPS, appareil recalé, prise pendant une trace | comme géolocalisée, à la position lue sur la trace (source `track`) |
-| heure de confiance, sans position | celle dont la visite estimée (± 10 min) contient l'heure, sinon l'arrivée la plus proche à 45 min au plus |
+| heure de confiance, sans position | celle dont la visite estimée (± 10 min) contient l'heure, sinon l'arrivée la plus proche à 45 min au plus ; deux visites voisines dont les marges contiennent l'heure : celle dont la visite elle-même est la plus proche (une photo prise à l'arrivée n'est pas donnée à l'étape d'avant — défaut corrigé le 2026-11-23) |
 | sinon | aucune (vignette estompée) |
 
 **Situées par la trace** (`locatePhotosOnTracks`, parcours_tracks.mjs) :
@@ -837,7 +837,14 @@ l'horaire : il ne peut pas le caler.
 **Recalage d'un appareil** (carte Photos) : saisie du décalage en minutes,
 ou « Caler l'horloge sur l'étape », proposé pour une photo sans position
 rattachée à une étape à heure sûre (épinglée, Lab) : décalage = heure de
-l'étape − heure de la photo.
+l'étape − heure de la photo. Ou « Caler sur une autre photo » (détail d'une
+photo sans position d'un appareil) : on choisit une photo de RÉFÉRENCE
+prise au même moment — téléphone géolocalisé, ou autre appareil déjà
+recalé (`pairCandidates`, les plus proches en heure d'abord) — et le
+décalage vaut heure de la référence (corrigée) − heure brute de la photo
+(`pairOffset`, absolu : celui déjà posé n'y entre pas ; ±2 jours au plus,
+comme le serveur). Avec une trace GPS, c'est le chemin le plus court pour
+situer toute une carte mémoire.
 
 **Clé d'appareil** (`cameraKey`, parcours_photos.mjs) : « marque modèle »,
 suivie de « #numéro de série » quand l'EXIF donne celui du boîtier

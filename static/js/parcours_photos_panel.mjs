@@ -28,6 +28,8 @@ import {
     cameraKey,
     cameraOffsets,
     hasPosition,
+    pairCandidates,
+    pairOffset,
     photoClock,
     photoGridGroups,
     photoTimeTrusted,
@@ -80,6 +82,10 @@ export function createPhotosPanel(deps) {
     const selectedIds = new Set();
     let selectAnchor = null;
     let gridOrder = [];
+    // Recalage par une paire : photo dont le sélecteur de référence est
+    // ouvert, et référence choisie (ids).
+    let pairFor = null;
+    let pairRef = null;
     // Cadrage montré mais pas encore enregistré (`values` : aspect, focusX,
     // focusY, zoom). Les flèches du clavier déplacent ce brouillon, qui
     // part en une requête quand la frappe s'arrête (un appui maintenu en
@@ -97,6 +103,13 @@ export function createPhotosPanel(deps) {
 
     function photoById(id) {
         return (s().inputs?.photos || []).find((photo) => photo.id === id) || null;
+    }
+
+    // Nom d'appareil affiché : le numéro de série du boîtier s'il est connu.
+    function cameraName(photo) {
+        return photo.camera && photo.cameraSerial
+            ? t('${camera} (n° ${serial})', { camera: photo.camera, serial: photo.cameraSerial })
+            : photo.camera || '';
     }
 
     async function upload(files) {
@@ -661,9 +674,7 @@ export function createPhotosPanel(deps) {
                 photo.name,
                 clock ? `${formatDay(clock.date, { day: 'numeric', month: 'short' })} ${minutesToTime(clock.minutes)}` : t('sans heure'),
                 hasPosition(photo) ? t('géolocalisée') : onTrack ? t('située par la trace GPS') : t('sans position'),
-                photo.camera && photo.cameraSerial
-                    ? t('${camera} (n° ${serial})', { camera: photo.camera, serial: photo.cameraSerial })
-                    : photo.camera || '',
+                cameraName(photo),
             ].filter(Boolean).join(' · ');
         }
 
@@ -729,6 +740,23 @@ export function createPhotosPanel(deps) {
             calibrate.addEventListener('click', () => setCameraOffset(cameraKey(photo), offset));
             actions.push(calibrate);
         }
+        // Recalage sur une photo prise au même moment par un autre appareil.
+        const candidates = !hasPosition(photo) && photo.camera && clock
+            ? pairCandidates(inputs.photos, photo, offsets) : [];
+        if (candidates.length) {
+            const pair = deps.button('btn btn-sm btn-outline-primary parcours-photo-pair-open', 'ti-clock',
+                t('Caler l’horloge de l’appareil sur une photo prise au même moment'),
+                { text: t('Caler sur une autre photo') });
+            pair.setAttribute('aria-expanded', String(pairFor === photo.id));
+            pair.setAttribute('aria-controls', 'parcoursPhotoPair');
+            pair.addEventListener('click', () => {
+                pairFor = pairFor === photo.id ? null : photo.id;
+                pairRef = null;
+                renderPhotoDetail();
+            });
+            actions.push(pair);
+        }
+        renderPair(photo, pairFor === photo.id ? candidates : [], offsets);
         if (timeline && photoSlots(timeline).some((slot) => slot.photoId === photo.id)) {
             const show = deps.button('btn btn-sm btn-outline-secondary parcours-photo-preview', 'ti-eye',
                 t('Ouvrir l’aperçu en pause sur cette photo'), { text: t('Voir sur la carte') });
@@ -740,6 +768,76 @@ export function createPhotosPanel(deps) {
         remove.addEventListener('click', () => deletePhoto(photo.id));
         actions.push(remove);
         el('parcoursPhotoActions')?.replaceChildren(...actions);
+    }
+
+    // Sélecteur de la photo de référence (recalage par une paire) : les
+    // candidates les plus proches en heure d'abord, puis le décalage qui en
+    // découle, appliqué à l'appareil d'un clic.
+    function renderPair(photo, candidates, offsets) {
+        const box = el('parcoursPhotoPair');
+        if (!box) return;
+        box.hidden = candidates.length === 0;
+        if (box.hidden) {
+            box.replaceChildren();
+            return;
+        }
+        const intro = document.createElement('div');
+        intro.className = 'form-hint text-muted mb-1';
+        intro.textContent = t('Choisissez une photo prise au même moment par un téléphone ou par un appareil déjà recalé :');
+        const grid = document.createElement('div');
+        grid.className = 'parcours-photo-pair-grid';
+        grid.setAttribute('role', 'group');
+        grid.setAttribute('aria-label', t('Photos de référence'));
+        for (const ref of candidates) {
+            const refClock = photoClock(ref, offsets);
+            const when = `${formatDay(refClock.date, { day: 'numeric', month: 'short' })} ${minutesToTime(refClock.minutes)}`;
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'parcours-photo-pair-option';
+            option.dataset.photoId = String(ref.id);
+            option.setAttribute('aria-pressed', String(pairRef === ref.id));
+            option.title = [ref.name, cameraName(ref), when].filter(Boolean).join(' — ');
+            const img = document.createElement('img');
+            img.src = photoUrl(ref, true);
+            img.alt = ref.name || '';
+            img.loading = 'lazy';
+            const label = document.createElement('span');
+            label.textContent = when;
+            option.append(img, label);
+            option.addEventListener('click', () => {
+                pairRef = ref.id;
+                renderPair(photo, candidates, offsets);
+            });
+            grid.append(option);
+        }
+        const footer = document.createElement('div');
+        footer.className = 'd-flex align-items-center gap-2 flex-wrap mt-2';
+        const ref = candidates.find((c) => c.id === pairRef);
+        const offset = ref ? pairOffset(photo, ref, offsets) : null;
+        if (offset !== null) {
+            const result = document.createElement('span');
+            result.className = 'small fw-medium parcours-photo-pair-result';
+            result.textContent = t('Décalage de ${camera} : ${offset}', { camera: cameraName(photo), offset: formatOffset(offset) });
+            const apply = deps.button('btn btn-sm btn-primary parcours-photo-pair-apply', 'ti-check',
+                t('Recaler l’horloge'), { text: t('Recaler l’horloge') });
+            apply.addEventListener('click', () => {
+                pairFor = null;
+                pairRef = null;
+                setCameraOffset(cameraKey(photo), offset);
+            });
+            footer.append(result, apply);
+        }
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'btn btn-sm btn-link parcours-photo-pair-cancel';
+        cancel.textContent = t('Annuler');
+        cancel.addEventListener('click', () => {
+            pairFor = null;
+            pairRef = null;
+            renderPhotoDetail();
+        });
+        footer.append(cancel);
+        box.replaceChildren(intro, grid, footer);
     }
 
     // Sélecteur du cadrage : la photo entière, la fenêtre gardée par-dessus
