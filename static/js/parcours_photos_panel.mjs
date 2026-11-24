@@ -60,6 +60,7 @@ const PHOTO_DISPLAY_FIELDS = Object.freeze({
     frame: 'parcoursPhotoFrame',
     effect: 'parcoursPhotoEffect',
     overflow: 'parcoursPhotoOverflow',
+    pin_shape: 'parcoursPhotoPinShape',
 });
 const PHOTO_DISPLAY_FLAGS = Object.freeze({
     leader: 'parcoursPhotoLeader',
@@ -71,6 +72,8 @@ const PHOTO_DISPLAY_FLAGS = Object.freeze({
     en_route: 'parcoursPhotoEnRoute',
     pano_pan: 'parcoursPhotoPanoPan',
     day_recap: 'parcoursPhotoDayRecap',
+    pin_group: 'parcoursPhotoPinGroup',
+    flash: 'parcoursPhotoFlash',
 });
 
 // deps : { getState, uploads, button, fetchJson, reloadAdjustments,

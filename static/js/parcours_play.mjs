@@ -36,7 +36,9 @@ import {
 import {
     CURRENT_RING_PERIOD,
     FAVORITE_COLOR,
+    contrastTextColor,
     currentRingRadius,
+    dayColor,
     favoriteBurst,
     hexToRgba,
     playPhase,
@@ -53,11 +55,14 @@ import {
     photoAspect,
     photoCaptionText,
     photoCropRect,
+    photoFlashesAt,
     photoFrameAt,
     photoSlots,
     recapSheetLayout,
 } from './parcours_photo_layout.mjs';
-import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
+import {
+    drawPhotoCard, drawPhotoLeader, drawPhotoMedallion, drawPinBadge, drawShutterFlash,
+} from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
 import { formatDay, formatKm, formatRange, stopLabel, stopsCountText } from './parcours_labels.mjs';
@@ -1167,6 +1172,7 @@ export function createParcoursPlayDraw(deps) {
     // couche de la tête (parcours_photo_draw.mjs), donc filmées. Une photo
     // encore en chargement n'est pas dessinée.
     let lastPhotoCards = [];          // cartes peintes à la dernière image (relevé e2e)
+    let lastFlashes = [];             // photos dont l'éclair est peint à la dernière image (relevé e2e)
     let lastPhotoView = null;         // taille du canevas de cette image
 
     function photoLayoutView(event) {
@@ -1244,24 +1250,58 @@ export function createParcoursPlayDraw(deps) {
         });
     }
 
+    // Couleur de la journée d'un créneau (cercle des médaillons, nombre de
+    // photos) : celle de son étape, ou du trajet d'une photo en chemin.
+    function slotDayColor(slot) {
+        const { timeline } = S();
+        const index = slot?.route
+            ? legDayIndex(timeline.legs[slot.leg])
+            : paints.dayIndexes().byKey.get(timeline.stops[slot?.stop]?.key) ?? 0;
+        return dayColor(index, paints.stopStyle().day_palette);
+    }
+
     function drawPhotoCards(event) {
         const { timeline, currentQ, photoDisplay } = S();
         lastPhotoCards = [];
+        lastFlashes = [];
         if (!timeline) return;
         ensurePhotosNear();
         const view = photoLayoutView(event);
         lastPhotoView = { width: view.width, height: view.height, ratio: view.ratio };
-        // Mouvement réduit : entrée au fondu, jamais de Ken Burns.
-        const display = reducedMotion() ? { ...photoDisplay, effect: 'fade', ken_burns: false } : photoDisplay;
-        const { cards } = photoFrameAt(timeline, currentQ, display, view);
+        // Mouvement réduit : entrée au fondu, jamais de Ken Burns ni d'éclair.
+        const display = reducedMotion()
+            ? { ...photoDisplay, effect: 'fade', ken_burns: false, flash: false }
+            : photoDisplay;
         const ctx = event.context;
+        // Éclairs sous les cartes : la photo sort de la lumière.
+        if (display.flash && display.layout !== PHOTO_LAYOUT_NONE) {
+            for (const { slot, progress } of photoFlashesAt(timeline, currentQ)) {
+                const point = slot.route ? view.pointPixel(slot.at) : view.stopPixel(slot.stop);
+                if (!point) continue;
+                drawShutterFlash(ctx, point, progress, view.ratio);
+                lastFlashes.push(slot.photoId);
+            }
+        }
+        const { cards } = photoFrameAt(timeline, currentQ, display, view);
         const font = pageFontFamily();
+        const slots = photoSlots(timeline);
         for (const card of cards) {
-            const thumb = card.pinned ? photoThumbs.get(card.photoId) : null;
+            const thumb = card.pinned || card.round ? photoThumbs.get(card.photoId) : null;
             const img = imageReady(thumb) ? thumb : photoImages.get(card.photoId);
             if (!imageReady(img)) continue;
+            const photo = photoById(card.photoId);
+            if (card.round || card.badge) card.ring = slotDayColor(slots[card.slot]);
             drawPhotoLeader(ctx, card, view.ratio);
-            drawPhotoCard(ctx, card, img, photoById(card.photoId), { font, ratio: view.ratio });
+            // Vers le médaillon : la carte s'efface pendant qu'il paraît.
+            const round = card.round || 0;
+            if (round < 1) {
+                drawPhotoCard(ctx, round ? { ...card, alpha: card.alpha * (1 - round) } : card, img, photo,
+                    { font, ratio: view.ratio });
+            }
+            if (round > 0) drawPhotoMedallion(ctx, card, img, photo, { ring: card.ring, ratio: view.ratio });
+            if (card.badge) {
+                drawPinBadge(ctx, card, { color: card.ring, text: contrastTextColor(card.ring), font, ratio: view.ratio });
+            }
             lastPhotoCards.push(card);
         }
     }
@@ -1315,6 +1355,7 @@ export function createParcoursPlayDraw(deps) {
         imageStats,
         lastPhotoView: () => lastPhotoView,
         lastPhotoCards: () => lastPhotoCards,
+        lastFlashes: () => lastFlashes,
         cardPhotos: () => {
             const c = currentCardPhotos();
             return { open: c.open, days: [...c.days], end: [...c.end] };

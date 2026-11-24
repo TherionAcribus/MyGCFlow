@@ -448,6 +448,63 @@ test('vignettes sur la carte : la photo d’une étape passée y reste en petit'
   expect(errors).toEqual([]);
 });
 
+test('médaillons, éclair et zoom lent varié : ronds à la couleur de la journée, nombre de photos', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  expect((await request.put('/api/settings', { data: { parcours_playback: { camera: 'fixed' } } })).ok()).toBeTruthy();
+  const { parcours, phone, camera } = await withTwoPhotos(page, request);
+  // Les deux photos à GCPAR01 : une seule pile, donc un seul médaillon.
+  await request.patch(`/api/parcours/${parcours.id}/photos/${camera}`, { data: { stopKey: 'GCPAR01' } });
+  await openReady(page);
+  await page.locator('a[href="#photos"]').click();
+  await page.locator('#parcoursPhotoAutoPreview').uncheck();
+  await page.locator('#parcoursPhotoPin').check();
+  await page.locator('#parcoursPhotoPinShape').selectOption('round');
+  await page.locator('#parcoursPhotoFlash').check();
+  await page.locator('#parcoursPhotoKenBurns').check();
+  await expect.poll(async () => {
+    const saved = await savedDisplay(request);
+    return [saved.pin_shape, saved.flash, saved.ken_burns, saved.pin_group];
+  }).toEqual(['round', true, true, true]);
+
+  const slots = (await snapshot(page)).photoSlots;
+  const [first, second] = slots;
+  expect(slots.map((slot) => slot.photoId)).toEqual([phone, camera]);
+  await page.locator('#btnQuickPreview').click();
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(true));
+  await expect.poll(() => playbackState(page)).toBe('paused');
+  const seek = (q) => page.evaluate(async (target) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(2000, 0, 1 + target)), q);
+
+  // Arrivée de la première photo : éclair sur l'étape, zoom lent en avancée.
+  await seek(first.fromQ + 1);
+  await expect.poll(async () => (await snapshot(page)).photoFlashes).toEqual([phone]);
+  // Deuxième photo (rang 1) : recul, l'éclair de la première est fini.
+  await seek(second.fromQ + 6);
+  await expect.poll(async () => (await snapshot(page)).photoFlashes).toEqual([]);
+  let state = await snapshot(page);
+  const shown = state.photoCards.find((c) => c.photoId === camera);
+  expect(shown.kenBurns).toBeGreaterThan(1);
+  expect(shown.kenBurnsShift).toBe(0);
+
+  // Les deux posées : un médaillon, la seconde par-dessus, « 2 », cerclé de
+  // la couleur du jour 1.
+  await seek(Math.ceil(second.toQ) + 8);
+  await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => [c.photoId, c.round, c.badge]))
+    .toEqual([[camera, 1, 2]]);
+  state = await snapshot(page);
+  const [medallion] = state.photoCards;
+  expect(medallion.ring).toBe(Object.values(state.dayColors)[0]);
+  expect(medallion.leader).toBe(true);
+  expect(medallion.rotation).toBe(0);
+
+  // Petite carte : la pile des deux, sans nombre (rien de regroupé).
+  await page.locator('#parcoursPhotoPinShape').selectOption('card');
+  await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => [c.photoId, c.round, c.badge]))
+    .toEqual([[phone, 0, 0], [camera, 0, 0]]);
+  await page.locator('#btnQuickStop').click();
+  expect(errors).toEqual([]);
+});
+
 test('photos hors étapes : un lieu proposé, créé d’un clic, et les photos s’y rattachent', async ({ page, request }) => {
   const errors = collectErrors(page);
   await createWeekend(request);

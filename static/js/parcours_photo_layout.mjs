@@ -80,6 +80,21 @@ export function photoCropRect(natural, photo) {
     return { x, y, width, height };
 }
 
+// Fenêtre du zoom lent dans la fenêtre `src` de l'image : réduite de
+// 1/scale et placée pour garder le point focal au même endroit (zoom vers
+// lui, ou depuis lui) — au centre pour un point focal au milieu —, décalée
+// de `shift` (-1..1 : d'un bord de la marge à l'autre) pour le travelling.
+export function kenBurnsRect(src, natural, photo, scale, shift = 0) {
+    if (!(scale > 1)) return src;
+    const width = src.width / scale;
+    const height = src.height / scale;
+    const crop = photoCrop(photo);
+    const fx = src.width > 0 ? clamp(((crop.focusX / 100) * (natural?.width || 0) - src.x) / src.width, 0, 1) : 0.5;
+    const fy = src.height > 0 ? clamp(((crop.focusY / 100) * (natural?.height || 0) - src.y) / src.height, 0, 1) : 0.5;
+    const px = clamp(fx + shift / 2, 0, 1);
+    return { x: src.x + (src.width - width) * px, y: src.y + (src.height - height) * fy, width, height };
+}
+
 // Panoramas : une photo nettement plus large que haute, montrée entière,
 // devenait une bande minuscule. Avec `pano_pan`, elle est montrée dans une
 // fenêtre aux proportions PANORAMA_VIEW_RATIO qui la parcourt de gauche à
@@ -164,6 +179,10 @@ export const PHOTO_FRAMES = Object.freeze(['postcard', 'polaroid', 'rounded', 'p
 export const PHOTO_EFFECTS = Object.freeze(['fade', 'slide', 'zoom', 'pop']);
 export const PHOTO_SIZE_RANGE = Object.freeze([120, 600]);
 export const PHOTO_PIN_SIZE_RANGE = Object.freeze([40, 160]);
+// Forme des vignettes laissées sur la carte : `card` (la carte en petit, en
+// petite pile), `round` (médaillon rond cerclé de la couleur de la journée,
+// une par étape, avec le nombre de photos).
+export const PHOTO_PIN_SHAPES = Object.freeze(['card', 'round']);
 export const PHOTO_DURATION_RANGE = Object.freeze([0.5, 6]);
 export const PHOTO_MAX_PER_STOP_RANGE = Object.freeze([1, 12]);
 // Au-delà du plafond par étape : `share` (les photos se partagent le temps
@@ -182,11 +201,17 @@ export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
     stack: false,
     pin: false,
     pin_size: 72,
+    pin_shape: 'card',
+    // Vignettes qui se chevauchent à l'écran regroupées sous la plus
+    // récente, avec le nombre de photos (groupPins).
+    pin_group: true,
     size: 220,
     frame: 'postcard',
     tilt: true,
     effect: 'fade',
     ken_burns: false,
+    // Éclair sur l'étape à l'arrivée de chaque photo (photoFlashesAt).
+    flash: false,
     duration: 1.5,
     max_per_stop: 4,
     overflow: 'share',
@@ -217,11 +242,14 @@ export function normalizePhotoDisplay(raw) {
         stack: flag('stack'),
         pin: flag('pin'),
         pin_size: Math.round(numberIn(o.pin_size, PHOTO_PIN_SIZE_RANGE, d.pin_size)),
+        pin_shape: choice('pin_shape', PHOTO_PIN_SHAPES),
+        pin_group: flag('pin_group'),
         size: Math.round(numberIn(o.size, PHOTO_SIZE_RANGE, d.size)),
         frame: choice('frame', PHOTO_FRAMES),
         tilt: flag('tilt'),
         effect: choice('effect', PHOTO_EFFECTS),
         ken_burns: flag('ken_burns'),
+        flash: flag('flash'),
         duration: Math.round(numberIn(o.duration, PHOTO_DURATION_RANGE, d.duration) * 10) / 10,
         max_per_stop: Math.round(numberIn(o.max_per_stop, PHOTO_MAX_PER_STOP_RANGE, d.max_per_stop)),
         overflow: choice('overflow', PHOTO_OVERFLOWS),
@@ -405,6 +433,28 @@ export function photoSlots(timeline) {
     return slots;
 }
 
+// Éclair de l'étape (`flash`) : à l'arrivée de chaque photo, pendant
+// PHOTO_FLASH_Q quanta, comme un déclencheur. → [{ slot, progress (0..1) }]
+// des éclairs en cours à la position `qf` (créneaux triés par début :
+// recherche par bissection, quelques créneaux parcourus).
+export const PHOTO_FLASH_Q = 5;
+
+export function photoFlashesAt(timeline, qf) {
+    const slots = photoSlots(timeline);
+    let lo = 0;
+    let hi = slots.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (slots[mid].fromQ <= qf) lo = mid + 1;
+        else hi = mid;
+    }
+    const out = [];
+    for (let i = lo - 1; i >= 0 && slots[i].fromQ > qf - PHOTO_FLASH_Q; i--) {
+        out.push({ slot: slots[i], progress: (qf - slots[i].fromQ) / PHOTO_FLASH_Q });
+    }
+    return out.reverse();
+}
+
 // Temps d'écran des photos de la chronologie : { count (photos montrées),
 // quanta (leur temps cumulé, fondus compris dans les créneaux, planches de
 // journée comprises), totalQ (toute la lecture) } — l'onglet Photos le
@@ -467,6 +517,27 @@ const STOP_GAP = 18;      // px CSS entre l'étape et sa carte
 const TILT_DEG = [-2.5, 2];
 const KEN_BURNS_ZOOM = 0.08;
 
+// Zoom lent (`ken_burns`) : trois mouvements en alternance selon le rang de
+// la photo, pour que deux photos à la suite ne bougent pas pareil — avancée
+// (vers le point d'intérêt), recul (depuis lui), travelling (fenêtre un peu
+// plus serrée qui glisse d'un bord à l'autre, sens alterné). Un panorama,
+// déjà parcouru, n'a que l'avancée. `t` : avancement (0..1) du créneau.
+// → { scale, shift } : agrandissement de la fenêtre (> 1 : zoomée) et
+// décalage horizontal de son centre (-1..1, en part de la marge) ;
+// parcours_photo_draw.mjs centre la fenêtre sur le point d'intérêt.
+export const KEN_BURNS_MOTIONS = Object.freeze(['in', 'out', 'drift']);
+const KEN_BURNS_DRIFT_ZOOM = 0.12;
+
+export function kenBurnsMotion(order, t, { panorama = false } = {}) {
+    const k = clamp(t, 0, 1);
+    const n = Math.max(0, Math.floor(order) || 0);
+    const motion = panorama ? 'in' : KEN_BURNS_MOTIONS[n % KEN_BURNS_MOTIONS.length];
+    if (motion === 'in') return { motion, scale: 1 + KEN_BURNS_ZOOM * k, shift: 0 };
+    if (motion === 'out') return { motion, scale: 1 + KEN_BURNS_ZOOM * (1 - k), shift: 0 };
+    const sense = Math.floor(n / KEN_BURNS_MOTIONS.length) % 2 ? -1 : 1;
+    return { motion, scale: 1 + KEN_BURNS_DRIFT_ZOOM, shift: sense * (2 * smooth(k) - 1) };
+}
+
 const easings = Object.fromEntries(Object.entries(IMAGE_EFFECT_EASINGS).map(([k, v]) => [k, cubicBezier(...v)]));
 function eased(effect, t) {
     return easings[effect] ? easings[effect](t) : t;
@@ -480,6 +551,13 @@ function imageSize(size, aspect) {
 // Point du rectangle (centre, demi-tailles) le plus proche de p.
 function nearestOnRect(cx, cy, hw, hh, p) {
     return [clamp(p[0], cx - hw, cx + hw), clamp(p[1], cy - hh, cy + hh)];
+}
+
+// Point du cercle (centre, rayon) le plus proche de p (p lui-même s'il est dedans).
+function nearestOnCircle(cx, cy, r, p) {
+    const d = Math.hypot(p[0] - cx, p[1] - cy);
+    if (d <= r) return [p[0], p[1]];
+    return [cx + (p[0] - cx) * (r / d), cy + (p[1] - cy) * (r / d)];
 }
 
 function anchorCenter(anchor, width, height, cardW, cardH, margin) {
@@ -518,10 +596,13 @@ function insideScreen(p, width, height) {
 //   sideMemo       — facultatif, { timeline, sides } gardé d'une image à
 //                    l'autre : côté `auto` de chaque pile montrée (stopSide).
 // Retour : { cards: [{ photoId, slot, x, y, w, h, frame, scale, rotation,
-// alpha, dx, dy, effectScale, kenBurns, caption, captionAlpha, leader }] },
-// dans l'ordre de dessin (vignettes de la bande d'abord). x, y : centre ;
-// w, h : image sans cadre ; frame : marges en px réels ; scale : réduction
-// d'une vignette ; leader : { from, to } en px réels, ou null.
+// alpha, dx, dy, effectScale, kenBurns, kenBurnsShift, caption,
+// captionAlpha, leader, pinned, round, pinSize, badge }] }, dans l'ordre de
+// dessin (vignettes de la bande d'abord). x, y : centre ; w, h : image sans
+// cadre ; frame : marges en px réels ; scale : réduction d'une vignette ;
+// leader : { from, to } en px réels, ou null ; round (0..1) : part du
+// médaillon (vignette ronde) dans le fondu depuis la carte, pinSize son
+// diamètre (px réels) ; badge : nombre de photos d'une vignette regroupée.
 export function photoFrameAt(timeline, qf, display, view) {
     const out = { cards: [] };
     if (!timeline || display.layout === PHOTO_LAYOUT_NONE) return out;
@@ -553,7 +634,7 @@ export function photoFrameAt(timeline, qf, display, view) {
             photoId: slot.photoId, slot: slot.order, x: 0, y: 0, w, h, frame,
             cardW: w + 2 * frame.side, cardH: h + frame.top + frame.bottom,
             scale: 1, rotation: tilt(slot), alpha: 1, dx: 0, dy: 0, effectScale: 1,
-            kenBurns: null, pan, caption, captionAlpha: 1, leader: null,
+            kenBurns: null, kenBurnsShift: 0, pan, caption, captionAlpha: 1, leader: null,
         };
     };
 
@@ -581,9 +662,15 @@ export function photoFrameAt(timeline, qf, display, view) {
     const rectOf = (card) => ({
         x: card.x - card.cardW / 2, y: card.y - card.cardH / 2, width: card.cardW, height: card.cardH,
     });
-    const kenBurns = (slot, endQ) => (display.ken_burns
-        ? 1 + KEN_BURNS_ZOOM * clamp((qf - slot.fromQ) / Math.max(1e-9, endQ - slot.fromQ), 0, 1)
-        : null);
+    // Zoom lent posé sur la carte : `kenBurns` (agrandissement) et
+    // `kenBurnsShift` (kenBurnsMotion).
+    const kenBurns = (card, slot, endQ) => {
+        if (!display.ken_burns) return;
+        const t = (qf - slot.fromQ) / Math.max(1e-9, endQ - slot.fromQ);
+        const motion = kenBurnsMotion(slot.order, t, { panorama: card.pan != null });
+        card.kenBurns = motion.scale;
+        card.kenBurnsShift = motion.shift;
+    };
 
     if (display.layout === PHOTO_LAYOUT_STRIP) {
         // Repère d'une photo de la bande, pour l'effet `pop`.
@@ -627,7 +714,10 @@ export function photoFrameAt(timeline, qf, display, view) {
     };
     const setLeader = (card, stop) => {
         if (!insideScreen(stop, width, height)) return;
-        const to = nearestOnRect(card.x, card.y, card.cardW * card.scale / 2, card.cardH * card.scale / 2, stop);
+        // Médaillon : jusqu'au bord du cercle, pas au coin de son carré.
+        const to = card.round >= 1
+            ? nearestOnCircle(card.x, card.y, card.pinSize / 2, stop)
+            : nearestOnRect(card.x, card.y, card.cardW * card.scale / 2, card.cardH * card.scale / 2, stop);
         if (Math.hypot(to[0] - stop[0], to[1] - stop[1]) > 4 * ratio) card.leader = { from: stop, to };
     };
 
@@ -637,6 +727,9 @@ export function photoFrameAt(timeline, qf, display, view) {
     const landing = [];
     const shown = [];
     const pinPx = display.pin_size * ratio;
+    const round = display.pin_shape === 'round';
+    // Vignettes posées, par pile : { cards, stop, count, x, y } (groupPins).
+    const pinEntries = [];
     for (const pile of photoPiles(timeline)) {
         const first = pile[0];
         const last = pile[pile.length - 1];
@@ -673,23 +766,24 @@ export function photoFrameAt(timeline, qf, display, view) {
         // (pinDirection), en petite pile. Position strictement relative à
         // l'étape : rognée par le bord de l'écran plutôt que déplacée, pour
         // ne jamais glisser par rapport à la carte.
+        // Médaillon : un seul par étape, chaque photo se pose sur la précédente.
         const pinOf = (k) => {
             const [dx, dy] = first.route ? PIN_DIRECTIONS[0] : pinDirection(timeline, first.stop);
-            const half = pinPx * (0.5 + PIN_SPREAD);
+            const half = pinPx * (round ? 0.5 : 0.5 + PIN_SPREAD);
             const p = stop || [width / 2, height / 2];
-            const [ox, oy] = STACK_OFFSETS[k % STACK_OFFSETS.length];
+            const [ox, oy] = round ? [0, 0] : STACK_OFFSETS[k % STACK_OFFSETS.length];
             const scale = pinPx / Math.max(cards[k].cardW, cards[k].cardH);
             return {
                 x: p[0] + dx * (half + PIN_GAP * ratio) + ox * pinPx,
                 y: p[1] + dy * (half + PIN_GAP * ratio) + oy * pinPx,
-                rotation: display.tilt ? STACK_TILT_DEG[k % STACK_TILT_DEG.length] * Math.PI / 180 : 0,
+                rotation: !round && display.tilt ? STACK_TILT_DEG[k % STACK_TILT_DEG.length] * Math.PI / 180 : 0,
                 scale,
             };
         };
         // Fin d'affichage (avant la sortie) : la pile part d'un bloc.
         const endOf = (slot) => (display.stack ? last.toQ : slot.toQ);
         let top = null;
-        let topPin = null;
+        const pilePins = [];
         pile.forEach((slot, k) => {
             if (qf < slot.fromQ) return;
             const card = cards[k];
@@ -706,11 +800,16 @@ export function photoFrameAt(timeline, qf, display, view) {
                 card.scale = 1 + (to.scale - 1) * t;
                 card.captionAlpha = 1 - land;
                 card.pinned = land >= 1;
+                if (round) {
+                    // Fondu de la carte vers le médaillon pendant la fin de
+                    // la descente ; le médaillon suit la taille de la carte.
+                    card.round = clamp((land - ROUND_FROM) / (1 - ROUND_FROM), 0, 1);
+                    card.pinSize = Math.max(card.cardW, card.cardH) * card.scale;
+                }
                 if (!card.pinned) {
                     landing.push(card);
                 } else if (!stop || onScreen(card, width, height)) {
-                    pinned.push(card);
-                    topPin = card;
+                    pilePins.push(card);
                 }
                 return;
             }
@@ -721,20 +820,69 @@ export function photoFrameAt(timeline, qf, display, view) {
             }
             const exit = (end + PHOTO_FADE_Q - qf) / PHOTO_FADE_Q;
             applyEffect(card, Math.min((qf - slot.fromQ) / PHOTO_FADE_Q, exit), rectOf(card), stop);
-            card.kenBurns = kenBurns(slot, end + PHOTO_FADE_Q);
+            kenBurns(card, slot, end + PHOTO_FADE_Q);
             if (card.alpha <= 0) return;
             if (display.leader && !pileCenter) setLeader(card, stop);
             shown.push(card);
             top = card;
         });
         if (top && display.leader && pileCenter) setLeader(top, stop);
-        if (topPin) setLeader(topPin, stop);
+        if (pilePins.length) {
+            const topPin = pilePins[pilePins.length - 1];
+            pinEntries.push({
+                // Médaillon : seul celui du dessus se voit.
+                cards: round ? [topPin] : pilePins, stop, count: pilePins.length, x: topPin.x, y: topPin.y,
+            });
+        }
     }
     if (memo) {
         for (const key of memo.sides.keys()) if (!activePiles.has(key)) memo.sides.delete(key);
     }
+    const groups = display.pin_group ? groupPins(pinEntries, pinPx * PIN_GROUP_REACH) : pinEntries;
+    for (const group of groups) {
+        const topPin = group.cards[group.cards.length - 1];
+        // Nombre de photos : sur tout médaillon qui en porte plusieurs, sur
+        // une carte quand elle en a absorbé d'autres (sa pile se voit déjà).
+        if (round ? group.count > 1 : group.merged) topPin.badge = group.count;
+        setLeader(topPin, group.stop);
+        pinned.push(...group.cards);
+    }
     out.cards.push(...pinned, ...landing, ...shown);
     return out;
+}
+
+// Regroupement des vignettes (`pin_group`) : en partant de la plus récente,
+// une vignette dont le centre tombe à moins de `reach` px d'une vignette
+// gardée s'y ajoute (son nombre de photos compte, elle n'est plus dessinée).
+// Grille de `reach` px : chaque vignette ne regarde que ses 9 cases. →
+// groupes gardés dans l'ordre chronologique (les récents par-dessus), avec
+// `count` cumulé et `merged`.
+function groupPins(entries, reach) {
+    const kept = [];
+    const grid = new Map();
+    const cell = (v) => Math.floor(v / reach);
+    for (let i = entries.length - 1; i >= 0; i--) {
+        const entry = entries[i];
+        const cx = cell(entry.x);
+        const cy = cell(entry.y);
+        let host = null;
+        for (let gx = cx - 1; gx <= cx + 1 && !host; gx++) {
+            for (let gy = cy - 1; gy <= cy + 1 && !host; gy++) {
+                host = (grid.get(`${gx},${gy}`) || []).find((g) => Math.hypot(g.x - entry.x, g.y - entry.y) < reach) || null;
+            }
+        }
+        if (host) {
+            host.count += entry.count;
+            host.merged = true;
+            continue;
+        }
+        const group = { ...entry, merged: false };
+        kept.push(group);
+        const key = `${cx},${cy}`;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(group);
+    }
+    return kept.reverse();
 }
 
 // Pile (près de l'étape, emplacement fixe) : les photos d'une étape se
@@ -750,13 +898,18 @@ export function photoFrameAt(timeline, qf, display, view) {
 // la pile entière) descend en PIN_LAND_Q quanta vers une petite pile posée
 // à côté de son étape, et y reste jusqu'à la fin, attachée à l'étape (elle
 // suit la carte : rognée au bord de l'écran plutôt que déplacée), avec un
-// trait vers l'étape.
+// trait vers l'étape. En médaillon (`pin_shape: 'round'`), la carte se fond
+// dans un rond à la fin de sa descente ; un médaillon par étape.
 const STACK_OFFSETS = [[0, 0], [0.07, -0.05], [-0.06, 0.05], [0.05, 0.07], [-0.07, -0.06], [0.03, -0.08]];
 const STACK_TILT_DEG = [-3, 4, -5.5, 2.5, 6, -4];
 const STACK_SPREAD = 0.08;
 const PIN_SPREAD = 0.08;
 const PIN_GAP = 8;        // px CSS entre l'étape et sa vignette
 export const PIN_LAND_Q = 4;
+const ROUND_FROM = 0.5;   // part de la descente où commence le fondu vers le médaillon
+// Deux vignettes se regroupent quand leurs centres sont à moins de cette
+// part de leur taille (elles se recouvrent d'un bon quart).
+export const PIN_GROUP_REACH = 0.75;
 
 function onScreen(card, width, height) {
     const r = Math.max(card.cardW, card.cardH) * card.scale;
@@ -920,7 +1073,7 @@ function stripCards(out, slots, qf, display, ctx) {
             card.y = bigY;
             applyEffect(card, enter, rectOf(card), originOf(m.slot));
         }
-        card.kenBurns = kenBurns(m.slot, m.slot.toQ);
+        kenBurns(card, m.slot, m.slot.toQ);
         if (card.alpha > 0) big.push(card);
     }
     out.cards.push(...big);

@@ -10,6 +10,8 @@ import {
     cardPhotos,
     isFullFrame,
     isPanorama,
+    kenBurnsMotion,
+    kenBurnsRect,
     panoramaRect,
     normalizePhotoDisplay,
     photoAspect,
@@ -17,6 +19,7 @@ import {
     photoCrop,
     photoCropRect,
     photoDisplayPreset,
+    photoFlashesAt,
     photoFrameAt,
     photoFrameMetrics,
     photoScreenTime,
@@ -25,7 +28,9 @@ import {
     photoTimelineOptions,
     pinDirection,
 } from '../../static/js/parcours_photo_layout.mjs';
-import { drawPhotoCard, drawPhotoLeader } from '../../static/js/parcours_photo_draw.mjs';
+import {
+    drawPhotoCard, drawPhotoLeader, drawPhotoMedallion, drawPinBadge, drawShutterFlash,
+} from '../../static/js/parcours_photo_draw.mjs';
 
 const round = (r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, Math.round(v * 100) / 100]));
 
@@ -391,6 +396,134 @@ test('dessin : cadres, légende, trait, sans erreur sur un contexte factice', ()
     drawPhotoCard(ctx, card, { naturalWidth: 0, naturalHeight: 0 }, {});
     assert.equal(calls.length, 0);
     assert.ok(card.alpha === 1 && PHOTO_FADE_Q > 0);
+});
+
+test('vignettes rondes : un médaillon par étape, fondu depuis la carte, nombre de photos', () => {
+    const display = normalizePhotoDisplay({ pin: true, pin_shape: 'round' });
+    assert.equal(PHOTO_DISPLAY_DEFAULTS.pin_shape, 'card');
+    assert.equal(normalizePhotoDisplay({ pin_shape: 'hexagon' }).pin_shape, 'card');
+    // Début de la descente (photo 1 finie à 27) : encore la carte.
+    let landing = photoFrameAt(timeline(), 28, display, VIEW).cards.find((c) => c.photoId === 1);
+    assert.equal(landing.round, 0);
+    // Fin de la descente : fondu engagé, médaillon de la taille de la carte.
+    landing = photoFrameAt(timeline(), 30.5, display, VIEW).cards.find((c) => c.photoId === 1);
+    assert.ok(landing.round > 0 && landing.round < 1);
+    assert.ok(Math.abs(landing.pinSize - Math.max(landing.cardW, landing.cardH) * landing.scale) < 1e-9);
+    // Posé : rond plein, 72 px, droit, au-dessus à droite de l'étape (500, 300).
+    let [pin] = photoFrameAt(timeline(), 35, display, VIEW).cards;
+    assert.equal(pin.photoId, 1);
+    assert.equal(pin.round, 1);
+    assert.ok(Math.abs(pin.pinSize - 72) < 1e-9);
+    assert.equal(pin.rotation, 0);
+    assert.ok(pin.x > 500 && pin.y < 300 && pin.leader);
+    assert.equal(pin.badge, undefined);   // une seule photo posée
+    // Deux photos posées à l'étape : un seul médaillon (la dernière), « 2 ».
+    const cards = photoFrameAt(timeline(), 90, display, VIEW).cards;
+    assert.deepEqual(cards.map((c) => [c.photoId, !!c.pinned]), [[2, true], [3, false]]);
+    [pin] = cards;
+    assert.equal(pin.badge, 2);
+    assert.ok(Math.abs(pin.x - photoFrameAt(timeline(), 35, display, VIEW).cards[0].x) < 1e-9); // même place
+});
+
+test('regroupement des vignettes : celles qui se chevauchent rejoignent la plus récente', () => {
+    // Les deux étapes à 20 px l'une de l'autre (vue d'ensemble).
+    const close = { ...VIEW, stopPixel: (i) => (i === 0 ? [500, 300] : [520, 300]) };
+    const tl = timeline();
+    tl.stops[1].q = 50;
+    tl.stops[1].departQ = 75;
+    const after = 75;
+    // Médaillons : un seul reste, celui de l'étape 2, qui compte les 3 photos.
+    const round = normalizePhotoDisplay({ pin: true, pin_shape: 'round' });
+    let pins = photoFrameAt(tl, after, round, close).cards.filter((c) => c.pinned);
+    assert.deepEqual(pins.map((c) => [c.photoId, c.badge]), [[3, 3]]);
+    assert.ok(pins[0].leader);
+    // Sans regroupement : les deux médaillons, chacun son compte.
+    pins = photoFrameAt(tl, after, { ...round, pin_group: false }, close).cards.filter((c) => c.pinned);
+    assert.deepEqual(pins.map((c) => [c.photoId, c.badge]), [[2, 2], [3, undefined]]);
+    // Cartes : la petite pile la plus récente reste, avec le total.
+    const card = normalizePhotoDisplay({ pin: true });
+    pins = photoFrameAt(tl, after, card, close).cards.filter((c) => c.pinned);
+    assert.deepEqual(pins.map((c) => [c.photoId, c.badge]), [[3, 3]]);
+    // Étapes éloignées : rien de regroupé, pas de nombre sur une carte.
+    pins = photoFrameAt(tl, after, card, VIEW).cards.filter((c) => c.pinned);
+    assert.deepEqual(pins.map((c) => [c.photoId, c.badge]), [[1, undefined], [2, undefined], [3, undefined]]);
+});
+
+test('zoom lent : avancée, recul et travelling en alternance, vers le point focal', () => {
+    assert.deepEqual([0, 1, 2, 3, 4, 5].map((n) => kenBurnsMotion(n, 0.5).motion),
+        ['in', 'out', 'drift', 'in', 'out', 'drift']);
+    assert.equal(kenBurnsMotion(0, 0).scale, 1);
+    assert.ok(Math.abs(kenBurnsMotion(0, 1).scale - 1.08) < 1e-9);
+    assert.ok(Math.abs(kenBurnsMotion(1, 0).scale - 1.08) < 1e-9);
+    assert.equal(kenBurnsMotion(1, 1).scale, 1);
+    // Travelling : fenêtre serrée constante, d'un bord à l'autre, sens alterné.
+    assert.deepEqual([kenBurnsMotion(2, 0).shift, kenBurnsMotion(2, 1).shift], [-1, 1]);
+    assert.deepEqual([kenBurnsMotion(5, 0).shift, kenBurnsMotion(5, 1).shift], [1, -1]);
+    // Panorama : avancée seule.
+    assert.equal(kenBurnsMotion(2, 0.5, { panorama: true }).motion, 'in');
+    // Fenêtre : point focal au milieu → centrée ; point focal à gauche
+    // (photo entière) → le zoom va vers lui, il garde sa place.
+    const natural = { width: 4000, height: 3000 };
+    const full = { x: 0, y: 0, width: 4000, height: 3000 };
+    assert.deepEqual(kenBurnsRect(full, natural, {}, 1.25), { x: 400, y: 300, width: 3200, height: 2400 });
+    const left = kenBurnsRect(full, natural, { focusX: 20, focusY: 50 }, 1.25);
+    assert.equal(left.x, 160);
+    assert.equal((800 - left.x) / left.width, 0.2);
+    // Travelling : d'un bord de la marge à l'autre.
+    assert.equal(kenBurnsRect(full, natural, {}, 1.25, -1).x, 0);
+    assert.equal(kenBurnsRect(full, natural, {}, 1.25, 1).x, 800);
+    assert.equal(kenBurnsRect(full, natural, {}, 1), full);
+    // Sur les cartes : rang 1 en recul.
+    const display = normalizePhotoDisplay({ ken_burns: true });
+    const second = photoFrameAt(timeline(), 28, display, VIEW).cards.find((c) => c.photoId === 2);
+    assert.ok(second.kenBurns > 1.07 && second.kenBurnsShift === 0);
+});
+
+test('éclair de l’étape : à l’arrivée de chaque photo, quelques quanta', () => {
+    assert.equal(PHOTO_DISPLAY_DEFAULTS.flash, false);
+    assert.deepEqual(photoFlashesAt(timeline(), 11), []);
+    assert.deepEqual(photoFlashesAt(timeline(), 14).map((f) => [f.slot.photoId, f.progress]), [[1, 0.4]]);
+    assert.deepEqual(photoFlashesAt(timeline(), 17), []);
+    assert.deepEqual(photoFlashesAt(timeline(), 27).map((f) => f.slot.photoId), [2]);
+    assert.deepEqual(photoFlashesAt(timeline(), 84).map((f) => f.slot.photoId), [3]);
+    assert.deepEqual(photoFlashesAt({ stops: [] }, 5), []);
+});
+
+test('dessin : médaillon, nombre de photos, éclair', () => {
+    const calls = [];
+    const ctx = new Proxy({}, {
+        get(target, key) {
+            if (key in target) return target[key];
+            if (key === 'measureText') return (text) => ({ width: text.length * 7 });
+            if (key === 'createRadialGradient') return () => ({ addColorStop() {} });
+            return (...args) => calls.push([key, ...args]);
+        },
+        set(target, key, value) {
+            target[key] = value;
+            return true;
+        },
+    });
+    const img = { naturalWidth: 400, naturalHeight: 300 };
+    const display = normalizePhotoDisplay({ pin: true, pin_shape: 'round' });
+    const [pin] = photoFrameAt(timeline(), 90, display, VIEW).cards;
+    drawPhotoMedallion(ctx, pin, img, {}, { ring: '#c2410c' });
+    // Image carrée (cadrage 1:1), dans le cercle.
+    const draw = calls.find((c) => c[0] === 'drawImage');
+    assert.deepEqual(draw.slice(2, 6), [50, 0, 300, 300]);
+    assert.ok(draw[8] < 72 && Math.abs(draw[8] - draw[9]) < 1e-9);
+    assert.ok(calls.some((c) => c[0] === 'clip'));
+    calls.length = 0;
+    drawPinBadge(ctx, pin, { color: '#c2410c' });
+    assert.ok(calls.some((c) => c[0] === 'fillText' && c[1] === '2'));
+    calls.length = 0;
+    drawPinBadge(ctx, { ...pin, badge: 140 });
+    assert.ok(calls.some((c) => c[0] === 'fillText' && c[1] === '99+'));
+    calls.length = 0;
+    drawShutterFlash(ctx, [10, 10], 0.3);
+    assert.ok(calls.some((c) => c[0] === 'arc') && calls.some((c) => c[0] === 'stroke'));
+    calls.length = 0;
+    drawShutterFlash(ctx, [10, 10], 1);
+    assert.equal(calls.length, 0);
 });
 
 test('panoramas : fenêtre 16:9 qui parcourt l’image pendant le créneau', () => {

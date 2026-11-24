@@ -7,7 +7,7 @@
 // ce qui est peint là est filmé tel quel par les deux pipelines
 // d'enregistrement. Aucune dépendance au DOM ni à OpenLayers.
 
-import { panoramaRect, photoCropRect } from './parcours_photo_layout.mjs';
+import { kenBurnsRect, panoramaRect, photoCropRect } from './parcours_photo_layout.mjs';
 
 function roundRectPath(ctx, x, y, w, h, r) {
     const radius = Math.max(0, Math.min(r, w / 2, h / 2));
@@ -92,6 +92,115 @@ function fitText(ctx, text, maxWidth) {
     return `${text.slice(0, lo).trimEnd()}…`;
 }
 
+// Vignette ronde (`pin_shape: 'round'`) : la photo en médaillon, au
+// cadrage carré de la photo (point focal), liseré blanc, cerclée de `ring`
+// (couleur de la journée). Opacité : celle de la carte × `round` (fondu
+// depuis la carte pendant la descente).
+export function drawPhotoMedallion(ctx, card, img, photo, { ring = '#ffffff', ratio = 1 } = {}) {
+    const alpha = card.alpha * (card.round ?? 1);
+    if (!img || alpha <= 0 || !(card.pinSize > 0)) return;
+    const natural = { width: img.naturalWidth || img.width || 0, height: img.naturalHeight || img.height || 0 };
+    if (!natural.width || !natural.height) return;
+    const src = photoCropRect(natural, { ...(photo || {}), aspect: '1:1' });
+    const x = card.x + card.dx;
+    const y = card.y + card.dy;
+    const r = card.pinSize / 2;
+    const ringW = Math.max(2 * ratio, r * 0.11);
+    const inner = r - ringW - Math.max(1.5 * ratio, r * 0.05);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    ctx.shadowBlur = 6 * ratio;
+    ctx.shadowOffsetY = 2 * ratio;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = ring;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.beginPath();
+    ctx.arc(x, y, r - ringW, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, inner, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, src.x, src.y, src.width, src.height, x - inner, y - inner, inner * 2, inner * 2);
+    ctx.restore();
+}
+
+// Nombre de photos d'une vignette (`badge`) : pastille au coin haut-droit
+// (sur le cercle d'un médaillon), fond `color`, texte `text`, liseré blanc.
+export function drawPinBadge(ctx, card, { color = '#212529', text = '#ffffff', font = 'sans-serif', ratio = 1 } = {}) {
+    if (!card.badge || card.alpha <= 0) return;
+    const label = card.badge > 99 ? '99+' : String(card.badge);
+    const round = (card.round ?? 0) >= 1;
+    const r = round ? card.pinSize / 2 : 0;
+    const x = card.x + card.dx + (round ? r * Math.SQRT1_2 : card.cardW * card.scale / 2);
+    const y = card.y + card.dy - (round ? r * Math.SQRT1_2 : card.cardH * card.scale / 2);
+    const size = Math.max(10 * ratio, (round ? card.pinSize : Math.max(card.cardW, card.cardH) * card.scale) * 0.16);
+    ctx.save();
+    ctx.globalAlpha = card.alpha;
+    ctx.font = `700 ${size}px ${font}`;
+    const h = size * 1.5;
+    const w = Math.max(h, ctx.measureText(label).width + size * 0.9);
+    roundRectPath(ctx, x - w / 2, y - h / 2, w, h, h / 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = Math.max(1, 1.5 * ratio);
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+    ctx.fillStyle = text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y + size * 0.05);
+    ctx.restore();
+}
+
+// Éclair de déclencheur sur l'étape (`flash`), à `progress` (0..1) : un
+// halo blanc et une étoile à quatre branches effilées qui s'éteignent, et un
+// anneau qui s'élargit.
+export function drawShutterFlash(ctx, point, progress, ratio = 1) {
+    const k = Math.min(1, Math.max(0, progress));
+    const alpha = (1 - k) ** 1.4;
+    if (!point || alpha <= 0) return;
+    const [x, y] = point;
+    const r = (14 + 22 * Math.sqrt(k)) * ratio;
+    ctx.save();
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r);
+    glow.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+    glow.addColorStop(0.4, `rgba(255, 255, 255, ${0.6 * alpha})`);
+    glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Étoile : branches longues sur les axes, plus courtes en diagonale.
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    const long = r * 1.35;
+    const short = r * 0.7;
+    const waist = r * 0.13;
+    for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4;
+        const reach = i % 2 ? short : long;
+        ctx.lineTo(x + Math.cos(angle) * reach, y + Math.sin(angle) * reach);
+        ctx.lineTo(x + Math.cos(angle + Math.PI / 8) * waist, y + Math.sin(angle + Math.PI / 8) * waist);
+    }
+    ctx.closePath();
+    ctx.fill();
+    // Anneau : part de l'étape, s'élargit et s'amincit.
+    ctx.globalAlpha = alpha * 0.8;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = Math.max(1, 3 * (1 - k)) * ratio;
+    ctx.beginPath();
+    ctx.arc(x, y, (8 + 40 * k) * ratio, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+}
+
 // Trait fin de l'étape vers la carte, avec un point sur l'étape.
 export function drawPhotoLeader(ctx, card, ratio = 1) {
     if (!card.leader || card.alpha <= 0) return;
@@ -127,9 +236,8 @@ export function drawPhotoCard(ctx, card, img, photo, { font = 'sans-serif', rati
     // carte, qui glisse le long de l'image.
     let src = card.pan != null ? panoramaRect(natural, card.w / card.h, card.pan) : photoCropRect(natural, photo);
     if (card.kenBurns && card.kenBurns > 1) {
-        const w = src.width / card.kenBurns;
-        const h = src.height / card.kenBurns;
-        src = { x: src.x + (src.width - w) / 2, y: src.y + (src.height - h) / 2, width: w, height: h };
+        // Panorama : le point focal n'a pas cours, la fenêtre le parcourt déjà.
+        src = kenBurnsRect(src, natural, card.pan != null ? null : photo, card.kenBurns, card.kenBurnsShift || 0);
     }
     const { frame, w, h } = card;
     const cardW = w + 2 * frame.side;

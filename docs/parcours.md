@@ -1012,12 +1012,15 @@ surcharge). Clés :
 | `leader` | trait de l'étape vers la carte (près de l'étape, emplacement fixe) : `false` |
 | `stack` | pile (près de l'étape, emplacement fixe) : les photos d'une étape se posent les unes sur les autres, décalées et inclinées selon leur rang, et la pile s'efface d'un bloc après la dernière : `false` |
 | `pin`, `pin_size` | vignettes sur la carte (près de l'étape, emplacement fixe) : au lieu de s'effacer, chaque photo (la pile entière avec `stack`) descend en 4 quanta vers une petite pile attachée à son étape, et y reste jusqu'à la fin ; grand côté 40-160 px CSS : `false`, 72 |
+| `pin_shape` | forme des vignettes : `card` (la carte en petit, en petite pile inclinée) ou `round` (médaillon : voir ci-dessous) : `card` |
+| `pin_group` | regroupement des vignettes qui se chevauchent à l'écran (voir ci-dessous) : `true` |
 | `strip_edge`, `strip_reset` | bande : `bottom` / `top` ; vidée à l'arrivée sur la première étape d'une nouvelle journée : `false` |
 | `size` | grand côté de l'image, 120-600 px CSS : 220 |
 | `frame` | `postcard` (marge blanche, ombre), `polaroid` (marge basse épaisse), `rounded` (coins arrondis, ombre), `plain`, `stamp` (timbre : papier blanc dentelé, un chemin creusé de demi-cercles — rien n'est effacé du canevas de la carte), `tape` (marge de carte postale et deux bandes de scotch translucides aux coins du haut), `film` (pellicule : bandes noires perforées en haut et en bas, légende sur bandeau) |
 | `tilt` | ± 2,5° en alternance : `true` |
 | `effect` | `fade`, `slide`, `zoom` (courbes d'`images_render.mjs`), `pop` (« Depuis l'étape » : la photo sort du point de son étape en grandissant, avec un léger rebond, et y rentre à la sortie ; repli sur `zoom` quand l'étape est hors de l'écran ; en bande, elle part de son étape vers sa place en grand) |
-| `ken_burns` | zoom lent (+ 8 %) pendant l'affichage : `false` |
+| `ken_burns` | zoom lent pendant l'affichage, mouvement alterné d'une photo à l'autre (voir ci-dessous) : `false` |
+| `flash` | éclair de déclencheur sur l'étape (ou le point d'arrêt d'une photo en chemin) à l'arrivée de chaque photo, 5 quanta (`photoFlashesAt`, `drawShutterFlash`), sous les cartes ; coupé en mouvement réduit ; relevé `photoFlashes` : `false` |
 | `duration`, `max_per_stop` | 1,5 s par photo (0,5-6), 4 photos au plus en temps cumulé par étape (1-12) |
 | `overflow` | au-delà du plafond : `share` (toutes, chacune plus brève), `first` (les favorites puis les premières prises, à leur durée entière, montrées dans l'ordre de prise de vue ; les suivantes n'ont pas de créneau, donc ni pile, ni vignette, ni repère sur la barre) |
 | `en_route` | photos prises en chemin (voir ci-dessous) : `false` |
@@ -1077,6 +1080,32 @@ surcharge). Clés :
   plutôt que déplacée (elle ne glisse jamais par rapport à la carte), plus
   dessinée quand elle est hors de l'écran. Peintes depuis les miniatures
   (320 px), sous les photos montrées.
+- **Médaillons** (`pin_shape: 'round'`) : un par étape, sans décalage ni
+  inclinaison — chaque photo se pose sur la précédente, seule celle du
+  dessus est dessinée. Pendant la seconde moitié de la descente, la carte
+  s'efface et le médaillon paraît à sa taille (`round` 0..1, `pinSize`) ;
+  posé, il fait `pin_size` de diamètre. Photo au cadrage carré (point
+  focal), liseré blanc, cercle de la couleur de la journée
+  (`dayColor` de la palette du style, journée de l'étape ou du trajet
+  d'une photo en chemin — que les étapes soient colorées par journée ou
+  non). Le trait vers l'étape s'arrête au bord du cercle. Nombre de photos
+  (`badge`) dans une pastille de la même couleur dès que le médaillon en
+  porte plusieurs.
+- **Regroupement** (`pin_group`, `groupPins`) : à chaque image, en partant
+  de la plus récente, une vignette (la pile d'une étape) dont le centre
+  tombe à moins de 0,75 × `pin_size` d'une vignette gardée s'y ajoute et
+  n'est plus dessinée — sa pile compte dans le nombre affiché par la
+  gardée (médaillon : toujours ; carte : seulement quand elle en a absorbé
+  d'autres, sa propre pile se voit déjà). En pixels écran : la vue
+  d'ensemble regroupe, le zoom sépare. Grille de la taille du seuil, 9
+  cases regardées par vignette.
+- **Zoom lent** (`ken_burns`, `kenBurnsMotion`) : selon le rang de la
+  photo, en alternance, avancée (+ 8 %), recul (− 8 %) ou travelling
+  (fenêtre serrée de 12 % qui glisse d'un bord à l'autre, adouci, sens
+  alterné à chaque cycle) ; un panorama n'a que l'avancée. La fenêtre
+  (`kenBurnsRect`) garde le point focal du cadrage à sa place : le zoom va
+  vers lui (centré pour un point focal au milieu). Relevé `kenBurns`,
+  `kenBurnsShift` des `photoCards`.
 - **Légende** (`photoCaptionText`) : une balise vide ne laisse pas de
   séparateur orphelin. `{heure}` : celle de la photo si elle est
   datée, sinon celle de l'étape (« ≈ » selon « Heures affichées »).

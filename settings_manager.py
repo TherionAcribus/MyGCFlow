@@ -381,6 +381,7 @@ PARCOURS_PHOTO_STRIP_EDGES = ("bottom", "top")
 PARCOURS_PHOTO_FRAMES = ("postcard", "polaroid", "rounded", "plain", "stamp", "tape", "film")
 PARCOURS_PHOTO_EFFECTS = ("fade", "slide", "zoom", "pop")
 PARCOURS_PHOTO_OVERFLOWS = ("share", "first")
+PARCOURS_PHOTO_PIN_SHAPES = ("card", "round")
 PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "layout": "stop",
     "side": "auto",
@@ -391,11 +392,14 @@ PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "stack": False,
     "pin": False,
     "pin_size": 72,
+    "pin_shape": "card",
+    "pin_group": True,
     "size": 220,
     "frame": "postcard",
     "tilt": True,
     "effect": "fade",
     "ken_burns": False,
+    "flash": False,
     "duration": 1.5,
     "max_per_stop": 4,
     "overflow": "share",
@@ -725,9 +729,10 @@ _PHOTO_DISPLAY_CHOICES = {
     "frame": PARCOURS_PHOTO_FRAMES,
     "effect": PARCOURS_PHOTO_EFFECTS,
     "overflow": PARCOURS_PHOTO_OVERFLOWS,
+    "pin_shape": PARCOURS_PHOTO_PIN_SHAPES,
 }
 _PHOTO_DISPLAY_FLAGS = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns", "en_route", "pano_pan",
-                        "day_recap")
+                        "day_recap", "pin_group", "flash")
 _PHOTO_DISPLAY_NUMBERS = {
     "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
     "pin_size": (PARCOURS_PHOTO_PIN_SIZE_RANGE, int),

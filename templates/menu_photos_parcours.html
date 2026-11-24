@@ -218,10 +218,27 @@
                             <span class="form-hint text-muted">{{ _("Les photos d'une étape s'y posent en petit, du côté le moins encombré par le trajet, et y restent.") }}</span>
                         </label>
                         <div class="mb-2 ms-4" id="parcoursPhotoPinSizeRow">
-                            <label class="form-label small mb-1" for="parcoursPhotoPinSize">
-                                {{ _("Taille des vignettes") }} <span id="parcoursPhotoPinSizeValue" class="text-muted"></span>
+                            <div class="row g-2 mb-1">
+                                <div class="col-6">
+                                    <label class="form-label small mb-1" for="parcoursPhotoPinShape">{{ _("Forme") }}</label>
+                                    <select id="parcoursPhotoPinShape" class="form-select form-select-sm">
+                                        <option value="card">{{ _("Petite carte") }}</option>
+                                        <option value="round">{{ _("Médaillon rond") }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small mb-1" for="parcoursPhotoPinSize">
+                                        {{ _("Taille des vignettes") }} <span id="parcoursPhotoPinSizeValue" class="text-muted"></span>
+                                    </label>
+                                    <input type="range" id="parcoursPhotoPinSize" class="form-range" min="40" max="160" step="4">
+                                </div>
+                            </div>
+                            <span class="form-hint text-muted mb-1">{{ _("Médaillon : un par étape, cerclé de la couleur de la journée, avec le nombre de photos.") }}</span>
+                            <label class="form-check mb-0">
+                                <input type="checkbox" id="parcoursPhotoPinGroup" class="form-check-input">
+                                <span class="form-check-label">{{ _("Regrouper les vignettes qui se chevauchent") }}</span>
+                                <span class="form-hint text-muted">{{ _("Vue d'ensemble, zoom arrière : seule la plus récente reste, avec le nombre de photos regroupées.") }}</span>
                             </label>
-                            <input type="range" id="parcoursPhotoPinSize" class="form-range" min="40" max="160" step="4">
                         </div>
                         <label class="form-check mb-1" id="parcoursPhotoStripResetRow">
                             <input type="checkbox" id="parcoursPhotoStripReset" class="form-check-input">
@@ -271,6 +288,12 @@
                         <label class="form-check mb-2">
                             <input type="checkbox" id="parcoursPhotoKenBurns" class="form-check-input">
                             <span class="form-check-label">{{ _("Zoom lent pendant l'affichage") }}</span>
+                            <span class="form-hint text-muted">{{ _("Avancée, recul ou travelling, en alternance d'une photo à l'autre, centrés sur le point d'intérêt du cadrage.") }}</span>
+                        </label>
+                        <label class="form-check mb-2">
+                            <input type="checkbox" id="parcoursPhotoFlash" class="form-check-input">
+                            <span class="form-check-label">{{ _("Éclair sur l'étape") }}</span>
+                            <span class="form-hint text-muted">{{ _("Un bref éclair, comme un flash d'appareil, à l'arrivée de chaque photo.") }}</span>
                         </label>
                         <label class="form-check mb-2">
                             <input type="checkbox" id="parcoursPhotoPanoPan" class="form-check-input">
