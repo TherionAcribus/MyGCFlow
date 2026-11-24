@@ -1260,6 +1260,47 @@ export function createParcoursPlayDraw(deps) {
         return dayColor(index, paints.stopStyle().day_palette);
     }
 
+    // Vignettes posées, préparées une fois : réduire la miniature en qualité
+    // haute (et flouter l'ombre) à chaque image coûtait ~0,09 ms par vignette
+    // en rendu logiciel (Chromium sans accélération : 26 ms pour 300 en
+    // 1080p, 77 ms en capture deux fois plus fine), ~0,005 ms en recopie
+    // d'un petit canevas. Clé : tout ce qui change le dessin d'une vignette
+    // posée (image, taille, cadre, inclinaison, forme, cercle) ; l'opacité
+    // est appliquée à la recopie. Oubliées après PIN_SPRITE_IDLE images sans
+    // servir.
+    const PIN_SPRITE_IDLE = 120;
+    const pinSprites = new Map();     // clé → { canvas, img, usedAt }
+    let spriteFrame = 0;
+
+    function pinSprite(card, img, photo, ratio) {
+        if (typeof document === 'undefined') return null;
+        const key = [card.photoId, card.round, card.pinSize, card.scale, card.rotation, card.frame.kind,
+            card.w, card.h, card.ring, ratio].join('|');
+        let entry = pinSprites.get(key);
+        if (!entry || entry.img !== img) {
+            // Le carré qui contient la carte tournée, son ombre et son scotch.
+            const span = card.round >= 1 ? card.pinSize : Math.hypot(card.cardW, card.cardH) * card.scale;
+            const size = Math.ceil(span * 1.15 + 24 * ratio);
+            const canvas = entry?.canvas || document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const sctx = canvas.getContext('2d');
+            const local = { ...card, x: size / 2, y: size / 2, dx: 0, dy: 0, alpha: 1 };
+            if (card.round >= 1) drawPhotoMedallion(sctx, local, img, photo, { ring: card.ring, ratio });
+            else drawPhotoCard(sctx, local, img, photo, { font: pageFontFamily(), ratio });
+            entry = { canvas, img, usedAt: spriteFrame };
+            pinSprites.set(key, entry);
+        }
+        entry.usedAt = spriteFrame;
+        return entry.canvas;
+    }
+
+    function prunePinSprites() {
+        for (const [key, entry] of pinSprites) {
+            if (spriteFrame - entry.usedAt > PIN_SPRITE_IDLE) pinSprites.delete(key);
+        }
+    }
+
     function drawPhotoCards(event) {
         const { timeline, currentQ, photoDisplay } = S();
         lastPhotoCards = [];
@@ -1285,6 +1326,7 @@ export function createParcoursPlayDraw(deps) {
         const { cards } = photoFrameAt(timeline, currentQ, display, view);
         const font = pageFontFamily();
         const slots = photoSlots(timeline);
+        spriteFrame += 1;
         for (const card of cards) {
             const thumb = card.pinned || card.round ? photoThumbs.get(card.photoId) : null;
             const img = imageReady(thumb) ? thumb : photoImages.get(card.photoId);
@@ -1294,16 +1336,23 @@ export function createParcoursPlayDraw(deps) {
             drawPhotoLeader(ctx, card, view.ratio);
             // Vers le médaillon : la carte s'efface pendant qu'il paraît.
             const round = card.round || 0;
-            if (round < 1) {
+            const sprite = card.pinned ? pinSprite(card, img, photo, view.ratio) : null;
+            if (sprite) {
+                ctx.save();
+                ctx.globalAlpha = card.alpha;
+                ctx.drawImage(sprite, card.x + card.dx - sprite.width / 2, card.y + card.dy - sprite.height / 2);
+                ctx.restore();
+            } else if (round < 1) {
                 drawPhotoCard(ctx, round ? { ...card, alpha: card.alpha * (1 - round) } : card, img, photo,
                     { font, ratio: view.ratio });
             }
-            if (round > 0) drawPhotoMedallion(ctx, card, img, photo, { ring: card.ring, ratio: view.ratio });
+            if (round > 0 && !sprite) drawPhotoMedallion(ctx, card, img, photo, { ring: card.ring, ratio: view.ratio });
             if (card.badge) {
                 drawPinBadge(ctx, card, { color: card.ring, text: contrastTextColor(card.ring), font, ratio: view.ratio });
             }
             lastPhotoCards.push(card);
         }
+        if (spriteFrame % 30 === 0) prunePinSprites();
     }
 
     // Aperçu en pause calé sur une photo : la lecture s'ouvre en pause (si
@@ -1324,17 +1373,20 @@ export function createParcoursPlayDraw(deps) {
     function clearImages() {
         photoImages.clear();
         photoThumbs.clear();
+        pinSprites.clear();
     }
 
     function evictImage(id) {
         photoImages.delete(id);
         photoThumbs.delete(id);
+        for (const key of pinSprites.keys()) if (key.startsWith(`${id}|`)) pinSprites.delete(key);
     }
 
     function imageStats() {
         return {
             loaded: [...photoImages.values()].filter(imageReady).length,
             thumbs: [...photoThumbs.values()].filter(imageReady).length,
+            pinSprites: pinSprites.size,
         };
     }
 

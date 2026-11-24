@@ -969,8 +969,10 @@ centre, 100 %).
   réparties sur tout le parcours) — et passe en premier au-delà du
   plafond quand il ne garde que les premières (`photoFavorites` de
   `buildParcoursTimeline`). Choix : `cardPhotos` (parcours_photo_layout.mjs,
-  parmi les photos que la chronologie montre — aucune avec « Aucune photo
-  dans la vidéo »). Sans favorite, les cartons restent du texte. Peintes
+  parmi les photos que la chronologie montre, dans son ordre — photos
+  prises en chemin comprises (`legPauses`), à la journée de l'étape d'où
+  part leur trajet ; aucune avec « Aucune photo dans la vidéo »). Sans
+  favorite, les cartons restent du texte. Peintes
   au-dessus du texte (pleine taille préchargée dès l'ouverture, attendues
   avant un enregistrement, comptées dans les photos manquantes). Relevés :
   `scene.cardPhotos` (choix) et `scene.cardPhotosDrawn` (peintes à la
@@ -1079,7 +1081,23 @@ surcharge). Clés :
   décalage fixe, avec un trait vers elle : rognée par le bord de l'écran
   plutôt que déplacée (elle ne glisse jamais par rapport à la carte), plus
   dessinée quand elle est hors de l'écran. Peintes depuis les miniatures
-  (320 px), sous les photos montrées.
+  (320 px), sous les photos montrées. Photo prise en chemin :
+  `pointPinDirection`, même calcul autour de son point d'arrêt — posée
+  sur son trajet, qui la traverse, sa vignette part en travers (elle
+  allait toujours en haut à droite, souvent sur le trait).
+- **Vignettes préparées** (`pinSprite`, parcours_play.mjs) : une vignette
+  posée est dessinée une fois dans un petit canevas, puis recopiée à
+  chaque image (opacité appliquée à la recopie, trait et nombre dessinés
+  à part). Mesure (2026-11-24, `drawPhotoCard` × 300 vignettes,
+  miniature 320 px, cadre carte postale) : en rendu logiciel (Chromium de
+  Playwright), 26 ms par image en 1080p (dont ~6 ms d'ombre floutée,
+  ~7 ms de réduction en qualité haute, le reste en découpe et tracés),
+  77 ms en capture deux fois plus fine ; recopie : 1,6 et 7 ms. Dans
+  Chrome accéléré, l'écart est noyé dans le bruit (l'ombre y est
+  quasi gratuite). Clé : image, taille, cadre, inclinaison, forme,
+  cercle, résolution (une capture haute résolution prépare les siennes) ;
+  oubliées après 120 images sans servir, et avec l'image (`evictImage`).
+  Relevé : `photosPinSprites` de `getParcoursSnapshot()`.
 - **Médaillons** (`pin_shape: 'round'`) : un par étape, sans décalage ni
   inclinaison — chaque photo se pose sur la précédente, seule celle du
   dessus est dessinée. Pendant la seconde moitié de la descente, la carte

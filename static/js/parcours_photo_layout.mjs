@@ -128,7 +128,8 @@ export function photoAspect(photo) {
 // --- Photos des cartons -----------------------------------------------------------
 
 // Photos favorites des cartons, parmi celles que montre la lecture (dans
-// l'ordre de la chronologie) : { open (carton d'ouverture), days (une par
+// l'ordre de la chronologie, photos prises en chemin comprises — à la
+// journée de l'étape d'où part leur trajet) : { open (carton d'ouverture), days (une par
 // journée, ou null), end (mosaïque de fin, au plus `mosaicMax`, réparties
 // sur tout le parcours) }. Le premier carton de journée ne reprend pas la
 // photo d'ouverture qui vient de le précéder. Sans favorite, rien : les
@@ -141,13 +142,22 @@ export function cardPhotos(timeline, favorites, { mosaicMax = CARD_MOSAIC_MAX } 
     if (!favorites?.size || !timeline?.stops?.length) return empty;
     const shown = [];
     const seen = new Set();
-    for (const stop of timeline.stops) {
-        for (const id of stop.photos || []) {
-            if (!favorites.has(id) || seen.has(id)) continue;
-            seen.add(id);
-            shown.push({ id, day: stop.day });
-        }
+    const add = (id, day) => {
+        if (!favorites.has(id) || seen.has(id)) return;
+        seen.add(id);
+        shown.push({ id, day });
+    };
+    const legsFrom = new Map();
+    for (const leg of timeline.legs || []) {
+        if (!legsFrom.has(leg.from)) legsFrom.set(leg.from, []);
+        legsFrom.get(leg.from).push(leg);
     }
+    timeline.stops.forEach((stop, i) => {
+        for (const id of stop.photos || []) add(id, stop.day);
+        for (const leg of legsFrom.get(i) || []) {
+            for (const pause of legPauses(leg)) add(pause.id, stop.day);
+        }
+    });
     if (!shown.length) return empty;
     const open = shown[0].id;
     for (let d = 0; d < days.length; d++) {
@@ -768,7 +778,7 @@ export function photoFrameAt(timeline, qf, display, view) {
         // ne jamais glisser par rapport à la carte.
         // Médaillon : un seul par étape, chaque photo se pose sur la précédente.
         const pinOf = (k) => {
-            const [dx, dy] = first.route ? PIN_DIRECTIONS[0] : pinDirection(timeline, first.stop);
+            const [dx, dy] = first.route ? pointPinDirection(timeline, first.at) : pinDirection(timeline, first.stop);
             const half = pinPx * (round ? 0.5 : 0.5 + PIN_SPREAD);
             const p = stop || [width / 2, height / 2];
             const [ox, oy] = round ? [0, 0] : STACK_OFFSETS[k % STACK_OFFSETS.length];
@@ -949,20 +959,37 @@ export const PIN_CLEARANCE_KM = 0.5;
 // change ni avec le zoom ni pendant que la caméra suit. → [dx, dy], chacun
 // dans {-1, 0, 1} (une diagonale pose la vignette par son coin).
 const directionCache = new WeakMap();
-export function pinDirection(timeline, index) {
+function directionMemo(timeline, key, compute) {
     let cache = directionCache.get(timeline);
     if (!cache) {
         cache = new Map();
         directionCache.set(timeline, cache);
     }
-    if (cache.has(index)) return cache.get(index);
+    if (!cache.has(key)) cache.set(key, compute());
+    return cache.get(key);
+}
+
+export function pinDirection(timeline, index) {
     const stop = timeline.stops[index];
-    if (!Number.isFinite(stop?.lat) || !Number.isFinite(stop?.lon)) return PIN_DIRECTIONS[0];
+    return directionMemo(timeline, index, () => freestDirection(timeline, stop?.lon, stop?.lat, index));
+}
+
+// Même choix pour le point d'arrêt d'une photo prise en chemin ([lon, lat]) :
+// posé sur son trajet, qui le traverse, la vignette part en travers.
+export function pointPinDirection(timeline, at) {
+    if (!Array.isArray(at)) return PIN_DIRECTIONS[0];
+    return directionMemo(timeline, `${at[0]},${at[1]}`, () => freestDirection(timeline, at[0], at[1], -1));
+}
+
+// Direction la moins encombrée autour de (lon, lat) ; `self` : l'étape
+// elle-même, qui ne compte pas comme obstacle (-1 : aucune).
+function freestDirection(timeline, lon, lat, self) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return PIN_DIRECTIONS[0];
     const R = PIN_CLEARANCE_KM;
-    const kx = 111.32 * Math.cos(stop.lat * Math.PI / 180);
+    const kx = 111.32 * Math.cos(lat * Math.PI / 180);
     const ky = 110.57;
     // Point [lon, lat] → km à l'écran (y vers le bas).
-    const local = (p) => [(p[0] - stop.lon) * kx, -(p[1] - stop.lat) * ky];
+    const local = (p) => [(p[0] - lon) * kx, -(p[1] - lat) * ky];
     const obstacles = [];
     const add = (p, weight = 1) => {
         const d = Math.hypot(p[0], p[1]);
@@ -987,7 +1014,7 @@ export function pinDirection(timeline, index) {
         }
     }
     timeline.stops.forEach((other, i) => {
-        if (i !== index) add(local([other.lon, other.lat]), 2);
+        if (i !== self) add(local([other.lon, other.lat]), 2);
     });
     let best = PIN_DIRECTIONS[0];
     let bestCost = Infinity;
@@ -1003,7 +1030,6 @@ export function pinDirection(timeline, index) {
             bestCost = cost;
         }
     }
-    cache.set(index, best);
     return best;
 }
 

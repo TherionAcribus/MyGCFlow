@@ -496,6 +496,8 @@ test('médaillons, éclair et zoom lent varié : ronds à la couleur de la journ
   expect(medallion.ring).toBe(Object.values(state.dayColors)[0]);
   expect(medallion.leader).toBe(true);
   expect(medallion.rotation).toBe(0);
+  // Posé : dessiné depuis sa vignette préparée (recopie d'un petit canevas).
+  expect(state.photosPinSprites).toBeGreaterThan(0);
 
   // Petite carte : la pile des deux, sans nombre (rien de regroupé).
   await page.locator('#parcoursPhotoPinShape').selectOption('card');

@@ -27,6 +27,7 @@ import {
     photoSlots,
     photoTimelineOptions,
     pinDirection,
+    pointPinDirection,
 } from '../../static/js/parcours_photo_layout.mjs';
 import {
     drawPhotoCard, drawPhotoLeader, drawPhotoMedallion, drawPinBadge, drawShutterFlash,
@@ -52,6 +53,18 @@ test('photos des cartons : favorites montrées, une par journée, mosaïque rép
     // Plus de favorites que la mosaïque n'en tient : réparties du début à la fin.
     assert.deepEqual(cardPhotos(timeline, new Set([1, 2, 3, 4, 5, 6, 7, 8]), { mosaicMax: 3 }).end, [1, 5, 8]);
     assert.equal(CARD_MOSAIC_MAX, 5);
+    // Favorite prise en chemin : à sa place dans la chronologie, à la journée
+    // de l'étape d'où part son trajet.
+    const enRoute = {
+        days: [{}, {}],
+        stops: [{ day: 0, photos: [1] }, { day: 1, photos: [2] }],
+        legs: [{ from: 0, to: 1, photos: [{ id: 9, f: 0.5 }], photoQ: 10, startQ: 0, endQ: 40 }],
+    };
+    assert.deepEqual(cardPhotos(enRoute, new Set([9, 2])), { open: 9, days: [null, 2], end: [9, 2] });
+    assert.deepEqual(cardPhotos(enRoute, new Set([1, 9])), { open: 1, days: [9, null], end: [1, 9] });
+    // Sans arrêt (trajet sans temps photo) : pas montrée, pas de carton.
+    enRoute.legs[0].photoQ = 0;
+    assert.deepEqual(cardPhotos(enRoute, new Set([9])).open, null);
 });
 
 test('cadrage : valeurs bornées, défauts', () => {
@@ -634,6 +647,15 @@ test('vignettes : côté le moins encombré par le trajet, stable', () => {
     assert.deepEqual(pinDirection({ stops, legs: [{ from: 0, to: 1, night: true }] }, 2), [1, -1]);
     // Étape sans position : haut-droite.
     assert.deepEqual(pinDirection({ stops: [{}], legs: [] }, 0), [1, -1]);
+    // Photo en chemin, au milieu d'un trajet ouest-est : en travers, vers le
+    // haut (plus en haut à droite, sur le trait).
+    const straight = { stops: [{ lat: 45, lon: 5.99 }, { lat: 45, lon: 6.01 }], legs: [{ from: 0, to: 1 }] };
+    assert.deepEqual(pointPinDirection(straight, [6, 45]), [0, -1]);
+    assert.equal(pointPinDirection(straight, [6, 45]), pointPinDirection(straight, [6, 45]));
+    // Trajet nord-sud : vers la droite.
+    const north = { stops: [{ lat: 44.993, lon: 6 }, { lat: 45.007, lon: 6 }], legs: [{ from: 0, to: 1 }] };
+    assert.deepEqual(pointPinDirection(north, [6, 45]), [1, 0]);
+    assert.deepEqual(pointPinDirection(north, null), [1, -1]);
 });
 
 test('vignettes : la photo descend près de son étape et y reste', () => {

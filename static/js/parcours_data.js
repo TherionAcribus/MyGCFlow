@@ -1565,6 +1565,7 @@ export function getParcoursSnapshot() {
         photoStops: Object.fromEntries([...photoByStop].map(([key, ids]) => [key, [...ids]])),
         photosLoaded: playDraw.imageStats().loaded,
         photosThumbs: playDraw.imageStats().thumbs,
+        photosPinSprites: playDraw.imageStats().pinSprites,
         photosMissing: playDraw.photosMissing(),
         // Lot 9 : réglages d'affichage, créneaux et cartes peintes à la
         // dernière image (centre, taille et cadre en px du canevas).
