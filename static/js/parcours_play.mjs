@@ -20,6 +20,7 @@ import { KIND_BASE, KIND_PLACE, CONFIDENCE_ANCHORED, isCountedStop } from './par
 import {
     HEAD_PICTOGRAM,
     dayCardAt,
+    dayRecapAt,
     openCardAt,
     dayStats,
     endCardAt,
@@ -54,6 +55,7 @@ import {
     photoCropRect,
     photoFrameAt,
     photoSlots,
+    recapSheetLayout,
 } from './parcours_photo_layout.mjs';
 import { drawPhotoCard, drawPhotoLeader } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
@@ -311,6 +313,7 @@ export function createParcoursPlayDraw(deps) {
         }
         // Après le géocacheur : la carte postale passe au-dessus.
         drawPhotoCards(event);
+        drawDayRecap(ctx, ratio);
         cardPhotosDrawn = [];
         drawOpenCard(ctx, ratio);
         drawDayCard(ctx, ratio);
@@ -917,6 +920,77 @@ export function createParcoursPlayDraw(deps) {
         ctx.restore();
     }
 
+    // Planche de la journée (option `day_recap`) : la carte s'assombrit
+    // comme à la tombée de la nuit, le titre de la journée paraît, puis ses
+    // photos en vignettes carrées, l'une après l'autre. Peintes depuis les
+    // miniatures (320 px, préchargées pour toutes les photos montrées), la
+    // pleine taille à défaut.
+    let recapDrawn = null;           // { day, photos } peints à la dernière image (relevé e2e)
+    function drawDayRecap(ctx, ratio) {
+        recapDrawn = null;
+        const { timeline, currentQ, msPerDay, photoDisplay } = S();
+        if (!timeline || !photoDisplay?.day_recap) return;
+        const recap = dayRecapAt(timeline, currentQ, sceneTimingOptions(msPerDay));
+        if (!recap || !(recap.alpha > 0)) return;
+        const W = ctx.canvas.width;
+        const H = ctx.canvas.height;
+        const items = recap.photos.map((id) => ({ id, photo: photoById(id), img: thumbOrFull(id) }))
+            .filter((item) => item.photo && item.img);
+        const layout = recapSheetLayout(items.length, recap.progress, { width: W, height: H, ratio },
+            { tilt: photoDisplay.tilt, reduced: reducedMotion() });
+        ctx.save();
+        ctx.fillStyle = `rgba(10, 16, 38, ${(0.55 * recap.alpha).toFixed(3)})`;
+        ctx.fillRect(0, 0, W, H);
+        const day = timeline.days[recap.day];
+        if (layout.title && day) {
+            const title = formatDay(day.date, { weekday: 'long', day: 'numeric', month: 'long' });
+            ctx.globalAlpha = recap.alpha;
+            ctx.font = `700 ${layout.title.size}px ${pageFontFamily()}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 8 * ratio;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(title.charAt(0).toUpperCase() + title.slice(1), layout.title.x, layout.title.y);
+            ctx.shadowColor = 'transparent';
+        }
+        const border = Math.max(3, layout.tiles[0]?.size * 0.035 || 0);
+        const drawn = [];
+        layout.tiles.forEach((tile) => {
+            const { id, photo, img } = items[tile.index];
+            const alpha = recap.alpha * tile.alpha;
+            if (!(alpha > 0)) return;
+            const natural = { width: img.naturalWidth, height: img.naturalHeight };
+            const rect = photoCropRect(natural, { ...photo, aspect: '1:1', zoom: Math.max(100, photo.zoom || 100) });
+            const half = tile.size / 2;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(tile.x, tile.y);
+            if (tile.rotation) ctx.rotate(tile.rotation);
+            if (tile.scale !== 1) ctx.scale(tile.scale, tile.scale);
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 12 * ratio;
+            ctx.shadowOffsetY = 4 * ratio;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-half - border, -half - border, tile.size + border * 2, tile.size + border * 2);
+            ctx.shadowColor = 'transparent';
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height, -half, -half, tile.size, tile.size);
+            ctx.restore();
+            drawn.push(id);
+        });
+        ctx.restore();
+        recapDrawn = { day: recap.day, photos: drawn, alpha: recap.alpha };
+    }
+
+    // Image prête d'une photo : la miniature, sinon la pleine taille.
+    function thumbOrFull(id) {
+        const thumb = photoThumbs.get(id);
+        if (imageReady(thumb)) return thumb;
+        const full = photoImages.get(id);
+        return imageReady(full) ? full : null;
+    }
+
     function drawDayCard(ctx, ratio) {
         const { playback, timeline, currentQ, msPerDay } = S();
         const card = playback.day_cards ? dayCardAt(timeline, currentQ, sceneTimingOptions(msPerDay)) : null;
@@ -1246,6 +1320,7 @@ export function createParcoursPlayDraw(deps) {
             return { open: c.open, days: [...c.days], end: [...c.end] };
         },
         lastCardPhotos: () => cardPhotosDrawn,
+        lastRecap: () => recapDrawn,
         previewPhoto,
         trailOptions,
         dayCardText,

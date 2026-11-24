@@ -45,8 +45,10 @@ import {
     photoCrop,
     photoCropRect,
     photoDisplayPreset,
+    photoScreenTime,
     photoSlots,
 } from './parcours_photo_layout.mjs';
+import { formatDurationHuman } from './video_timing.mjs';
 
 const el = (id) => document.getElementById(id);
 
@@ -68,6 +70,7 @@ const PHOTO_DISPLAY_FLAGS = Object.freeze({
     ken_burns: 'parcoursPhotoKenBurns',
     en_route: 'parcoursPhotoEnRoute',
     pano_pan: 'parcoursPhotoPanoPan',
+    day_recap: 'parcoursPhotoDayRecap',
 });
 
 // deps : { getState, uploads, button, fetchJson, reloadAdjustments,
@@ -75,8 +78,8 @@ const PHOTO_DISPLAY_FLAGS = Object.freeze({
 //          previewPhoto, evictPhotoImages, getMap, getPhotoDisplay,
 //          setPhotoDisplay, savePhotoDisplay, resetPhotoDisplay,
 //          makePhotoDisplayDefault, photoDisplayScope, previewState,
-//          shownPhotoId, reopenPausedAt, clockRunning, deferTimeline,
-//          applyTimeline }
+//          shownPhotoId, reopenPausedAt, msPerQuantum, clockRunning,
+//          deferTimeline, applyTimeline }
 // getState() → { inputs, ordered, photoMatches, timeline, selectedId }
 export function createPhotosPanel(deps) {
     const s = () => deps.getState() || {};
@@ -259,6 +262,7 @@ export function createPhotosPanel(deps) {
         const empty = el('parcoursPhotosEmpty');
         if (empty) empty.hidden = !!inputs;
         if (!inputs) return;
+        renderPhotoTime();
         // Onglet Photos non affiché : la grille (une vignette par photo,
         // jusqu'à des centaines) n'est pas reconstruite à chaque ajustement
         // fait ailleurs — juste marquée, refaite à l'ouverture de l'onglet.
@@ -974,6 +978,25 @@ export function createPhotosPanel(deps) {
         if (auto) auto.checked = autoPreviewEnabled();
     }
 
+    // Temps d'écran des photos (section « Temps d'écran ») : combien de
+    // photos la vidéo montre, et leur part de sa durée — au rythme courant.
+    function renderPhotoTime() {
+        const box = el('parcoursPhotoTimeSummary');
+        if (!box) return;
+        const { timeline } = s();
+        const { count, quanta, totalQ } = timeline ? photoScreenTime(timeline) : { count: 0, quanta: 0, totalQ: 0 };
+        if (!count) {
+            box.textContent = t('Aucune photo dans la vidéo.');
+            return;
+        }
+        const ms = Number(deps.msPerQuantum?.()) || 100;
+        const photos = formatDurationHuman(quanta * ms);
+        const total = formatDurationHuman(totalQ * ms);
+        box.textContent = count === 1
+            ? t('1 photo montrée : ${photos} sur ${total} de vidéo.', { photos, total })
+            : t('${n} photos montrées : ${photos} sur ${total} de vidéo.', { n: count, photos, total });
+    }
+
     // Portée des réglages : ceux du parcours ouvert (quand ils diffèrent du
     // défaut, avec les deux actions), ou le défaut commun.
     function renderPhotoDisplayScope() {
@@ -1027,6 +1050,7 @@ export function createPhotosPanel(deps) {
             || before.max_per_stop !== next.max_per_stop
             || before.overflow !== next.overflow
             || before.en_route !== next.en_route
+            || before.day_recap !== next.day_recap
             || (before.layout === PHOTO_LAYOUT_NONE) !== (next.layout === PHOTO_LAYOUT_NONE);
         let reopened = false;
         if (timing) {
@@ -1042,6 +1066,7 @@ export function createPhotosPanel(deps) {
                 deps.applyTimeline();
             }
         }
+        renderPhotoTime();
         deps.getMap()?.render();
         if (!reopened) autoPreview(target);
     }

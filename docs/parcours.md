@@ -1014,14 +1014,15 @@ surcharge). Clés :
 | `pin`, `pin_size` | vignettes sur la carte (près de l'étape, emplacement fixe) : au lieu de s'effacer, chaque photo (la pile entière avec `stack`) descend en 4 quanta vers une petite pile attachée à son étape, et y reste jusqu'à la fin ; grand côté 40-160 px CSS : `false`, 72 |
 | `strip_edge`, `strip_reset` | bande : `bottom` / `top` ; vidée à l'arrivée sur la première étape d'une nouvelle journée : `false` |
 | `size` | grand côté de l'image, 120-600 px CSS : 220 |
-| `frame` | `postcard` (marge blanche, ombre), `polaroid` (marge basse épaisse), `rounded` (coins arrondis, ombre), `plain` |
+| `frame` | `postcard` (marge blanche, ombre), `polaroid` (marge basse épaisse), `rounded` (coins arrondis, ombre), `plain`, `stamp` (timbre : papier blanc dentelé, un chemin creusé de demi-cercles — rien n'est effacé du canevas de la carte), `tape` (marge de carte postale et deux bandes de scotch translucides aux coins du haut), `film` (pellicule : bandes noires perforées en haut et en bas, légende sur bandeau) |
 | `tilt` | ± 2,5° en alternance : `true` |
-| `effect` | `fade`, `slide`, `zoom` (courbes d'`images_render.mjs`) |
+| `effect` | `fade`, `slide`, `zoom` (courbes d'`images_render.mjs`), `pop` (« Depuis l'étape » : la photo sort du point de son étape en grandissant, avec un léger rebond, et y rentre à la sortie ; repli sur `zoom` quand l'étape est hors de l'écran ; en bande, elle part de son étape vers sa place en grand) |
 | `ken_burns` | zoom lent (+ 8 %) pendant l'affichage : `false` |
 | `duration`, `max_per_stop` | 1,5 s par photo (0,5-6), 4 photos au plus en temps cumulé par étape (1-12) |
 | `overflow` | au-delà du plafond : `share` (toutes, chacune plus brève), `first` (les favorites puis les premières prises, à leur durée entière, montrées dans l'ordre de prise de vue ; les suivantes n'ont pas de créneau, donc ni pile, ni vignette, ni repère sur la barre) |
 | `en_route` | photos prises en chemin (voir ci-dessous) : `false` |
 | `pano_pan` | panoramas parcourus : une photo d'au moins 2:1 sans cadrage choisi (`isPanorama` ; un cadrage ou un zoom prime) est montrée dans une fenêtre 16:9 qui glisse de gauche à droite pendant son créneau (`pan` des cartes, adouci ; `panoramaRect` au dessin) — vignettes et piles gardent la dernière position ; coupé, la photo entière en bande : `true` |
+| `day_recap` | planche de la journée (voir ci-dessous) : `false` |
 | `caption` | gabarit `{legende}`, `{etape}`, `{heure}`, `{jour}`, `{date}` (120 caractères ; vide : pas de légende) |
 
 - **Chronologie** : `photoSlots` (créneaux : arrivée + 2 quanta, puis une
@@ -1036,13 +1037,17 @@ surcharge). Clés :
   (`reopenPausedAt`, parcours_data.js ; la première si elle n'a plus de
   créneau).
 - **Styles tout faits** (`PHOTO_DISPLAY_PRESETS`, `photoDisplayPreset`) :
-  Carte postale (= défaut), Carnet de voyage (polaroid, pile, vignettes,
-  zoom), Sobre (emplacement fixe, coins arrondis, zoom lent), Pellicule
-  (bande vidée chaque jour, sans cadre). Ils ne posent que placement et
+  Carte postale (= défaut), Carnet de voyage (scotch, pile, vignettes,
+  depuis l'étape), Sobre (emplacement fixe, coins arrondis, zoom lent),
+  Pellicule (bande vidée chaque jour, cadre pellicule). Ils ne posent que placement et
   apparence — jamais durée, plafond, photos en chemin, légende ni taille ;
   le bouton du style que les réglages reproduisent est pressé
   (`aria-pressed`). Les réglages sont rangés sous des intertitres
   (Placement, Apparence, Mouvement, Temps d'écran), sans repli.
+- **Temps d'écran** (`photoScreenTime`, sous l'intertitre du même nom) :
+  « n photos montrées : 45 s sur 6 min 20 s de vidéo », au rythme courant
+  (quanta des créneaux × durée d'un quantum) — refait à chaque
+  reconstruction de la chronologie (réglage photo, rythme, durée imposée).
 - **Aperçu automatique** (case « Montrer chaque réglage sur la carte »,
   cochée par défaut, retenue par navigateur dans `localStorage`
   `parcoursPhotoAutoPreview`) : un réglage changé au repos ouvre l'aperçu en
@@ -1081,6 +1086,40 @@ surcharge). Clés :
   sur la carte ») : ouvre l'aperçu en pause (`startPausedPreview`) et saute
   au créneau de la photo (`seekAnimationToDate`) — pour régler l'affichage
   sans rejouer le parcours.
+
+### Planche de la journée (option `day_recap`)
+
+Coupée par défaut, réglable par parcours. À la fin de chaque journée qui a
+montré au moins `DAY_RECAP_MIN` (2) photos — étapes et photos en chemin
+comprises, la dernière journée aussi —, le géocacheur reste sur sa
+dernière étape `DAY_RECAP_Q` (30 quanta, 3 s) de plus, après les photos de
+celle-ci et avant la nuit : la carte s'assombrit (comme la nuit), le titre
+de la journée paraît, puis ses photos en vignettes carrées à bord blanc,
+l'une après l'autre (fondu et petit rebond, fondu seul en mouvement
+réduit), légèrement inclinées si « Légère inclinaison » est cochée.
+
+- **Chronologie** (`buildParcoursTimeline`, option `dayRecapQ` posée par
+  `photoTimelineOptions`) : `recapQ` et `recapPhotos` sur la dernière étape
+  de la journée, inclus dans son `departQ` ; `dayRecaps(timeline)` →
+  `[{ day, stop, photos, fromQ, toQ }]`, `dayRecapAt(timeline, q)` ajoute
+  `progress` et `alpha`. Sous durée imposée, c'est un contenu à lire
+  (plancher, comme un bloc photo). Compté dans le temps d'écran des
+  photos (`photoScreenTime`).
+- **Choix des photos** (`pickRecapPhotos`) : toutes jusqu'à
+  `DAY_RECAP_MAX` (9) ; au-delà, les favorites d'abord, puis les autres
+  réparties du début à la fin de la journée, dans l'ordre d'apparition.
+- **Disposition** (`recapSheetLayout`, parcours_photo_layout.mjs) : grille
+  (1 à 3 en une rangée, 2 × 2, 3 × 2, 4 × 2, 3 × 3), rangée du bas
+  centrée, dans 72 % × 66 % de l'écran, 240 px CSS de côté au plus, écart
+  de 14 % du côté (bord blanc et inclinaison ne se touchent pas) ; les
+  vignettes arrivent pendant les premiers 45 % de la planche.
+- **Dessin** (`drawDayRecap`, parcours_play.mjs) : peintes depuis les
+  miniatures 320 px (préchargées pour toutes les photos montrées), la
+  pleine taille à défaut ; carré au cadrage de la photo (point focal).
+- **Relevé** : `scene.recaps` (planches de la chronologie) et
+  `scene.recap` (`{ day, photos, alpha }` peinte à la dernière image) de
+  `getParcoursSnapshot()` — exemple : « planche de la journée » de
+  `parcours-photo-display.spec.mjs`.
 
 ### Photos en chemin (option `en_route`)
 

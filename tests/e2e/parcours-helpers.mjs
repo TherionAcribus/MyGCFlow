@@ -91,7 +91,7 @@ export function collectErrors(page) {
 export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
   layout: 'stop', side: 'auto', anchor: 'top-right', leader: false, strip_edge: 'bottom', strip_reset: false, stack: false, pin: false, pin_size: 72,
   size: 220, frame: 'postcard', tilt: true, effect: 'fade', ken_burns: false, duration: 1.5, max_per_stop: 4, overflow: 'share', en_route: false, pano_pan: true,
-  caption: '{legende}',
+  day_recap: false, caption: '{legende}',
 });
 
 // Préférences globales de la page, remises en sortie de spec.

@@ -378,8 +378,8 @@ PARCOURS_PHOTO_SIDES = ("auto", "top-right", "top-left", "bottom-right", "bottom
 PARCOURS_PHOTO_ANCHORS = ("top-left", "top-center", "top-right", "middle-left", "middle-right",
                           "bottom-left", "bottom-center", "bottom-right")
 PARCOURS_PHOTO_STRIP_EDGES = ("bottom", "top")
-PARCOURS_PHOTO_FRAMES = ("postcard", "polaroid", "rounded", "plain")
-PARCOURS_PHOTO_EFFECTS = ("fade", "slide", "zoom")
+PARCOURS_PHOTO_FRAMES = ("postcard", "polaroid", "rounded", "plain", "stamp", "tape", "film")
+PARCOURS_PHOTO_EFFECTS = ("fade", "slide", "zoom", "pop")
 PARCOURS_PHOTO_OVERFLOWS = ("share", "first")
 PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "layout": "stop",
@@ -401,6 +401,7 @@ PARCOURS_PHOTO_DISPLAY_DEFAULTS = {
     "overflow": "share",
     "en_route": False,
     "pano_pan": True,
+    "day_recap": False,
     "caption": "{legende}",
 }
 PARCOURS_PHOTO_SIZE_RANGE = (120, 600)
@@ -725,7 +726,8 @@ _PHOTO_DISPLAY_CHOICES = {
     "effect": PARCOURS_PHOTO_EFFECTS,
     "overflow": PARCOURS_PHOTO_OVERFLOWS,
 }
-_PHOTO_DISPLAY_FLAGS = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns", "en_route", "pano_pan")
+_PHOTO_DISPLAY_FLAGS = ("leader", "strip_reset", "stack", "pin", "tilt", "ken_burns", "en_route", "pano_pan",
+                        "day_recap")
 _PHOTO_DISPLAY_NUMBERS = {
     "size": (PARCOURS_PHOTO_SIZE_RANGE, int),
     "pin_size": (PARCOURS_PHOTO_PIN_SIZE_RANGE, int),

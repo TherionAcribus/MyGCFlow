@@ -237,6 +237,9 @@
                                     <option value="polaroid">{{ _("Polaroid") }}</option>
                                     <option value="rounded">{{ _("Coins arrondis") }}</option>
                                     <option value="plain">{{ _("Sans cadre") }}</option>
+                                    <option value="stamp">{{ _("Timbre") }}</option>
+                                    <option value="tape">{{ _("Scotch (carnet)") }}</option>
+                                    <option value="film">{{ _("Pellicule") }}</option>
                                 </select>
                             </div>
                             <div class="col-6 parcours-photo-tilt-cell">
@@ -262,6 +265,7 @@
                                 <option value="fade">{{ _("Fondu") }}</option>
                                 <option value="slide">{{ _("Glissement depuis le bord") }}</option>
                                 <option value="zoom">{{ _("Zoom") }}</option>
+                                <option value="pop">{{ _("Depuis l'étape") }}</option>
                             </select>
                         </div>
                         <label class="form-check mb-2">
@@ -275,6 +279,7 @@
                         </label>
 
                         <h6 class="parcours-photo-subtitle">{{ _("Temps d'écran") }}</h6>
+                        <div id="parcoursPhotoTimeSummary" class="form-hint text-muted mb-2" role="status"></div>
                         <div class="row g-2 mb-2">
                             <div class="col-6">
                                 <label class="form-label small mb-1" for="parcoursPhotoDuration">{{ _("Durée par photo (s)") }}</label>
@@ -298,6 +303,11 @@
                             <input type="checkbox" id="parcoursPhotoEnRoute" class="form-check-input">
                             <span class="form-check-label">{{ _("Montrer les photos prises en chemin") }}</span>
                             <span class="form-hint text-muted">{{ _("Prises entre deux étapes, loin de l'une comme de l'autre (photo géolocalisée, ou située par la trace) : le géocacheur s'arrête à leur position le temps de les montrer.") }}</span>
+                        </label>
+                        <label class="form-check mb-2">
+                            <input type="checkbox" id="parcoursPhotoDayRecap" class="form-check-input">
+                            <span class="form-check-label">{{ _("Planche de la journée") }}</span>
+                            <span class="form-hint text-muted">{{ _("À la fin de chaque journée qui a montré au moins deux photos, la carte s'assombrit et ses photos reviennent en planche-contact (9 au plus, les favorites d'abord), 3 s avant la nuit.") }}</span>
                         </label>
                     </fieldset>
 

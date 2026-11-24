@@ -58,6 +58,7 @@ import {
     QUANTUM_MS,
     buildParcoursTimeline,
     dayCardAt,
+    dayRecaps,
     openCardAt,
     endCardAt,
     formatClock,
@@ -1236,6 +1237,7 @@ const photosPanel = createPhotosPanel({
     previewState: () => pkg.previewPlaybackState?.(),
     shownPhotoId,
     reopenPausedAt,
+    msPerQuantum: () => playMsPerDay,
     clockRunning: () => clock.running,
     deferTimeline: () => { pendingTimeline = true; },
     applyTimeline: () => applyTimeline(),
@@ -1723,6 +1725,10 @@ export function getParcoursSnapshot() {
             // dernière image.
             cardPhotos: playDraw.cardPhotos(),
             cardPhotosDrawn: [...playDraw.lastCardPhotos()],
+            // Planches de journée de la chronologie, et celle peinte à la
+            // dernière image ({ day, photos, alpha }).
+            recaps: dayRecaps(timeline).map((r) => ({ ...r, photos: [...r.photos] })),
+            recap: playDraw.lastRecap(),
             headMode: headModeAt(timeline, currentQ),
             headGlyph: playback.head === HEAD_PICTOGRAM && !!playDraw.headGlyph(headModeAt(timeline, currentQ)),
         } : null,

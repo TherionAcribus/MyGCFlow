@@ -89,7 +89,17 @@ export const TIMELINE_DEFAULTS = Object.freeze({
     propMinStopQ: 3,      // proportionnel : une étape reste visible un instant
     propMinLegQ: 1,
     endCardQ: 24,         // carton final de synthèse : temps d'écran ajouté
+    dayRecapQ: 0,         // planche de la journée (0 : aucune ; DAY_RECAP_Q)
 });
+
+// Planche de la journée (option `day_recap` de l'affichage des photos) : à la
+// fin de chaque journée qui a montré au moins DAY_RECAP_MIN photos, le
+// géocacheur reste sur sa dernière étape le temps d'une planche-contact de
+// DAY_RECAP_MAX photos au plus (les favorites d'abord, puis réparties sur la
+// journée), avant la nuit.
+export const DAY_RECAP_Q = 30;
+export const DAY_RECAP_MIN = 2;
+export const DAY_RECAP_MAX = 9;
 
 export function normalizePlayback(raw) {
     const o = raw && typeof raw === 'object' ? raw : {};
@@ -150,6 +160,21 @@ function dayNumber(iso) {
 //             manquant étant pris sur les visites et les trajets. Avec
 //             `fixedTotal` (durée imposée, musique), le total de quanta est
 //             conservé ; sinon la chronologie s'allonge d'autant.
+// Photos d'une planche de journée : toutes jusqu'à `max` ; au-delà, les
+// favorites d'abord, puis des autres réparties du début à la fin — dans leur
+// ordre d'apparition.
+export function pickRecapPhotos(ids, favorites, max = DAY_RECAP_MAX) {
+    if (ids.length <= max) return [...ids];
+    const fav = favorites?.size ? ids.filter((id) => favorites.has(id)).slice(0, max) : [];
+    const rest = ids.filter((id) => !fav.includes(id));
+    const room = max - fav.length;
+    const spread = room <= 0 ? []
+        : room === 1 ? [rest[0]]
+            : Array.from({ length: room }, (_, i) => rest[Math.round((i * (rest.length - 1)) / (room - 1))]);
+    const kept = new Set([...fav, ...spread]);
+    return ids.filter((id) => kept.has(id));
+}
+
 // Les `max` photos gardées d'une étape : les favorites d'abord, puis les
 // premières prises ; montrées dans leur ordre d'origine.
 function keepFirstPhotos(ids, max, favorites) {
@@ -260,7 +285,28 @@ export function buildParcoursTimeline(reconstructed, {
                 : attached;
             const photoQ = photos.length ? o.photoQ * Math.min(photos.length, o.maxPhotosPerStop) / photos.length : 0;
             dwell += photoQ * photos.length;
-            stops.push({ ...stop, q, departQ: q + dwell, day: dayIndex, km, photos, photoQ });
+            // Planche de la journée, après la dernière étape (et ses photos).
+            let recapQ = 0;
+            let recapPhotos = [];
+            if (o.dayRecapQ > 0 && k === dayStops.length - 1) {
+                const first = days[dayIndex].first;
+                const shown = [];
+                for (let i = first; i < stops.length; i++) {
+                    const leg = i > first ? legs[i - 1] : null;
+                    for (const p of leg?.photos || []) shown.push(p.id);
+                    shown.push(...stops[i].photos);
+                }
+                for (const p of legs[stops.length - 1]?.photos || []) {
+                    if (stops.length > first) shown.push(p.id);
+                }
+                shown.push(...photos);
+                if (shown.length >= DAY_RECAP_MIN) {
+                    recapQ = o.dayRecapQ;
+                    recapPhotos = pickRecapPhotos(shown, photoFavorites);
+                    dwell += recapQ;
+                }
+            }
+            stops.push({ ...stop, q, departQ: q + dwell, day: dayIndex, km, photos, photoQ, recapQ, recapPhotos });
             q += dwell;
         }
     }
@@ -301,8 +347,10 @@ function compressTimeline(tl, timing, o) {
     // par trajet : trajet de jour (élastique) ou nuit (plancher).
     const baseDwells = tl.stops.map((stop) => {
         const block = stop.photoQ * stop.photos.length;
-        return { natural: (stop.departQ - stop.q) - block, elastic: true };
+        return { natural: (stop.departQ - stop.q) - block - (stop.recapQ || 0), elastic: true };
     });
+    // Planche de la journée : un contenu à lire (plancher).
+    const recapBlocks = tl.stops.map((stop) => (stop.recapQ > 0 ? { natural: stop.recapQ, floor: true } : null));
     const photoBlocks = tl.stops.map((stop) => {
         const block = stop.photoQ * stop.photos.length;
         return block > 0 ? { natural: block, floor: true } : null;
@@ -317,7 +365,8 @@ function compressTimeline(tl, timing, o) {
         natural: leg.endQ - leg.startQ - (legBlocks[i]?.natural || 0), floor: leg.night,
     }));
     const all = [items.openDescent, items.intro, items.outro, items.endCard,
-        ...baseDwells, ...photoBlocks.filter(Boolean), ...legItems, ...legBlocks.filter(Boolean)]
+        ...baseDwells, ...photoBlocks.filter(Boolean), ...recapBlocks.filter(Boolean),
+        ...legItems, ...legBlocks.filter(Boolean)]
         .filter((it) => it.natural > 0);
     let floorTotal = 0;
     let elasticTotal = 0;
@@ -362,7 +411,8 @@ function compressTimeline(tl, timing, o) {
         const blockQ = photoBlocks[i] ? allocOf(photoBlocks[i]) : 0;
         stop.photoQ = blockQ ? blockQ / stop.photos.length : 0;
         stop.q = q;
-        stop.departQ = q + allocOf(baseDwells[i]) + blockQ;
+        stop.recapQ = recapBlocks[i] ? allocOf(recapBlocks[i]) : 0;
+        stop.departQ = q + allocOf(baseDwells[i]) + blockQ + stop.recapQ;
         q = stop.departQ;
     }
     tl.endCardQ = tl.endCardQ ? allocOf(items.endCard) : 0;
@@ -815,6 +865,42 @@ export function dayCardAt(timeline, qf, options = {}) {
         const fadeIn = night || timeline.openCardQ ? clamp((qf - from) / o.cardFadeQ, 0, 1) : 1;
         const fadeOut = clamp((to - qf) / o.cardFadeQ, 0, 1);
         return { day: d, alpha: Math.min(fadeIn, fadeOut) };
+    }
+    return null;
+}
+
+// Planches de la chronologie, une par journée qui en a une : [{ day, stop
+// (index de sa dernière étape), photos, fromQ, toQ }] — la planche occupe la
+// fin du séjour sur cette étape.
+const recapsMemo = new WeakMap();
+export function dayRecaps(timeline) {
+    if (!timeline || typeof timeline !== 'object') return [];
+    let list = recapsMemo.get(timeline);
+    if (!list) {
+        list = [];
+        (timeline.stops || []).forEach((stop, i) => {
+            if (!(stop.recapQ > 0) || !stop.recapPhotos?.length) return;
+            list.push({ day: stop.day, stop: i, photos: stop.recapPhotos, fromQ: stop.departQ - stop.recapQ, toQ: stop.departQ });
+        });
+        recapsMemo.set(timeline, list);
+    }
+    return list;
+}
+
+// Planche à `qf` : { day, stop, photos, fromQ, toQ, progress (0..1 dans la
+// planche), alpha (fondus d'entrée et de sortie) } ou null.
+export function dayRecapAt(timeline, qf, options = {}) {
+    const o = { ...SCENE_DEFAULTS, ...options };
+    for (const recap of dayRecaps(timeline)) {
+        if (qf < recap.fromQ) break;
+        if (qf > recap.toQ) continue;
+        const span = Math.max(1e-9, recap.toQ - recap.fromQ);
+        const fade = Math.min(o.cardFadeQ, span / 3);
+        return {
+            ...recap,
+            progress: clamp((qf - recap.fromQ) / span, 0, 1),
+            alpha: Math.min(clamp((qf - recap.fromQ) / fade, 0, 1), clamp((recap.toQ - qf) / fade, 0, 1)),
+        };
     }
     return null;
 }

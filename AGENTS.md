@@ -612,6 +612,14 @@ Autres repères :
 - `navigator.clipboard.readText()` rend des fins de ligne CRLF sous
   Windows : normaliser (`replace(/\r\n/g, '\n')`) avant de comparer un texte
   copié — exemple « écran de fin » de `parcours-page.spec.mjs`.
+- Échec isolé en suite longue sous Windows, `beforeEach` expiré sur
+  `waitForFunction(() => window.mygcflowReady === true)` avec une page
+  vide : regarder les erreurs de console de la trace (`trace.zip` →
+  `*-trace.trace`, `"messageType":"error"`). `net::ERR_ADDRESS_IN_USE` sur
+  le chargement des modules `static/js/*` = ports clients éphémères du
+  poste épuisés (chaque page charge ~200 modules) : environnement, pas
+  régression — le test passe seul. Constaté deux fois sur
+  `parcours-photos.spec.mjs` › « étape choisie retirée… » (2026-11-23).
 - Vider les processus orphelins si un run est tué : `taskkill /F /T /PID <id>`
   sur les `node.exe`/`python.exe` dont la ligne de commande contient
   `@playwright\test\cli.js`, `run-tests.mjs` ou `run_server.py`. Sous Linux :

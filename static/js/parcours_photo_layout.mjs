@@ -21,7 +21,7 @@
 // (tests/js/parcours_photo_layout.test.mjs).
 
 import { IMAGE_EFFECT_EASINGS, cubicBezier, effectTransform } from './images_render.mjs';
-import { legPauses } from './parcours_timeline.mjs';
+import { DAY_RECAP_Q, dayRecaps, legPauses } from './parcours_timeline.mjs';
 
 export const PHOTO_ASPECTS = Object.freeze(['original', '1:1', '4:3', '3:4', '16:9']);
 export const PHOTO_FOCUS_RANGE = Object.freeze([0, 100]);
@@ -158,8 +158,10 @@ export const PHOTO_ANCHORS = Object.freeze([
     'top-left', 'top-center', 'top-right', 'middle-left', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right',
 ]);
 export const PHOTO_STRIP_EDGES = Object.freeze(['bottom', 'top']);
-export const PHOTO_FRAMES = Object.freeze(['postcard', 'polaroid', 'rounded', 'plain']);
-export const PHOTO_EFFECTS = Object.freeze(['fade', 'slide', 'zoom']);
+export const PHOTO_FRAMES = Object.freeze(['postcard', 'polaroid', 'rounded', 'plain', 'stamp', 'tape', 'film']);
+// `pop` : la photo sort du point de son étape en grandissant, et y rentre à
+// la sortie (repli sur `zoom` quand l'étape n'est pas à l'écran).
+export const PHOTO_EFFECTS = Object.freeze(['fade', 'slide', 'zoom', 'pop']);
 export const PHOTO_SIZE_RANGE = Object.freeze([120, 600]);
 export const PHOTO_PIN_SIZE_RANGE = Object.freeze([40, 160]);
 export const PHOTO_DURATION_RANGE = Object.freeze([0.5, 6]);
@@ -193,6 +195,9 @@ export const PHOTO_DISPLAY_DEFAULTS = Object.freeze({
     en_route: false,
     // Panoramas parcourus dans une fenêtre 16:9 (isPanorama, panoramaRect).
     pano_pan: true,
+    // Planche de la journée : ses photos en planche-contact avant la nuit
+    // (DAY_RECAP_Q, dayRecapAt de parcours_timeline.mjs, recapSheetLayout).
+    day_recap: false,
     caption: '{legende}',
 });
 
@@ -222,6 +227,7 @@ export function normalizePhotoDisplay(raw) {
         overflow: choice('overflow', PHOTO_OVERFLOWS),
         en_route: flag('en_route'),
         pano_pan: flag('pano_pan'),
+        day_recap: flag('day_recap'),
         caption: caption !== null && caption.length <= PHOTO_CAPTION_TEMPLATE_MAX ? caption : d.caption,
     };
 }
@@ -236,7 +242,7 @@ export const PHOTO_DISPLAY_PRESETS = Object.freeze({
         stack: false, pin: false, leader: false, ken_burns: false,
     }),
     scrapbook: Object.freeze({
-        layout: PHOTO_LAYOUT_STOP, side: 'auto', frame: 'polaroid', tilt: true, effect: 'zoom',
+        layout: PHOTO_LAYOUT_STOP, side: 'auto', frame: 'tape', tilt: true, effect: 'pop',
         stack: true, pin: true, leader: false, ken_burns: false,
     }),
     sober: Object.freeze({
@@ -244,7 +250,7 @@ export const PHOTO_DISPLAY_PRESETS = Object.freeze({
         stack: false, pin: false, leader: false, ken_burns: true,
     }),
     film: Object.freeze({
-        layout: PHOTO_LAYOUT_STRIP, strip_edge: 'bottom', strip_reset: true, frame: 'plain', tilt: false,
+        layout: PHOTO_LAYOUT_STRIP, strip_edge: 'bottom', strip_reset: true, frame: 'film', tilt: false,
         effect: 'fade', ken_burns: false,
     }),
 });
@@ -266,7 +272,72 @@ export function photoTimelineOptions(display) {
         photoQ: Math.round(display.duration * 10),
         maxPhotosPerStop: display.max_per_stop,
         photoOverflow: display.overflow,
+        dayRecapQ: display.day_recap && display.layout !== PHOTO_LAYOUT_NONE ? DAY_RECAP_Q : 0,
     };
+}
+
+// --- Planche de la journée ----------------------------------------------------------
+
+// Colonnes de la grille selon le nombre de photos (9 au plus) : une rangée
+// jusqu'à 3, 2 × 2, 3 × 2, 4 × 2, 3 × 3.
+function recapColumns(count) {
+    if (count <= 3) return count;
+    if (count === 4) return 2;
+    if (count <= 6) return 3;
+    if (count <= 8) return 4;
+    return 3;
+}
+
+const RECAP_TILE_MAX = 240;   // px CSS : grand côté d'une vignette au plus
+const RECAP_GAP_SHARE = 0.14; // écart entre deux vignettes, en part de leur côté (bord blanc et inclinaison compris)
+const RECAP_TITLE = 64;       // px CSS réservés au titre au-dessus
+const RECAP_REVEAL = 0.45;    // part de la planche pendant laquelle les vignettes arrivent
+const RECAP_TILE_IN = 0.12;   // part de la planche que dure l'arrivée d'une vignette
+const RECAP_TILT_DEG = [-2.5, 1.5, -1, 2.5, -2, 1, 2, -1.5, 0.5];
+
+// Disposition de la planche à `progress` (0..1) : vignettes carrées en
+// grille, centrées, qui arrivent l'une après l'autre (fondu et petit
+// rebond ; fondu seul en mouvement réduit). `view` : width, height (px
+// réels), ratio. → { tiles: [{ index, x, y, size, rotation, alpha, scale }],
+// title: { x, y, size } } (x, y : centres, px réels).
+export function recapSheetLayout(count, progress, view, { tilt = true, reduced = false } = {}) {
+    const n = Math.max(0, Math.floor(count));
+    const ratio = view.ratio || 1;
+    const out = { tiles: [], title: null };
+    if (!n) return out;
+    const cols = recapColumns(n);
+    const rows = Math.ceil(n / cols);
+    const titleH = RECAP_TITLE * ratio;
+    const maxW = view.width * 0.72;
+    const maxH = view.height * 0.66 - titleH;
+    const g = RECAP_GAP_SHARE;
+    const size = Math.max(8, Math.min(
+        maxW / (cols + (cols - 1) * g),
+        maxH / (rows + (rows - 1) * g),
+        RECAP_TILE_MAX * ratio,
+    ));
+    const gap = size * g;
+    const gridH = rows * size + (rows - 1) * gap;
+    const top = (view.height - gridH + titleH) / 2;
+    for (let i = 0; i < n; i++) {
+        const row = Math.floor(i / cols);
+        const inRow = row === rows - 1 ? n - row * cols : cols;
+        const col = i - row * cols;
+        const rowW = inRow * size + (inRow - 1) * gap;
+        const start = n > 1 ? (RECAP_REVEAL - RECAP_TILE_IN) * (i / (n - 1)) : 0;
+        const t = clamp((progress - start) / RECAP_TILE_IN, 0, 1);
+        out.tiles.push({
+            index: i,
+            x: (view.width - rowW) / 2 + col * (size + gap) + size / 2,
+            y: top + row * (size + gap) + size / 2,
+            size,
+            rotation: tilt ? RECAP_TILT_DEG[i % RECAP_TILT_DEG.length] * Math.PI / 180 : 0,
+            alpha: t,
+            scale: reduced ? 1 : 0.6 + 0.4 * eased('zoom', t),
+        });
+    }
+    out.title = { x: view.width / 2, y: top - titleH * 0.55, size: 22 * ratio };
+    return out;
 }
 
 // --- Légende ---------------------------------------------------------------------
@@ -334,13 +405,41 @@ export function photoSlots(timeline) {
     return slots;
 }
 
+// Temps d'écran des photos de la chronologie : { count (photos montrées),
+// quanta (leur temps cumulé, fondus compris dans les créneaux, planches de
+// journée comprises), totalQ (toute la lecture) } — l'onglet Photos le
+// convertit en secondes.
+export function photoScreenTime(timeline) {
+    const slots = photoSlots(timeline);
+    const quanta = slots.reduce((sum, slot) => sum + Math.max(0, slot.toQ - slot.fromQ), 0)
+        + dayRecaps(timeline).reduce((sum, recap) => sum + Math.max(0, recap.toQ - recap.fromQ), 0);
+    return { count: slots.length, quanta, totalQ: Math.max(0, Number(timeline?.quanta) || 0) };
+}
+
 // --- Cartes ------------------------------------------------------------------------
 
 // Cadre autour de l'image, en px CSS pour une taille `size` : marges (haut,
 // côtés, bas), rayon, ombre, et où s'écrit la légende (`margin` : dans la
 // marge blanche du bas ; `overlay` : sur un bandeau en bas de l'image).
+// Timbre : papier blanc dentelé (`perforation` : rayon des dents) ; scotch :
+// marge de carte postale et deux bandes adhésives aux coins du haut ;
+// pellicule : bandes noires perforées en haut et en bas.
 export function photoFrameMetrics(frame, size, hasCaption) {
     const captionSize = clamp(Math.round(size * 0.06), 11, 24);
+    if (frame === 'stamp') {
+        const side = Math.max(7, Math.round(size * 0.06));
+        return {
+            kind: frame, top: side, side, bottom: hasCaption ? side + Math.round(captionSize * 1.7) : side,
+            radius: 0, shadow: true, captionIn: 'margin', captionSize, perforation: side * 0.36,
+        };
+    }
+    if (frame === 'film') {
+        const band = Math.max(10, Math.round(size * 0.1));
+        return {
+            kind: frame, top: band, side: Math.max(3, Math.round(size * 0.025)), bottom: band,
+            radius: 0, shadow: true, captionIn: 'overlay', captionSize,
+        };
+    }
     if (frame === 'polaroid') {
         const side = Math.max(5, Math.round(size * 0.045));
         return {
@@ -348,7 +447,7 @@ export function photoFrameMetrics(frame, size, hasCaption) {
             radius: 2, shadow: true, captionIn: 'margin', captionSize,
         };
     }
-    if (frame === 'postcard') {
+    if (frame === 'postcard' || frame === 'tape') {
         const side = Math.max(4, Math.round(size * 0.032));
         return {
             kind: frame, top: side, side, bottom: hasCaption ? side + Math.round(captionSize * 1.7) : side,
@@ -363,6 +462,7 @@ export function photoFrameMetrics(frame, size, hasCaption) {
 }
 
 const MARGIN = 16;        // px CSS entre une carte et le bord de l'écran
+const POP_FROM = 0.08;    // échelle de départ de l'effet `pop`
 const STOP_GAP = 18;      // px CSS entre l'étape et sa carte
 const TILT_DEG = [-2.5, 2];
 const KEN_BURNS_ZOOM = 0.08;
@@ -447,6 +547,7 @@ export function photoFrameAt(timeline, qf, display, view) {
         const frame = {
             kind: m.kind, top: m.top * ratio, side: m.side * ratio, bottom: m.bottom * ratio,
             radius: m.radius * ratio, shadow: m.shadow, captionIn: m.captionIn, captionSize: m.captionSize * ratio,
+            perforation: (m.perforation || 0) * ratio,
         };
         return {
             photoId: slot.photoId, slot: slot.order, x: 0, y: 0, w, h, frame,
@@ -457,10 +558,22 @@ export function photoFrameAt(timeline, qf, display, view) {
     };
 
     // Entrée / sortie : opacité linéaire, mouvement de l'effet adouci.
-    const applyEffect = (card, t, ownRect) => {
-        card.alpha *= clamp(t, 0, 1);
-        if (display.effect === 'fade' || t >= 1) return;
-        const move = effectTransform(display.effect, eased(display.effect, clamp(t, 0, 1)), ownRect, { width, height });
+    // `origin` : l'étape à l'écran (px), d'où sort une photo `pop`.
+    const applyEffect = (card, t, ownRect, origin = null) => {
+        const k = clamp(t, 0, 1);
+        if (display.effect === 'pop' && k < 1 && insideScreen(origin, width, height)) {
+            // Visible presque tout de suite : on la voit sortir du point.
+            card.alpha *= clamp(k * 3, 0, 1);
+            const move = eased('slide', k);
+            card.dx += (origin[0] - card.x) * (1 - move);
+            card.dy += (origin[1] - card.y) * (1 - move);
+            card.effectScale = POP_FROM + (1 - POP_FROM) * eased('zoom', k);
+            return;
+        }
+        card.alpha *= k;
+        const effect = display.effect === 'pop' ? 'zoom' : display.effect;
+        if (effect === 'fade' || t >= 1) return;
+        const move = effectTransform(effect, eased(effect, k), ownRect, { width, height });
         card.dx += move.dx;
         card.dy += move.dy;
         card.effectScale = move.scale;
@@ -473,7 +586,11 @@ export function photoFrameAt(timeline, qf, display, view) {
         : null);
 
     if (display.layout === PHOTO_LAYOUT_STRIP) {
-        stripCards(out, slots, qf, display, { width, height, margin, ratio, cardOf, applyEffect, rectOf, kenBurns, timeline });
+        // Repère d'une photo de la bande, pour l'effet `pop`.
+        const originOf = (slot) => (slot.route ? view.pointPixel?.(slot.at) : view.stopPixel?.(slot.stop)) || null;
+        stripCards(out, slots, qf, display, {
+            width, height, margin, ratio, cardOf, applyEffect, rectOf, kenBurns, timeline, originOf,
+        });
         return out;
     }
 
@@ -603,7 +720,7 @@ export function photoFrameAt(timeline, qf, display, view) {
                 card.captionAlpha = clamp(1 - (qf - next.fromQ) / PHOTO_FADE_Q, 0, 1);
             }
             const exit = (end + PHOTO_FADE_Q - qf) / PHOTO_FADE_Q;
-            applyEffect(card, Math.min((qf - slot.fromQ) / PHOTO_FADE_Q, exit), rectOf(card));
+            applyEffect(card, Math.min((qf - slot.fromQ) / PHOTO_FADE_Q, exit), rectOf(card), stop);
             card.kenBurns = kenBurns(slot, end + PHOTO_FADE_Q);
             if (card.alpha <= 0) return;
             if (display.leader && !pileCenter) setLeader(card, stop);
@@ -743,7 +860,7 @@ export function pinDirection(timeline, index) {
 // droite et défile vers la gauche quand elle déborde ; les vignettes
 // sorties s'effacent.
 function stripCards(out, slots, qf, display, ctx) {
-    const { width, height, margin, ratio, cardOf, applyEffect, rectOf, kenBurns, timeline } = ctx;
+    const { width, height, margin, ratio, cardOf, applyEffect, rectOf, kenBurns, timeline, originOf } = ctx;
     const thumbH = clamp(display.size * 0.36, 44, 140) * ratio;
     const gap = 6 * ratio;
     const bottom = display.strip_edge !== 'top';
@@ -801,7 +918,7 @@ function stripCards(out, slots, qf, display, ctx) {
             const enter = (qf - m.slot.fromQ) / PHOTO_FADE_Q;
             card.x = bigX;
             card.y = bigY;
-            applyEffect(card, enter, rectOf(card));
+            applyEffect(card, enter, rectOf(card), originOf(m.slot));
         }
         card.kenBurns = kenBurns(m.slot, m.slot.toQ);
         if (card.alpha > 0) big.push(card);

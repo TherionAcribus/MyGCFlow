@@ -15,8 +15,12 @@ import {
     barSeries,
     barTicks,
     buildParcoursTimeline,
+    DAY_RECAP_Q,
     dayCardAt,
+    dayRecapAt,
+    dayRecaps,
     dayStats,
+    pickRecapPhotos,
     endCardAt,
     formatClock,
     headAt,
@@ -404,6 +408,65 @@ test('durée imposée : contenus à lire gardés, temps repris sur le reste', ()
     for (const q of [a.q, tl.stops[1].q, tl.quanta - 1]) {
         assert.equal(stopsInRange(tl, q, q).length, stateAt(tl, q).stopsReached - stateAt(tl, q - 1).stopsReached);
     }
+});
+
+test('planche de la journée : après la dernière étape, avant la nuit, pour les journées illustrées', () => {
+    const photos = new Map([['A', ['p1', 'p2']], ['C', ['p3']], ['D', ['p4']]]);
+    const base = buildParcoursTimeline(journey(), { photosByStop: photos });
+    const tl = buildParcoursTimeline(journey(), { photosByStop: photos, options: { dayRecapQ: DAY_RECAP_Q } });
+    // Journée 1 (3 photos) : planche sur C, sa dernière étape ; journée 2
+    // (une seule photo) : aucune.
+    const recaps = dayRecaps(tl);
+    assert.deepEqual(recaps.map((r) => [r.day, tl.stops[r.stop].key, r.photos]), [[0, 'C', ['p1', 'p2', 'p3']]]);
+    const c = tl.stops[2];
+    assert.equal(recaps[0].toQ, c.departQ);
+    assert.equal(recaps[0].fromQ, c.departQ - DAY_RECAP_Q);
+    // Après les photos de C, avant la nuit ; la chronologie s'allonge d'autant.
+    assert.ok(recaps[0].fromQ >= c.q + c.photoQ * c.photos.length);
+    const night = tl.legs.find((leg) => leg.night);
+    assert.equal(night.startQ, recaps[0].toQ);
+    assert.equal(tl.quanta, base.quanta + DAY_RECAP_Q);
+    // Fenêtre, fondus, avancement.
+    assert.equal(dayRecapAt(tl, recaps[0].fromQ - 1), null);
+    assert.equal(dayRecapAt(tl, recaps[0].toQ + 1), null);
+    const mid = dayRecapAt(tl, (recaps[0].fromQ + recaps[0].toQ) / 2);
+    assert.equal(mid.alpha, 1);
+    assert.ok(Math.abs(mid.progress - 0.5) < 1e-9);
+    assert.ok(dayRecapAt(tl, recaps[0].fromQ + 1).alpha < 1);
+    // Option coupée : rien.
+    assert.deepEqual(dayRecaps(base), []);
+    // Durée imposée : la planche est un contenu à lire, comme les photos —
+    // même plancher qu'un bloc photo de même durée (A : 2 × 15 = 30 quanta).
+    const fixed = buildParcoursTimeline(journey(), {
+        photosByStop: photos, options: { dayRecapQ: DAY_RECAP_Q }, timing: { msPerDay: QUANTUM_MS / 2, fixedTotal: true },
+    });
+    const [r] = dayRecaps(fixed);
+    const blockA = fixed.stops[0].photoQ * fixed.stops[0].photos.length;
+    assert.ok(Math.abs((r.toQ - r.fromQ) - blockA) <= 1);
+    assert.ok(r.toQ - r.fromQ > DAY_RECAP_Q / 2);
+    // Sans durée imposée, elle garde ses secondes (deux fois plus de quanta à 50 ms).
+    const slow = buildParcoursTimeline(journey(), {
+        photosByStop: photos, options: { dayRecapQ: DAY_RECAP_Q }, timing: { msPerDay: QUANTUM_MS / 2, fixedTotal: false },
+    });
+    assert.equal(dayRecaps(slow)[0].toQ - dayRecaps(slow)[0].fromQ, 2 * DAY_RECAP_Q);
+    assert.equal(fixed.legs.find((leg) => leg.night).startQ, r.toQ);
+});
+
+test('planche de la journée : photos en chemin comprises, favorites d’abord au-delà de neuf', () => {
+    const ids = Array.from({ length: 20 }, (_, i) => `p${i}`);
+    assert.deepEqual(pickRecapPhotos(ids.slice(0, 4), null), ids.slice(0, 4));
+    const picked = pickRecapPhotos(ids, new Set(['p7', 'p15']), 9);
+    assert.equal(picked.length, 9);
+    assert.ok(picked.includes('p7') && picked.includes('p15'));
+    assert.equal(picked[0], 'p0');
+    assert.equal(picked[picked.length - 1], 'p19');
+    assert.deepEqual(picked, [...picked].sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))));
+    // Une photo en chemin de la journée compte.
+    const legPhotos = new Map([['B>C', [{ id: 'r1', lon: 5 + 75 * DEG_PER_100M, lat: 45 }]]]);
+    const tl = buildParcoursTimeline(journey(), {
+        photosByStop: new Map([['A', ['p1']]]), photosByLeg: legPhotos, options: { dayRecapQ: DAY_RECAP_Q },
+    });
+    assert.deepEqual(dayRecaps(tl)[0].photos, ['p1', 'r1']);
 });
 
 test('rythme rapide : les planchers rallongent la chronologie', () => {

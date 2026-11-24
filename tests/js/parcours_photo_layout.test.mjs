@@ -18,6 +18,9 @@ import {
     photoCropRect,
     photoDisplayPreset,
     photoFrameAt,
+    photoFrameMetrics,
+    photoScreenTime,
+    recapSheetLayout,
     photoSlots,
     photoTimelineOptions,
     pinDirection,
@@ -90,7 +93,11 @@ test('réglages d’affichage : défauts, bornes, valeurs inconnues', () => {
     assert.equal(d.anchor, 'top-right');
     assert.equal(d.overflow, 'share');
     assert.deepEqual(photoTimelineOptions(normalizePhotoDisplay({ duration: 2.5, max_per_stop: 6 })),
-        { photoQ: 25, maxPhotosPerStop: 6, photoOverflow: 'share' });
+        { photoQ: 25, maxPhotosPerStop: 6, photoOverflow: 'share', dayRecapQ: 0 });
+    // Planche de la journée : son temps, sauf sans photo dans la vidéo.
+    assert.equal(photoTimelineOptions(normalizePhotoDisplay({ day_recap: true })).dayRecapQ, 30);
+    assert.equal(photoTimelineOptions(normalizePhotoDisplay({ day_recap: true, layout: 'none' })).dayRecapQ, 0);
+    assert.equal(normalizePhotoDisplay({ day_recap: 'oui' }).day_recap, false);
     assert.equal(photoTimelineOptions(normalizePhotoDisplay({ overflow: 'first' })).photoOverflow, 'first');
 });
 
@@ -235,6 +242,72 @@ test('effets : glissement depuis le bord, zoom, zoom lent', () => {
     assert.ok(card.kenBurns > 1.07);
 });
 
+test('effet « depuis l’étape » : la photo sort du point de l’étape, zoom si l’étape est hors écran', () => {
+    const pop = normalizePhotoDisplay({ effect: 'pop', tilt: false });
+    const [still] = photoFrameAt(timeline(), 20, pop, VIEW).cards;
+    let [card] = photoFrameAt(timeline(), 12.2, pop, VIEW).cards;
+    // Au dixième de l'entrée : déjà visible, petite, près de l'étape (500, 300).
+    assert.ok(card.alpha >= 0.25 && card.effectScale < 0.6);
+    assert.ok(Math.hypot(card.x + card.dx - 500, card.y + card.dy - 300) < Math.hypot(still.x - 500, still.y - 300) / 2);
+    // Affichée : à sa place, taille pleine.
+    assert.ok(still.dx === 0 && still.dy === 0 && still.effectScale === 1);
+    // Sortie : elle rentre dans l'étape (après un léger rebond).
+    [card] = photoFrameAt(timeline(), 43.5, pop, VIEW).cards.filter((c) => c.photoId === 2);
+    assert.ok(card.effectScale < 1 && Math.hypot(card.dx, card.dy) > 0);
+    // Étape hors de l'écran : simple zoom sur place.
+    [card] = photoFrameAt(timeline(), 12.5, pop, { ...VIEW, stopPixel: () => [-400, 300] }).cards;
+    assert.ok(card.effectScale < 1 && card.dx === 0 && card.dy === 0);
+    // Bande : la photo entre en grand depuis son étape.
+    [card] = photoFrameAt(timeline(), 12.5, normalizePhotoDisplay({ layout: 'strip', effect: 'pop' }), VIEW).cards;
+    assert.ok(card.effectScale < 1 && card.dy !== 0);
+});
+
+test('cadres timbre, scotch, pellicule : marges', () => {
+    const stamp = photoFrameMetrics('stamp', 220, true);
+    assert.ok(stamp.perforation > 0 && stamp.perforation < stamp.side);
+    assert.ok(stamp.bottom > stamp.top && stamp.captionIn === 'margin');
+    assert.deepEqual(photoFrameMetrics('tape', 220, false), { ...photoFrameMetrics('postcard', 220, false), kind: 'tape' });
+    const film = photoFrameMetrics('film', 220, true);
+    assert.ok(film.top === film.bottom && film.top > film.side && film.captionIn === 'overlay');
+});
+
+test('planche de la journée : grille centrée, vignettes l’une après l’autre', () => {
+    const view = { width: 1000, height: 600, ratio: 1 };
+    assert.deepEqual(recapSheetLayout(0, 0.5, view).tiles, []);
+    // 5 photos : 3 puis 2, la rangée du bas centrée.
+    let { tiles, title } = recapSheetLayout(5, 1, view);
+    const ys = tiles.map((t) => Math.round(t.y));
+    assert.ok(ys[0] === ys[1] && ys[1] === ys[2] && ys[3] === ys[4] && ys[3] > ys[0]);
+    assert.equal(Math.round((tiles[3].x + tiles[4].x) / 2), 500);
+    // Écart d'au moins 10 % du côté : bords blancs et inclinaisons ne se touchent pas.
+    assert.ok(tiles[1].x - tiles[0].x - tiles[0].size >= 0.1 * tiles[0].size);
+    assert.ok(tiles[3].y - tiles[0].y - tiles[0].size >= 0.1 * tiles[0].size);
+    assert.ok(tiles.every((t) => t.alpha === 1 && Math.abs(t.scale - 1) < 1e-9));
+    // Le titre (22 px) laisse un jour au-dessus de la grille.
+    assert.ok(title.y + title.size < tiles[0].y - tiles[0].size / 2);
+    // Grille tenue dans l'écran, quel que soit le nombre.
+    for (const n of [1, 2, 4, 7, 9]) {
+        for (const t of recapSheetLayout(n, 1, view).tiles) {
+            assert.ok(t.x - t.size / 2 >= 0 && t.x + t.size / 2 <= 1000 && t.y + t.size / 2 <= 600, `n=${n}`);
+        }
+    }
+    // À 30 % de la planche : les premières arrivées, la dernière pas encore.
+    ({ tiles } = recapSheetLayout(5, 0.3, view));
+    assert.equal(tiles[0].alpha, 1);
+    assert.equal(tiles[4].alpha, 0);
+    // Mouvement réduit : pas de rebond ; sans inclinaison : droites.
+    ({ tiles } = recapSheetLayout(5, 0.3, view, { reduced: true, tilt: false }));
+    assert.ok(tiles.every((t) => t.scale === 1 && t.rotation === 0));
+    // Haute résolution : mêmes proportions.
+    const hi = recapSheetLayout(5, 1, { width: 2000, height: 1200, ratio: 2 }).tiles;
+    assert.equal(Math.round(hi[0].size), Math.round(2 * recapSheetLayout(5, 1, view).tiles[0].size));
+});
+
+test('temps d’écran des photos : nombre, quanta cumulés, durée totale', () => {
+    assert.deepEqual(photoScreenTime({ ...timeline(), quanta: 120 }), { count: 3, quanta: 45, totalQ: 120 });
+    assert.deepEqual(photoScreenTime(null), { count: 0, quanta: 0, totalQ: 0 });
+});
+
 test('bande : la photo entre en grand, rejoint sa case, la bande se vide à la journée suivante', () => {
     const display = normalizePhotoDisplay({ layout: 'strip', tilt: false });
     // Photo 1 en grand, centrée au-dessus de la bande.
@@ -289,7 +362,7 @@ test('dessin : cadres, légende, trait, sans erreur sur un contexte factice', ()
         },
     });
     const img = { naturalWidth: 400, naturalHeight: 300 };
-    for (const frame of ['postcard', 'polaroid', 'rounded', 'plain']) {
+    for (const frame of ['postcard', 'polaroid', 'rounded', 'plain', 'stamp', 'tape', 'film']) {
         const display = normalizePhotoDisplay({ frame, leader: true, ken_burns: true });
         const [card] = photoFrameAt(timeline(), 20, display, VIEW).cards;
         calls.length = 0;
@@ -300,6 +373,18 @@ test('dessin : cadres, légende, trait, sans erreur sur un contexte factice', ()
         assert.ok(draw[3] < 300 && draw[4] < 300, frame); // carré, zoom lent : fenêtre réduite
         assert.ok(calls.some((c) => c[0] === 'fillText' && String(c[1]).startsWith('Le lac')), frame);
     }
+    // Timbre : bord dentelé (des demi-cercles) ; pellicule : perforations
+    // (rectangles arrondis remplis) ; scotch : deux bandes tournées.
+    const drawn = (frame) => {
+        const [card] = photoFrameAt(timeline(), 20, normalizePhotoDisplay({ frame }), VIEW).cards;
+        calls.length = 0;
+        drawPhotoCard(ctx, card, img, {}, { font: 'Inter' });
+        return calls.map((c) => c[0]);
+    };
+    assert.ok(drawn('stamp').filter((k) => k === 'arc').length >= 8);
+    assert.equal(drawn('postcard').filter((k) => k === 'arc').length, 0);
+    assert.ok(drawn('film').filter((k) => k === 'fill').length > 4);
+    assert.equal(drawn('tape').filter((k) => k === 'rotate').length, 2 + 1); // carte inclinée + 2 bandes
     // Image pas encore décodée : rien.
     calls.length = 0;
     const [card] = photoFrameAt(timeline(), 20, normalizePhotoDisplay({}), VIEW).cards;

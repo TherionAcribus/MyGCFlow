@@ -137,7 +137,7 @@ test('réglages propres au parcours, styles tout faits, aperçu automatique', as
   await expect(page.locator('[data-photo-preset="scrapbook"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('[data-photo-preset="postcard"]')).toHaveAttribute('aria-pressed', 'false');
   await expect.poll(async () => (await (await request.get(`/api/parcours/${parcours.id}`)).json()).parcours.photo_display)
-    .toMatchObject({ frame: 'polaroid', stack: true, pin: true, effect: 'zoom' });
+    .toMatchObject({ frame: 'tape', stack: true, pin: true, effect: 'pop' });
   expect((await globalDisplay(request)).frame).toBe('postcard');
   await expect(scope).toContainText('propres à ce parcours');
   await expect(page.locator('#btnParcoursPhotoDisplayReset')).toBeVisible();
@@ -146,12 +146,17 @@ test('réglages propres au parcours, styles tout faits, aperçu automatique', as
   // Aperçu automatique : ouvert en pause sur la première photo, au cadre choisi.
   await expect.poll(() => playbackState(page)).toBe('paused');
   await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => [c.photoId, c.frame]))
-    .toContainEqual([phone, 'polaroid']);
+    .toContainEqual([phone, 'tape']);
+
+  // Temps d'écran : deux photos de 1,5 s, au rythme par défaut (100 ms par quantum).
+  const timeSummary = page.locator('#parcoursPhotoTimeSummary');
+  await expect(timeSummary).toContainText('2 photos montrées : 3 s sur');
 
   // Durée changée en pause : appliquée tout de suite, rouvert sur la photo.
   await page.locator('#parcoursPhotoDuration').fill('2.5');
   await page.locator('#parcoursPhotoDuration').press('Tab');
   await expect.poll(async () => (await snapshot(page)).timeline.quanta).toBe(base + 20);
+  await expect(timeSummary).toContainText('2 photos montrées : 5 s sur');
   await expect.poll(() => playbackState(page)).toBe('paused');
   await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => c.photoId)).toContain(phone);
 
@@ -210,6 +215,44 @@ test('au-delà du plafond : partager le temps, ou ne montrer que les premières'
   await page.locator('a[href="#photos"]').click();
   await expect(page.locator('#parcoursPhotoOverflow')).toHaveValue('first');
   await expect.poll(slotIds).toEqual([phone]);
+  expect(errors).toEqual([]);
+});
+
+test('planche de la journée : ses photos en planche-contact avant la nuit', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  const { parcours, phone, camera } = await withTwoPhotos(page, request);
+  // Les deux photos le jour 1 : GCPAR01 (téléphone) et GCPAR02.
+  await request.patch(`/api/parcours/${parcours.id}/photos/${camera}`, { data: { stopKey: 'GCPAR02' } });
+  await openReady(page);
+  await page.locator('a[href="#photos"]').click();
+  await page.locator('#parcoursPhotoAutoPreview').uncheck();
+  const base = (await snapshot(page)).timeline.quanta;
+  expect((await snapshot(page)).scene.recaps).toEqual([]);
+  await expect(page.locator('#parcoursPhotoTimeSummary')).toContainText('2 photos montrées : 3 s sur');
+
+  // Option cochée : une planche pour le jour 1 (le jour 2 n'a pas de photo),
+  // 3 s de plus, comptées dans le temps d'écran des photos.
+  await page.locator('#parcoursPhotoDayRecap').check();
+  await expect.poll(async () => (await snapshot(page)).scene.recaps.map((r) => [r.day, r.photos]))
+    .toEqual([[0, [phone, camera]]]);
+  const state = await snapshot(page);
+  expect(state.timeline.quanta).toBe(base + 30);
+  await expect(page.locator('#parcoursPhotoTimeSummary')).toContainText('2 photos montrées : 6 s sur');
+  await expect.poll(async () => (await savedDisplay(request)).day_recap).toBe(true);
+
+  // En pause au milieu de la planche : les deux photos peintes.
+  const [recap] = state.scene.recaps;
+  await page.locator('#btnQuickPreview').click();
+  await page.evaluate(async () => (await import('/static/js/index.js')).setPreviewPaused(true));
+  await expect.poll(() => playbackState(page)).toBe('paused');
+  const seek = (q) => page.evaluate(async (target) =>
+    (await import('/static/js/index.js')).seekAnimationToDate(new Date(2000, 0, 1 + target)), q);
+  await seek(Math.round((recap.fromQ + recap.toQ) / 2) + 3);
+  await expect.poll(async () => (await snapshot(page)).scene.recap?.photos).toEqual([phone, camera]);
+  // Après la planche : plus rien.
+  await seek(Math.ceil(recap.toQ) + 2);
+  await expect.poll(async () => (await snapshot(page)).scene.recap).toBeNull();
+  await page.locator('#btnQuickStop').click();
   expect(errors).toEqual([]);
 });
 

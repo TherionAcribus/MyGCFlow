@@ -24,6 +24,61 @@ function roundRectPath(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
+// Bord de timbre : rectangle dont chaque côté est creusé de demi-cercles de
+// rayon `r` (les dents), tracés vers l'intérieur du papier — un chemin plein,
+// rien n'est effacé du canevas de la carte.
+function stampPath(ctx, x, y, w, h, r) {
+    const count = (length) => Math.max(2, Math.round(length / (r * 2.6)));
+    const nx = count(w);
+    const ny = count(h);
+    const sx = w / nx;
+    const sy = h / ny;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (let i = 0; i < nx; i++) ctx.arc(x + sx * (i + 0.5), y, r, Math.PI, 0, true);
+    ctx.lineTo(x + w, y);
+    for (let i = 0; i < ny; i++) ctx.arc(x + w, y + sy * (i + 0.5), r, -Math.PI / 2, Math.PI / 2, true);
+    ctx.lineTo(x + w, y + h);
+    for (let i = nx - 1; i >= 0; i--) ctx.arc(x + sx * (i + 0.5), y + h, r, 0, Math.PI, true);
+    ctx.lineTo(x, y + h);
+    for (let i = ny - 1; i >= 0; i--) ctx.arc(x, y + sy * (i + 0.5), r, Math.PI / 2, -Math.PI / 2, true);
+    ctx.closePath();
+}
+
+// Pellicule : perforations claires dans les bandes du haut et du bas.
+function drawSprockets(ctx, left, top, cardW, cardH, band) {
+    const holeH = band * 0.42;
+    const holeW = holeH * 1.3;
+    const count = Math.max(2, Math.floor(cardW / (holeW * 2.2)));
+    const step = cardW / count;
+    ctx.fillStyle = 'rgba(236, 236, 228, 0.92)';
+    for (const y of [top + (band - holeH) / 2, top + cardH - band + (band - holeH) / 2]) {
+        for (let i = 0; i < count; i++) {
+            roundRectPath(ctx, left + step * (i + 0.5) - holeW / 2, y, holeW, holeH, holeH * 0.25);
+            ctx.fill();
+        }
+    }
+}
+
+// Carnet : deux bandes de scotch translucides, en travers des coins du haut.
+function drawTape(ctx, left, top, cardW) {
+    const length = cardW * 0.24;
+    const thick = Math.max(8, cardW * 0.07);
+    ctx.fillStyle = 'rgba(244, 236, 205, 0.78)';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+    ctx.lineWidth = 1;
+    for (const [x, angle] of [[left + length * 0.3, -Math.PI / 5], [left + cardW - length * 0.3, Math.PI / 5]]) {
+        ctx.save();
+        ctx.translate(x, top + thick * 0.15);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.rect(-length / 2, -thick / 2, length, thick);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
 // Texte tronqué (…) à `maxWidth`.
 function fitText(ctx, text, maxWidth) {
     if (ctx.measureText(text).width <= maxWidth) return text;
@@ -91,8 +146,10 @@ export function drawPhotoCard(ctx, card, img, photo, { font = 'sans-serif', rati
     const scale = card.scale * card.effectScale;
     if (scale !== 1) ctx.scale(scale, scale);
 
-    // Fond du cadre (blanc) ou de l'image seule, avec son ombre.
-    const paper = frame.kind === 'postcard' || frame.kind === 'polaroid';
+    // Fond du cadre (blanc, noir pour la pellicule) ou de l'image seule,
+    // avec son ombre.
+    const film = frame.kind === 'film';
+    const paper = film || ['postcard', 'polaroid', 'stamp', 'tape'].includes(frame.kind);
     if (frame.shadow) {
         // L'ombre ne suit pas ctx.scale : réduite avec la carte (vignettes).
         const shrink = Math.min(1, scale * 1.5);
@@ -101,11 +158,16 @@ export function drawPhotoCard(ctx, card, img, photo, { font = 'sans-serif', rati
         ctx.shadowOffsetY = 3 * ratio * shrink;
     }
     if (paper || frame.shadow) {
-        ctx.fillStyle = paper ? '#ffffff' : '#000000';
-        roundRectPath(ctx, left, top, cardW, cardH, frame.radius);
+        ctx.fillStyle = film ? '#141414' : paper ? '#ffffff' : '#000000';
+        if (frame.kind === 'stamp' && frame.perforation > 0) {
+            stampPath(ctx, left, top, cardW, cardH, frame.perforation);
+        } else {
+            roundRectPath(ctx, left, top, cardW, cardH, frame.radius);
+        }
         ctx.fill();
     }
     ctx.shadowColor = 'transparent';
+    if (film) drawSprockets(ctx, left, top, cardW, cardH, frame.top);
 
     ctx.save();
     roundRectPath(ctx, imageX, imageY, w, h, paper ? 0 : frame.radius);
@@ -141,6 +203,11 @@ export function drawPhotoCard(ctx, card, img, photo, { font = 'sans-serif', rati
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#343a40';
         ctx.fillText(fitText(ctx, card.caption, cardW - size * 1.2), 0, imageY + h + frame.bottom / 2);
+    }
+    // Le scotch passe par-dessus l'image et la marge.
+    if (frame.kind === 'tape') {
+        ctx.globalAlpha = card.alpha;
+        drawTape(ctx, left, top, cardW);
     }
     ctx.restore();
 }
