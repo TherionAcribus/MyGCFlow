@@ -33,6 +33,7 @@ import time
 from datetime import datetime
 
 import requests
+from sqlalchemy import func
 
 from models import RouteLegCache
 from options import REPO_URL
@@ -267,3 +268,20 @@ def route_legs(session, config: dict, profile: str, waypoints: list, force: bool
             legs[i] = _leg_dict(row, False)
         session.commit()
     return {'legs': legs, 'provider': provider, 'requested': requested, 'error': error}
+
+
+def cache_stats(session) -> dict:
+    """Contenu du cache, tous parcours confondus : total, et part par
+    fournisseur."""
+    rows = session.query(RouteLegCache.provider, func.count()).group_by(
+        RouteLegCache.provider).all()
+    providers = {provider: n for provider, n in rows}
+    return {'count': sum(providers.values()), 'providers': providers}
+
+
+def clear_cache(session) -> int:
+    """Vide le cache et renvoie le nombre de trajets oubliés. Tous
+    fournisseurs : chaque itinéraire sera redemandé au prochain calcul."""
+    removed = session.query(RouteLegCache).delete()
+    session.commit()
+    return removed

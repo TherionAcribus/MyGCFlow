@@ -8,7 +8,7 @@
 // déjà connus. Réglages persistés dans `parcours_routing` (settings_api) ;
 // reconstruction et chronologie sont injectées — pas d'import de
 // parcours_data.js.
-import { t } from './notifications.js';
+import { showConfirmation, showToast, t } from './notifications.js';
 import { saveSettingsPatch } from './settings_api.mjs';
 import { cacheKey, pendingRuns, routeEffects, routeRuns } from './parcours_routing.mjs';
 
@@ -26,6 +26,19 @@ export function createParcoursRouting(deps) {
     let routeState = { state: 'idle', message: '' };
     let routeSeq = 0;
     let routeRevision = 0;
+    let cacheStats = null;       // relevé du cache serveur (tous parcours)
+
+    // Contenu du cache serveur : relevé au premier rendu puis après chaque
+    // calcul (les résultats partiels d'un échec sont gardés eux aussi).
+    async function loadCacheStats() {
+        try {
+            cacheStats = await deps.fetchJson('/api/parcours/routes/cache');
+        } catch (error) {
+            console.warn('[PARCOURS] Relevé du cache d’itinéraires indisponible :', error);
+            cacheStats = null;
+        }
+        render();
+    }
 
     function config() {
         const raw = window.userSettings?.parcours_routing || {};
@@ -109,6 +122,7 @@ export function createParcoursRouting(deps) {
         if (seq !== routeSeq) return;
         routeState = failed ? { state: 'error', message } : { state: 'ready', message: '' };
         routeRevision++;
+        loadCacheStats();
         if (deps.clockRunning()) {
             deps.deferTimeline();
             render();
@@ -175,6 +189,20 @@ export function createParcoursRouting(deps) {
             hint.textContent = cfg.enabled ? status.textContent : t('Désactivés : trajets en ligne droite');
             hint.classList.toggle('is-warning', cfg.enabled && routeState.state === 'error');
         }
+        // Cache serveur (tous parcours) : ligne d'information et bouton de
+        // purge, visibles seulement quand le relevé est connu et non vide.
+        const cacheLine = el('parcoursRoutingCache');
+        if (cacheLine) {
+            const count = cacheStats?.count;
+            cacheLine.textContent = !cfg.enabled || !Number.isFinite(count) ? ''
+                : count === 0 ? t('Aucun itinéraire en cache.')
+                : t('${n} itinéraires gardés en cache.', { n: count });
+        }
+        const clearCache = el('btnParcoursRoutesCacheClear');
+        if (clearCache) {
+            clearCache.hidden = !cfg.enabled || !(cacheStats?.count > 0)
+                || routeState.state === 'loading';
+        }
     }
 
     function bind() {
@@ -227,6 +255,33 @@ export function createParcoursRouting(deps) {
             deps.applyTimeline();
             render();
         });
+        el('btnParcoursRoutesCacheClear')?.addEventListener('click', () => {
+            if (deps.adjustmentsLocked() || routeState.state === 'loading') return;
+            showConfirmation(
+                t('Oublier les ${n} itinéraires gardés en cache ? Ils seront recalculés par le service en ligne au prochain besoin.', { n: cacheStats?.count || 0 }),
+                t('Vider le cache des itinéraires'),
+                async () => {
+                    let body;
+                    try {
+                        body = await deps.fetchJson('/api/parcours/routes/cache', { method: 'DELETE' });
+                    } catch (error) {
+                        showToast(error.message, 'error');
+                        return;
+                    }
+                    // Le cache de la page reste : les itinéraires affichés
+                    // survivent, le serveur ne les redemandera qu'au prochain
+                    // besoin (rechargement, autre parcours, « Recalculer »).
+                    // Le vider ici relancerait aussitôt le téléchargement de
+                    // tous les trajets via rebuild() → ensureRoutes().
+                    cacheStats = { count: 0, providers: {} };
+                    render();
+                    showToast(t('${n} itinéraires oubliés.', { n: body?.removed || 0 }), 'success');
+                },
+                null,
+                { danger: true, confirmText: t('Vider') },
+            );
+        });
+        loadCacheStats();
     }
 
     // Changement de parcours ouvert : toute suite en vol appartient au

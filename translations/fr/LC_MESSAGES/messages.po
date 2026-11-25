@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-24 07:57+0100\n"
+"POT-Creation-Date: 2026-11-25 07:53+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -642,14 +642,14 @@ msgid "Code GC"
 msgstr "Code GC"
 
 #: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:776
-#: templates/menu_data_parcours.html:44 templates/menu_data_parcours.html:277
+#: templates/menu_data_parcours.html:44 templates/menu_data_parcours.html:283
 #: templates/menu_images.html:152 templates/stats_page.html:658
 #: templates/stats_page.html:732
 msgid "Nom"
 msgstr "Nom"
 
 #: poses_dataset.py:635 static/js/parcours_stops_panel.mjs:810
-#: static/js/ui.js:11726 templates/menu_data_parcours.html:270
+#: static/js/ui.js:11726 templates/menu_data_parcours.html:276
 msgid "Type"
 msgstr "Type"
 
@@ -921,8 +921,8 @@ msgstr "Confirmer"
 #: static/js/stats_page_links.js:267 static/js/stats_page_video.js:75
 #: templates/menu_data.html:127 templates/menu_data.html:586
 #: templates/menu_data.html:616 templates/menu_data.html:646
-#: templates/menu_data_parcours.html:163 templates/menu_data_parcours.html:243
-#: templates/menu_data_parcours.html:318 templates/menu_images.html:118
+#: templates/menu_data_parcours.html:163 templates/menu_data_parcours.html:249
+#: templates/menu_data_parcours.html:324 templates/menu_images.html:118
 #: templates/menu_stats.html:71 templates/menu_style.html:279
 #: templates/menu_style.html:304 templates/menu_style.html:329
 #: templates/menu_style.html:357 templates/menu_style.html:388
@@ -1275,11 +1275,11 @@ msgstr "Image trop lourde : %(max)d Mo au maximum."
 msgid "Format non pris en charge : PNG, JPEG, WebP, GIF, SVG ou HEIC."
 msgstr "Format non pris en charge : PNG, JPEG, WebP, GIF, SVG ou HEIC."
 
-#: blueprints/images.py:48 blueprints/parcours.py:294
+#: blueprints/images.py:48 blueprints/parcours.py:299
 msgid "Image trop grande (dimensions démesurées)."
 msgstr "Image trop grande (dimensions démesurées)."
 
-#: blueprints/images.py:49 blueprints/parcours.py:296
+#: blueprints/images.py:49 blueprints/parcours.py:301
 msgid "Ce fichier n'est pas une image lisible."
 msgstr "Ce fichier n'est pas une image lisible."
 
@@ -1607,66 +1607,66 @@ msgstr "Ce fichier n'est pas un export de parcours valide"
 msgid "La nouvelle plage laisse des lieux ou des étapes déplacées dehors"
 msgstr "La nouvelle plage laisse des lieux ou des étapes déplacées dehors"
 
-#: blueprints/parcours.py:208
+#: blueprints/parcours.py:213
 msgid "Choix de caches invalide"
 msgstr "Choix de caches invalide"
 
-#: blueprints/parcours.py:216
+#: blueprints/parcours.py:221
 msgid "Aucune cache à relire"
 msgstr "Aucune cache à relire"
 
-#: blueprints/parcours.py:219
+#: blueprints/parcours.py:224
 #, python-format
 msgid "%(count)s caches à relire : le favori en lit %(max)s au plus par collecte"
 msgstr "%(count)s caches à relire : le favori en lit %(max)s au plus par collecte"
 
-#: blueprints/parcours.py:289
+#: blueprints/parcours.py:294
 #, python-format
 msgid "Photo trop lourde : %(max)d Mo au maximum."
 msgstr "Photo trop lourde : %(max)d Mo au maximum."
 
-#: blueprints/parcours.py:292
+#: blueprints/parcours.py:297
 msgid "Format non pris en charge : JPEG, PNG, WebP, GIF ou HEIC."
 msgstr "Format non pris en charge : JPEG, PNG, WebP, GIF ou HEIC."
 
-#: blueprints/parcours.py:305
+#: blueprints/parcours.py:310
 msgid "Aucune photo fournie"
 msgstr "Aucune photo fournie"
 
-#: blueprints/parcours.py:399
+#: blueprints/parcours.py:404
 #, python-format
 msgid "Trace trop lourde : %(max)d Mo au maximum."
 msgstr "Trace trop lourde : %(max)d Mo au maximum."
 
-#: blueprints/parcours.py:402
+#: blueprints/parcours.py:407
 msgid "Cette trace n'a aucun point horodaté : impossible d'en tirer des heures."
 msgstr "Cette trace n'a aucun point horodaté : impossible d'en tirer des heures."
 
-#: blueprints/parcours.py:404
+#: blueprints/parcours.py:409
 msgid "Ce fichier n'est pas une trace GPX lisible."
 msgstr "Ce fichier n'est pas une trace GPX lisible."
 
-#: blueprints/parcours.py:413
+#: blueprints/parcours.py:418
 msgid "Aucune trace fournie"
 msgstr "Aucune trace fournie"
 
-#: blueprints/parcours.py:436
+#: blueprints/parcours.py:441
 msgid "Service d'itinéraires injoignable : trajets en ligne droite."
 msgstr "Service d'itinéraires injoignable : trajets en ligne droite."
 
-#: blueprints/parcours.py:437
+#: blueprints/parcours.py:442
 msgid "Le service d'itinéraires limite les requêtes : réessayez plus tard."
 msgstr "Le service d'itinéraires limite les requêtes : réessayez plus tard."
 
-#: blueprints/parcours.py:438
+#: blueprints/parcours.py:443
 msgid "Clé openrouteservice absente ou refusée."
 msgstr "Clé openrouteservice absente ou refusée."
 
-#: blueprints/parcours.py:452
+#: blueprints/parcours.py:457
 msgid "Les itinéraires ne sont pas activés."
 msgstr "Les itinéraires ne sont pas activés."
 
-#: blueprints/parcours.py:457
+#: blueprints/parcours.py:462
 msgid "Requête d'itinéraire invalide"
 msgstr "Requête d'itinéraire invalide"
 
@@ -6236,7 +6236,7 @@ msgid "${count} fiches de caches ajoutées ou mises à jour."
 msgstr "${count} fiches de caches ajoutées ou mises à jour."
 
 #: static/js/parcours_collect.js:302 static/js/parcours_collect.js:307
-#: templates/menu_data_parcours.html:179
+#: templates/menu_data_parcours.html:185
 msgid "Compléter depuis geocaching.com"
 msgstr "Compléter depuis geocaching.com"
 
@@ -6353,32 +6353,32 @@ msgid "ravitaillement"
 msgstr "ravitaillement"
 
 #: static/js/parcours_labels.mjs:110 static/js/parcours_stops_panel.mjs:476
-#: templates/menu_data_parcours.html:301
+#: templates/menu_data_parcours.html:307
 msgid "Parking"
 msgstr "Parking"
 
-#: static/js/parcours_labels.mjs:111 templates/menu_data_parcours.html:302
+#: static/js/parcours_labels.mjs:111 templates/menu_data_parcours.html:308
 msgid "Repas / pique-nique"
 msgstr "Repas / pique-nique"
 
-#: static/js/parcours_labels.mjs:112 templates/menu_data_parcours.html:303
+#: static/js/parcours_labels.mjs:112 templates/menu_data_parcours.html:309
 msgid "Point de vue"
 msgstr "Point de vue"
 
-#: static/js/parcours_labels.mjs:113 templates/menu_data_parcours.html:304
+#: static/js/parcours_labels.mjs:113 templates/menu_data_parcours.html:310
 msgid "Hébergement"
 msgstr "Hébergement"
 
-#: static/js/parcours_labels.mjs:114 templates/menu_data_parcours.html:305
+#: static/js/parcours_labels.mjs:114 templates/menu_data_parcours.html:311
 msgid "Ravitaillement / eau"
 msgstr "Ravitaillement / eau"
 
 #: static/js/parcours_labels.mjs:115 static/js/stats_page_dashboard.js:89
-#: templates/menu_data_parcours.html:306
+#: templates/menu_data_parcours.html:312
 msgid "Personnalisée…"
 msgstr "Personnalisée…"
 
-#: static/js/parcours_labels.mjs:116 templates/menu_data_parcours.html:300
+#: static/js/parcours_labels.mjs:116 templates/menu_data_parcours.html:306
 msgid "Autre"
 msgstr "Autre"
 
@@ -6573,7 +6573,7 @@ msgid "Réessayer"
 msgstr "Réessayer"
 
 #: static/js/parcours_list.mjs:74 static/js/parcours_stops_panel.mjs:127
-#: templates/menu_data_parcours.html:26 templates/menu_data_parcours.html:234
+#: templates/menu_data_parcours.html:26 templates/menu_data_parcours.html:240
 #: templates/menu_data_poses.html:18
 msgid "Chargement…"
 msgstr "Chargement…"
@@ -7198,24 +7198,24 @@ msgstr "Le parcours"
 msgid "Fin du parcours"
 msgstr "Fin du parcours"
 
-#: static/js/parcours_routing_ui.mjs:163
+#: static/js/parcours_routing_ui.mjs:180
 msgid "Clé enregistrée (la remplacer)"
 msgstr "Clé enregistrée (la remplacer)"
 
-#: static/js/parcours_routing_ui.mjs:163 templates/menu_data_parcours.html:147
+#: static/js/parcours_routing_ui.mjs:180 templates/menu_data_parcours.html:147
 msgid "Clé openrouteservice"
 msgstr "Clé openrouteservice"
 
-#: static/js/parcours_routing_ui.mjs:190
+#: static/js/parcours_routing_ui.mjs:207
 #, python-brace-format
 msgid "Calcul des itinéraires : ${done} / ${total} trajets…"
 msgstr "Calcul des itinéraires : ${done} / ${total} trajets…"
 
-#: static/js/parcours_routing_ui.mjs:193
+#: static/js/parcours_routing_ui.mjs:210
 msgid "Itinéraires indisponibles : trajets en ligne droite."
 msgstr "Itinéraires indisponibles : trajets en ligne droite."
 
-#: static/js/parcours_routing_ui.mjs:195
+#: static/js/parcours_routing_ui.mjs:212
 #, python-brace-format
 msgid ""
 "Calcul interrompu : ${routed} trajets sur ${legs} gardent leurs "
@@ -7224,18 +7224,49 @@ msgstr ""
 "Calcul interrompu : ${routed} trajets sur ${legs} gardent leurs "
 "itinéraires."
 
-#: static/js/parcours_routing_ui.mjs:199
+#: static/js/parcours_routing_ui.mjs:216
 msgid "Aucun trajet à calculer (trajets sur une trace ou en ligne droite)."
 msgstr "Aucun trajet à calculer (trajets sur une trace ou en ligne droite)."
 
-#: static/js/parcours_routing_ui.mjs:200
+#: static/js/parcours_routing_ui.mjs:217
 #, python-brace-format
 msgid "${routed} trajets sur ${legs} suivent les routes et chemins."
 msgstr "${routed} trajets sur ${legs} suivent les routes et chemins."
 
-#: static/js/parcours_routing_ui.mjs:206
+#: static/js/parcours_routing_ui.mjs:223
 msgid "Désactivés : trajets en ligne droite"
 msgstr "Désactivés : trajets en ligne droite"
+
+#: static/js/parcours_routing_ui.mjs:234
+msgid "Aucun itinéraire en cache."
+msgstr "Aucun itinéraire en cache."
+
+#: static/js/parcours_routing_ui.mjs:235
+#, python-brace-format
+msgid "${n} itinéraires gardés en cache."
+msgstr "${n} itinéraires gardés en cache."
+
+#: static/js/parcours_routing_ui.mjs:304
+#, python-brace-format
+msgid ""
+"Oublier les ${n} itinéraires gardés en cache ? Ils seront recalculés par "
+"le service en ligne au prochain besoin."
+msgstr ""
+"Oublier les ${n} itinéraires gardés en cache ? Ils seront recalculés par "
+"le service en ligne au prochain besoin."
+
+#: static/js/parcours_routing_ui.mjs:305
+msgid "Vider le cache des itinéraires"
+msgstr "Vider le cache des itinéraires"
+
+#: static/js/parcours_routing_ui.mjs:325
+#, python-brace-format
+msgid "${n} itinéraires oubliés."
+msgstr "${n} itinéraires oubliés."
+
+#: static/js/parcours_routing_ui.mjs:328
+msgid "Vider"
+msgstr "Vider"
 
 #: static/js/parcours_stops_panel.mjs:134
 msgid "Impossible de charger les étapes"
@@ -7272,7 +7303,7 @@ msgstr ""
 msgid "Tout déplier"
 msgstr "Tout déplier"
 
-#: static/js/parcours_stops_panel.mjs:173 templates/menu_data_parcours.html:254
+#: static/js/parcours_stops_panel.mjs:173 templates/menu_data_parcours.html:260
 msgid "Tout plier"
 msgstr "Tout plier"
 
@@ -7356,7 +7387,7 @@ msgid "Automatique (${mode})"
 msgstr "Automatique (${mode})"
 
 #: static/js/parcours_stops_panel.mjs:748
-#: static/js/parcours_stops_panel.mjs:832 templates/menu_data_parcours.html:282
+#: static/js/parcours_stops_panel.mjs:832 templates/menu_data_parcours.html:288
 msgid "Journée"
 msgstr "Journée"
 
@@ -7369,20 +7400,20 @@ msgstr "Renommer"
 msgid "Rôle"
 msgstr "Rôle"
 
-#: static/js/parcours_stops_panel.mjs:862 templates/menu_data_parcours.html:292
+#: static/js/parcours_stops_panel.mjs:862 templates/menu_data_parcours.html:298
 msgid "Départ et retour"
 msgstr "Départ et retour"
 
-#: static/js/parcours_stops_panel.mjs:863 templates/menu_data_parcours.html:293
+#: static/js/parcours_stops_panel.mjs:863 templates/menu_data_parcours.html:299
 msgid "Départ seulement"
 msgstr "Départ seulement"
 
-#: static/js/parcours_stops_panel.mjs:863 templates/menu_data_parcours.html:294
+#: static/js/parcours_stops_panel.mjs:863 templates/menu_data_parcours.html:300
 msgid "Arrivée seulement"
 msgstr "Arrivée seulement"
 
 #: static/js/parcours_stops_panel.mjs:879 static/js/stats_panels.js:3048
-#: static/js/stats_panels.js:3091 templates/menu_data_parcours.html:298
+#: static/js/stats_panels.js:3091 templates/menu_data_parcours.html:304
 msgid "Catégorie"
 msgstr "Catégorie"
 
@@ -8957,7 +8988,7 @@ msgid "Modifier l'image"
 msgstr "Modifier l'image"
 
 #: static/js/stats_page_image.js:102 templates/guide.html:389
-#: templates/guide.html:437 templates/menu_data_parcours.html:316
+#: templates/guide.html:437 templates/menu_data_parcours.html:322
 #: templates/menu_images.html:103 templates/menu_stats.html:57
 #: templates/stats_page.html:717
 msgid "Ajouter"
@@ -12934,7 +12965,7 @@ msgstr ""
 " la bordure. Les couleurs peuvent suivre le type de cache (Couleurs GC), "
 "être transparentes ou uniques."
 
-#: templates/guide.html:224 templates/menu_data_parcours.html:310
+#: templates/guide.html:224 templates/menu_data_parcours.html:316
 #: templates/menu_points.html:158
 msgid "Icône"
 msgstr "Icône"
@@ -16548,7 +16579,7 @@ msgstr ""
 " fois) :"
 
 #: templates/menu_data.html:189 templates/menu_data.html:358
-#: templates/menu_data_parcours.html:210
+#: templates/menu_data_parcours.html:216
 msgid "Préparation du favori…"
 msgstr "Préparation du favori…"
 
@@ -16565,7 +16596,7 @@ msgid "Importer des fichiers à la place"
 msgstr "Importer des fichiers à la place"
 
 #: templates/menu_data.html:202 templates/menu_data.html:371
-#: templates/menu_data_parcours.html:204
+#: templates/menu_data_parcours.html:210
 msgid "Ouvrez"
 msgstr "Ouvrez"
 
@@ -16574,7 +16605,7 @@ msgid "vos logs Adventure Lab"
 msgstr "vos logs Adventure Lab"
 
 #: templates/menu_data.html:203 templates/menu_data.html:372
-#: templates/menu_data_parcours.html:205
+#: templates/menu_data_parcours.html:211
 msgid ", connectez-vous, puis cliquez ce favori."
 msgstr ", connectez-vous, puis cliquez ce favori."
 
@@ -17073,7 +17104,11 @@ msgstr "2 000 itinéraires par jour. La clé reste sur cet ordinateur."
 msgid "Recalculer les itinéraires"
 msgstr "Recalculer les itinéraires"
 
-#: templates/menu_data_parcours.html:169
+#: templates/menu_data_parcours.html:170
+msgid "Vider le cache"
+msgstr "Vider le cache"
+
+#: templates/menu_data_parcours.html:175
 msgid ""
 "Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS "
 "(routing.openstreetmap.de) ou openrouteservice (HeiGIT)."
@@ -17081,7 +17116,7 @@ msgstr ""
 "Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS "
 "(routing.openstreetmap.de) ou openrouteservice (HeiGIT)."
 
-#: templates/menu_data_parcours.html:182
+#: templates/menu_data_parcours.html:188
 msgid ""
 "Le favori « MyGCFlow — Mes logs » relit sur geocaching.com les caches de "
 "ce parcours, et elles seules : points favoris donnés, coordonnées "
@@ -17091,19 +17126,19 @@ msgstr ""
 "ce parcours, et elles seules : points favoris donnés, coordonnées "
 "corrigées, fiches des DNF. Rien n'est importé avant votre validation."
 
-#: templates/menu_data_parcours.html:189
+#: templates/menu_data_parcours.html:195
 msgid "Caches jamais relues"
 msgstr "Caches jamais relues"
 
-#: templates/menu_data_parcours.html:193 templates/menu_trail.html:52
+#: templates/menu_data_parcours.html:199 templates/menu_trail.html:52
 msgid "Toutes les caches"
 msgstr "Toutes les caches"
 
-#: templates/menu_data_parcours.html:198
+#: templates/menu_data_parcours.html:204
 msgid "Préparer la collecte"
 msgstr "Préparer la collecte"
 
-#: templates/menu_data_parcours.html:208
+#: templates/menu_data_parcours.html:214
 msgid ""
 "Pas encore installé ? Glissez-le dans la barre de favoris de votre "
 "navigateur :"
@@ -17111,31 +17146,31 @@ msgstr ""
 "Pas encore installé ? Glissez-le dans la barre de favoris de votre "
 "navigateur :"
 
-#: templates/menu_data_parcours.html:214
+#: templates/menu_data_parcours.html:220
 msgid "Annuler la demande"
 msgstr "Annuler la demande"
 
-#: templates/menu_data_parcours.html:219
+#: templates/menu_data_parcours.html:225
 msgid "Valider l'import"
 msgstr "Valider l'import"
 
-#: templates/menu_data_parcours.html:230 templates/menu_informations.html:88
+#: templates/menu_data_parcours.html:236 templates/menu_informations.html:88
 msgid "Étapes"
 msgstr "Étapes"
 
-#: templates/menu_data_parcours.html:242
+#: templates/menu_data_parcours.html:248
 msgid "Annuler le dernier ajustement (Ctrl+Z)"
 msgstr "Annuler le dernier ajustement (Ctrl+Z)"
 
-#: templates/menu_data_parcours.html:246
+#: templates/menu_data_parcours.html:252
 msgid "Rétablir l’ajustement annulé (Ctrl+Y)"
 msgstr "Rétablir l’ajustement annulé (Ctrl+Y)"
 
-#: templates/menu_data_parcours.html:247
+#: templates/menu_data_parcours.html:253
 msgid "Rétablir"
 msgstr "Rétablir"
 
-#: templates/menu_data_parcours.html:250
+#: templates/menu_data_parcours.html:256
 msgid ""
 "Astuce : un clic droit sur la carte pose un lieu ou une base à cet "
 "endroit."
@@ -17143,43 +17178,43 @@ msgstr ""
 "Astuce : un clic droit sur la carte pose un lieu ou une base à cet "
 "endroit."
 
-#: templates/menu_data_parcours.html:251
+#: templates/menu_data_parcours.html:257
 msgid "Poser un lieu ou une base sur la carte"
 msgstr "Poser un lieu ou une base sur la carte"
 
-#: templates/menu_data_parcours.html:257
+#: templates/menu_data_parcours.html:263
 msgid "Exporter l’itinéraire en GPX (une route par journée)"
 msgstr "Exporter l’itinéraire en GPX (une route par journée)"
 
-#: templates/menu_data_parcours.html:258
+#: templates/menu_data_parcours.html:264
 msgid "Exporter GPX"
 msgstr "Exporter GPX"
 
-#: templates/menu_data_parcours.html:261
+#: templates/menu_data_parcours.html:267
 msgid "Réinitialiser les ajustements"
 msgstr "Réinitialiser les ajustements"
 
-#: templates/menu_data_parcours.html:265
+#: templates/menu_data_parcours.html:271
 msgid "Cliquez sur la carte à l'endroit du lieu (Échap pour annuler)."
 msgstr "Cliquez sur la carte à l'endroit du lieu (Échap pour annuler)."
 
-#: templates/menu_data_parcours.html:272
+#: templates/menu_data_parcours.html:278
 msgid "Lieu (une étape de plus)"
 msgstr "Lieu (une étape de plus)"
 
-#: templates/menu_data_parcours.html:273
+#: templates/menu_data_parcours.html:279
 msgid "Base (départ et retour de la journée)"
 msgstr "Base (départ et retour de la journée)"
 
-#: templates/menu_data_parcours.html:279
+#: templates/menu_data_parcours.html:285
 msgid "Belvédère, hôtel, restaurant…"
 msgstr "Belvédère, hôtel, restaurant…"
 
-#: templates/menu_data_parcours.html:286
+#: templates/menu_data_parcours.html:292
 msgid "Heure (facultative)"
 msgstr "Heure (facultative)"
 
-#: templates/menu_data_parcours.html:290
+#: templates/menu_data_parcours.html:296
 msgid "Rôle de la base"
 msgstr "Rôle de la base"
 

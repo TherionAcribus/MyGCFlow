@@ -462,3 +462,16 @@ def compute_routes():
         return jsonify({'success': False, 'error': 'routing-invalid', 'message': _("Requête d'itinéraire invalide")}), 400
     message = _ROUTING_MESSAGES[result['error']]() if result['error'] in _ROUTING_MESSAGES else None
     return jsonify({'success': True, **result, 'message': message})
+
+
+@parcours_bp.route('/api/parcours/routes/cache', methods=['GET'])
+def route_cache_stats():
+    """Contenu du cache d'itinéraires, partagé par tous les parcours."""
+    return jsonify({'success': True, **parcours_routing.cache_stats(db.session)})
+
+
+@parcours_bp.route('/api/parcours/routes/cache', methods=['DELETE'])
+def route_cache_clear():
+    """Vide le cache : chaque itinéraire sera redemandé au prochain calcul."""
+    removed = parcours_routing.clear_cache(db.session)
+    return jsonify({'success': True, 'removed': removed})

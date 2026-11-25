@@ -252,6 +252,21 @@ class ApiTests(_Db):
         self.assertEqual((body['error'], body['legs']), ('key', [None]))
         self.assertTrue(body['message'])
 
+    def test_cache_stats_and_clear(self):
+        cache = '/api/parcours/routes/cache'
+        self.assertEqual(self.client.get(cache).get_json()['count'], 0)
+        self.config['enabled'] = True
+        with mock.patch('requests.get', side_effect=lambda url, **kw:
+                        FakeResponse(200, osrm_ok(points_of_osrm_url(url)))):
+            self.post({'profile': 'foot', 'waypoints': [A, B, C]})
+        stats = self.client.get(cache).get_json()
+        self.assertEqual((stats['count'], stats['providers']), (2, {'fossgis': 2}))
+        removed = self.client.delete(cache, headers={'Origin': HOST},
+                                     base_url=HOST).get_json()
+        self.assertEqual(removed['removed'], 2)
+        self.assertEqual(RouteLegCache.query.count(), 0)
+        self.assertEqual(self.client.get(cache).get_json()['count'], 0)
+
 
 class SettingsTests(unittest.TestCase):
     def test_coercion(self):

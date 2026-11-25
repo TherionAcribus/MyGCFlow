@@ -165,6 +165,12 @@
                             <span id="parcoursRoutingStatus" class="small text-muted" aria-live="polite"></span>
                             <progress id="parcoursRoutesProgress" class="parcours-routes-progress" max="1" value="0" hidden></progress>
                         </div>
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <button type="button" id="btnParcoursRoutesCacheClear" class="btn btn-sm btn-outline-danger" hidden>
+                                <i class="ti ti-trash me-1" aria-hidden="true"></i>{{ _("Vider le cache") }}
+                            </button>
+                            <span id="parcoursRoutingCache" class="small text-muted" aria-live="polite"></span>
+                        </div>
                         <div class="form-hint text-muted mt-2 small">
                             {{ _("Itinéraires © contributeurs OpenStreetMap, calculés par FOSSGIS (routing.openstreetmap.de) ou openrouteservice (HeiGIT).") }}
                         </div>

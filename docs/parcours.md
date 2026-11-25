@@ -1284,7 +1284,10 @@ Option globale `parcours_routing`, **désactivée par défaut** (carte
   est re-découpée par dichotomie jusqu'à isoler le ou les coupables
   (`_route_chunk`) — les trajets routables voisins gardent leur itinéraire.
   « Recalculer » ignore le cache (`force`) ; « Réessayer », proposé après
-  un échec ou une annulation, reprend le calcul sans l'ignorer ;
+  un échec ou une annulation, reprend le calcul sans l'ignorer ; « Vider
+  le cache » oublie tous les itinéraires gardés (tous fournisseurs, tous
+  parcours — `GET`/`DELETE /api/parcours/routes/cache`), qui seront
+  recalculés au prochain besoin ;
 - en cas d'échec (réseau, quota, clé), les trajets restent non calculés,
   avec un message, et l'API répond quand même 200 ;
 - la clé openrouteservice est stockée dans settings.json mais **jamais
