@@ -327,6 +327,10 @@ class ParcoursPlace(db.Model):
     vue, restaurant… : une étape de plus) ou `base` (hôtel, domicile : départ
     et retour de la journée)."""
     __tablename__ = 'parcours_place'
+    # Ajustements et photos d'un lieu supprimé survivent sous sa clé
+    # « place:<id> » pour qu'Annuler les restaure : un id jamais réattribué
+    # empêche un lieu suivant de les récupérer par accident (migration v26).
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     parcours_id = db.Column(db.Integer, db.ForeignKey('parcours.id'), nullable=False)

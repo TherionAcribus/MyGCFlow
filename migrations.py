@@ -430,6 +430,47 @@ def _v25_affichage_photos_par_parcours(db):
             conn.exec_driver_sql("ALTER TABLE parcours ADD COLUMN photo_display TEXT")
 
 
+_PARCOURS_PLACE_COLUMNS = ("id, parcours_id, kind, name, latitude, longitude, "
+                           "date, time, created_at, role, category, icon")
+_PARCOURS_PLACE_TABLE = (
+    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+    "parcours_id INTEGER NOT NULL REFERENCES parcours (id), "
+    "kind VARCHAR(8) NOT NULL, name VARCHAR(80), "
+    "latitude FLOAT NOT NULL, longitude FLOAT NOT NULL, "
+    "date DATE, time VARCHAR(5), created_at DATETIME, "
+    "role VARCHAR(8) NOT NULL DEFAULT 'both', "
+    "category VARCHAR(16) NOT NULL DEFAULT 'other', icon VARCHAR(48)")
+
+
+def _v26_ids_lieux_parcours(db):
+    # Parcours : id des lieux jamais réattribués (AUTOINCREMENT). Les
+    # ajustements et photos d'un lieu supprimé survivent sous sa clé
+    # « place:<id> » pour qu'Annuler les restaure ; sans AUTOINCREMENT,
+    # SQLite réattribuait l'id au lieu suivant, qui en héritait par accident.
+    # Idempotent : la reconstruction est sautée si la table l'a déjà.
+    with db.engine.begin() as conn:
+        ddl = conn.exec_driver_sql(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='parcours_place'"
+        ).scalar()
+        if ddl is None:
+            conn.exec_driver_sql(f"CREATE TABLE parcours_place ({_PARCOURS_PLACE_TABLE})")
+            return
+        if 'AUTOINCREMENT' in ddl.upper():
+            return
+        conn.exec_driver_sql(f"CREATE TABLE parcours_place_v26 ({_PARCOURS_PLACE_TABLE})")
+        conn.exec_driver_sql(
+            f"INSERT INTO parcours_place_v26 ({_PARCOURS_PLACE_COLUMNS}) "
+            f"SELECT {_PARCOURS_PLACE_COLUMNS} FROM parcours_place")
+        conn.exec_driver_sql("DROP TABLE parcours_place")
+        conn.exec_driver_sql("ALTER TABLE parcours_place_v26 RENAME TO parcours_place")
+        # Un INSERT explicite met déjà la séquence au plus grand id ; la
+        # poser aussi pour une table vide rend le « jamais réattribué » net.
+        conn.exec_driver_sql("DELETE FROM sqlite_sequence WHERE name='parcours_place'")
+        conn.exec_driver_sql(
+            "INSERT INTO sqlite_sequence (name, seq) "
+            "SELECT 'parcours_place', COALESCE(MAX(id), 0) FROM parcours_place")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -456,6 +497,7 @@ MIGRATIONS = [
     (23, _v23_numero_serie_appareil_photo),
     (24, _v24_photo_favorite_parcours),
     (25, _v25_affichage_photos_par_parcours),
+    (26, _v26_ids_lieux_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

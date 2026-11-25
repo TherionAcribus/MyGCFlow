@@ -705,7 +705,10 @@ lecture, même en pause) :
   suppression d'un lieu ou d'une base sont elles-mêmes annulables :
   l'annulation d'une suppression recrée le lieu tel qu'il était (nouvel
   identifiant — ses ajustements et ses photos sont recollés sur la
-  nouvelle clé). Le point provisoire du formulaire de pose
+  nouvelle clé). L'identifiant d'un lieu supprimé n'est jamais
+  réattribué (`AUTOINCREMENT`, migration v26) : sans cela, le lieu
+  suivant héritait des ajustements et des photos gardés pour l'annulation.
+  Le point provisoire du formulaire de pose
   se glisse aussi (coordonnées du formulaire mises à jour) ;
 - **glisser une étape comptée** (lot 15, depuis le 2026-11-21 ; seule ou
   sortie de sa pile par l'éventail) : sa position devient un ajustement

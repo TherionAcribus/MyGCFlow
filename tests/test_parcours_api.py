@@ -585,6 +585,25 @@ class AdjustmentTests(_Base):
         other = self.create(name="Autre")["id"]
         self.assertEqual(self.delete(f"/api/parcours/{other}/places/{base.get_json()['place']['id']}").status_code, 404)
 
+    def test_place_ids_are_not_reused(self):
+        """AUTOINCREMENT (migration v26) : l'id d'un lieu supprimé n'est pas
+        réattribué — ses ajustements, gardés pour qu'Annuler les restaure,
+        ne passent pas au lieu suivant."""
+        pid = self.create()["id"]
+        gone = self.post(f"/api/parcours/{pid}/places", {"kind": "place", "name": "Vue",
+                         "lat": 45, "lon": 6, "date": "2025-07-12"}).get_json()["place"]
+        self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": f"place:{gone['id']}", "excluded": True, "pinnedTime": "09:00"}]})
+        self.delete(f"/api/parcours/{pid}/places/{gone['id']}")
+        fresh = self.post(f"/api/parcours/{pid}/places", {"kind": "place", "name": "Table",
+                          "lat": 46, "lon": 7, "date": "2025-07-13"}).get_json()["place"]
+        self.assertNotEqual(fresh["id"], gone["id"])
+        overrides = self.get(f"/api/parcours/{pid}/inputs").get_json()["overrides"]
+        # Le lieu nouveau est vierge ; l'orphelin du disparu survit pour
+        # l'annulation de sa suppression.
+        self.assertFalse(any(o["key"] == f"place:{fresh['id']}" for o in overrides))
+        self.assertTrue(any(o["key"] == f"place:{gone['id']}" for o in overrides))
+
     def test_shrinking_the_range_reports_orphans_and_cleans_with_confirm(self):
         """Un rétrécissement qui laisserait des lieux ou des ajustements
         « journée » dehors est refusé sans `drop_orphans` ; avec, les lieux
@@ -686,6 +705,40 @@ class MigrationTests(_Base):
         with db.engine.connect() as conn:
             tables = {row[0] for row in conn.exec_driver_sql("SELECT name FROM sqlite_master WHERE type='table'")}
         self.assertTrue({"parcours", "parcours_override", "parcours_place"} <= tables)
+
+    def test_v26_rebuilds_places_with_autoincrement(self):
+        """Une table parcours_place d'avant la migration (id réattribuables)
+        est reconstruite avec AUTOINCREMENT, données gardées ; la migration
+        est idempotente."""
+        pid = self.create()["id"]
+        with db.engine.begin() as conn:
+            conn.exec_driver_sql("DROP TABLE parcours_place")
+            conn.exec_driver_sql(
+                "CREATE TABLE parcours_place (id INTEGER PRIMARY KEY, "
+                "parcours_id INTEGER NOT NULL REFERENCES parcours (id), "
+                "kind VARCHAR(8) NOT NULL, name VARCHAR(80), "
+                "latitude FLOAT NOT NULL, longitude FLOAT NOT NULL, "
+                "date DATE, time VARCHAR(5), created_at DATETIME, "
+                "role VARCHAR(8) NOT NULL DEFAULT 'both', "
+                "category VARCHAR(16) NOT NULL DEFAULT 'other', icon VARCHAR(48))")
+            conn.exec_driver_sql(
+                "INSERT INTO parcours_place (parcours_id, kind, name, latitude, longitude) "
+                f"VALUES ({pid}, 'base', 'Ancien', 45, 6)")
+        migrations._v26_ids_lieux_parcours(db)
+        migrations._v26_ids_lieux_parcours(db)
+        with db.engine.connect() as conn:
+            ddl = conn.exec_driver_sql(
+                "SELECT sql FROM sqlite_master WHERE name='parcours_place'").scalar()
+            self.assertIn("AUTOINCREMENT", ddl.upper())
+            self.assertEqual(conn.exec_driver_sql("SELECT COUNT(*) FROM parcours_place").scalar(), 1)
+        # Le dernier lieu supprimé : son id (1) n'est pas repris au suivant.
+        with db.engine.begin() as conn:
+            conn.exec_driver_sql("DELETE FROM parcours_place")
+            conn.exec_driver_sql(
+                "INSERT INTO parcours_place (parcours_id, kind, latitude, longitude) "
+                f"VALUES ({pid}, 'place', 46, 7)")
+            self.assertGreater(
+                conn.exec_driver_sql("SELECT MAX(id) FROM parcours_place").scalar(), 1)
 
 
 if __name__ == "__main__":
