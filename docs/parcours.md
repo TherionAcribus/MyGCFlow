@@ -35,7 +35,9 @@ trouvailles laisse les parcours, qui se retrouvent simplement vides.
 
 Deux exports, deux usages. Sur la liste, « Exporter » produit le document
 JSON réimportable (sélection, ajustements, lieux — pas de photos ni de
-traces). Sur un parcours ouvert, le bouton GPX de la barre des étapes
+traces). Les lieux copiés ou recréés reçoivent un nouvel id : les clés
+« place:<id> » des ajustements y sont recollées (duplication comme
+import). Sur un parcours ouvert, le bouton GPX de la barre des étapes
 (`#btnParcoursExportGpx`, `parcours_gpx.mjs` côté client — l'itinéraire
 reconstruit suffit, rien ne repasse par le serveur) télécharge un fichier
 lisible par un GPS : une `<rte>` par journée, les étapes dans l'ordre,

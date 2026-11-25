@@ -648,9 +648,14 @@ class AdjustmentTests(_Base):
             {"key": "GC2", "position": {"lat": 45.2, "lon": 5.2}}]})
         self.post(f"/api/parcours/{pid}/places",
                   {"kind": "base", "name": "Hôtel", "lat": 45.9, "lon": 6.12, "role": "end"})
-        self.post(f"/api/parcours/{pid}/places",
-                  {"kind": "place", "name": "Resto", "lat": 45.5, "lon": 6.5,
-                   "date": "2025-07-12", "category": "custom", "icon": "ti-tree"})
+        resto = self.post(f"/api/parcours/{pid}/places",
+                          {"kind": "place", "name": "Resto", "lat": 45.5, "lon": 6.5,
+                           "date": "2025-07-12", "category": "custom", "icon": "ti-tree"}
+                          ).get_json()["place"]
+        # Un ajustement posé sur le lieu : sa clé « place:<id> » suit le
+        # nouvel id du lieu copié ou importé, pas celui de la source.
+        self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": f"place:{resto['id']}", "pinnedTime": "12:00", "legMode": "bike"}]})
 
         # Duplication : sélection, ajustements et lieux copiés.
         copy = self.post(f"/api/parcours/{pid}/duplicate", {})
@@ -663,12 +668,15 @@ class AdjustmentTests(_Base):
         self.assertEqual(inputs["places"][0]["role"], "end")
         self.assertEqual((inputs["places"][1]["category"], inputs["places"][1]["icon"]),
                          ("custom", "ti-tree"))
+        place_override = next(o for o in inputs["overrides"] if o["key"].startswith("place:"))
+        self.assertEqual(place_override["key"], f"place:{inputs['places'][1]['id']}")
+        self.assertEqual((place_override["pinnedTime"], place_override["legMode"]), ("12:00", "bike"))
 
         # Export : le document porte tout le nécessaire.
         exported = self.get(f"/api/parcours/{pid}/export").get_json()
         self.assertEqual(exported["format"], "mygcflow-parcours")
         self.assertEqual(exported["version"], 1)
-        self.assertEqual(len(exported["overrides"]), 2)
+        self.assertEqual(len(exported["overrides"]), 3)
         self.assertEqual(len(exported["places"]), 2)
 
         # Import : le parcours recréé retrouve ajustements et lieux.
@@ -680,6 +688,8 @@ class AdjustmentTests(_Base):
         self.assertEqual(inputs["overrides"][0]["key"], "GC1")
         self.assertEqual(inputs["overrides"][1]["position"], {"lat": 45.2, "lon": 5.2})
         self.assertEqual(inputs["places"][0]["name"], "Hôtel")
+        place_override = next(o for o in inputs["overrides"] if o["key"].startswith("place:"))
+        self.assertEqual(place_override["key"], f"place:{inputs['places'][1]['id']}")
 
         # Document invalide ou ajustement hors plage : rien n'est importé.
         for body in [{"format": "autre"}, {"parcours": {"name": "X"}},

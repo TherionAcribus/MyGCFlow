@@ -363,6 +363,17 @@ EXPORT_FORMAT = 'mygcflow-parcours'
 EXPORT_VERSION = 1
 
 
+def _remap_place_key(key: str, place_ids: dict) -> str:
+    """Clé « place:<ancien id> » recollée sur l'id du lieu copié (les lieux
+    reçoivent un nouvel id à la duplication comme à l'import). Les autres
+    clés — trouvailles, Labs, DNF, lieux disparus — restent telles quelles."""
+    if key.startswith('place:') and key[6:].isdigit():
+        mapped = place_ids.get(int(key[6:]))
+        if mapped is not None:
+            return f'place:{mapped}'
+    return key
+
+
 def duplicate(session, parcours_id: int) -> Parcours:
     """Copie un parcours et ses ajustements/lieux ; les photos et traces
     ne sont pas copiées."""
@@ -382,18 +393,23 @@ def duplicate(session, parcours_id: int) -> Parcours:
     )
     session.add(row)
     session.flush()                      # id de la copie pour ses enfants
-    for o in session.query(ParcoursOverride).filter_by(parcours_id=src.id):
-        session.add(ParcoursOverride(
-            parcours_id=row.id, stop_key=o.stop_key, rank=o.rank,
-            pinned_time=o.pinned_time, day=o.day, excluded=o.excluded,
-            leg_mode=o.leg_mode, visit_min=o.visit_min,
-            latitude=o.latitude, longitude=o.longitude))
-    for p in session.query(ParcoursPlace).filter_by(parcours_id=src.id):
-        session.add(ParcoursPlace(
+    created = []
+    for p in session.query(ParcoursPlace).filter_by(parcours_id=src.id).order_by(ParcoursPlace.id):
+        place = ParcoursPlace(
             parcours_id=row.id, kind=p.kind, name=p.name,
             latitude=p.latitude, longitude=p.longitude,
             date=p.date, time=p.time, role=p.role or 'both',
-            category=p.category, icon=p.icon, created_at=now))
+            category=p.category, icon=p.icon, created_at=now)
+        session.add(place)
+        created.append((p.id, place))
+    session.flush()                      # ids des lieux copiés
+    place_ids = {old: new.id for old, new in created}
+    for o in session.query(ParcoursOverride).filter_by(parcours_id=src.id):
+        session.add(ParcoursOverride(
+            parcours_id=row.id, stop_key=_remap_place_key(o.stop_key, place_ids), rank=o.rank,
+            pinned_time=o.pinned_time, day=o.day, excluded=o.excluded,
+            leg_mode=o.leg_mode, visit_min=o.visit_min,
+            latitude=o.latitude, longitude=o.longitude))
     session.commit()
     return row
 
@@ -456,8 +472,21 @@ def import_parcours(session, data: dict) -> Parcours:
     session.add(row)
     try:
         session.flush()
+        created = []
+        for place in places:
+            new_place = ParcoursPlace(parcours_id=row.id, created_at=now,
+                                      **_place_fields(place, row))
+            session.add(new_place)
+            created.append((place.get('id'), new_place))
+        session.flush()
+        # Clés « place:<id> » des ajustements recollées sur les lieux recréés.
+        place_ids = {}
+        for src_id, new_place in created:
+            if isinstance(src_id, int) and not isinstance(src_id, bool) and src_id not in place_ids:
+                place_ids[src_id] = new_place.id
         for patch in overrides:
             columns = _override_columns(patch, row)
+            columns['stop_key'] = _remap_place_key(columns['stop_key'], place_ids)
             o = ParcoursOverride(parcours_id=row.id, **columns)
             if o.excluded is None:
                 o.excluded = False
@@ -466,9 +495,6 @@ def import_parcours(session, data: dict) -> Parcours:
                                       ('rank', 'pinned_time', 'day', 'leg_mode', 'visit_min', 'latitude')):
                 continue
             session.add(o)
-        for place in places:
-            session.add(ParcoursPlace(parcours_id=row.id, created_at=now,
-                                      **_place_fields(place, row)))
         session.commit()
     except ParcoursError:
         session.rollback()
