@@ -431,6 +431,24 @@ class CollectRequestTests(_Base):
         self.assertIsNone(response.get_json()["request"])
         self.assertIsNone(self.gc_logs.current_collect_request())
 
+    def test_deleting_the_parcours_cancels_its_request(self):
+        self.find("GC1", "2025-07-12")
+        db.session.commit()
+        parcours = self.create(date_end="2025-07-12")
+        self.post(f"/api/parcours/{parcours['id']}/collect", {"mode": "all"})
+        self.assertIsNotNone(self.gc_logs.current_collect_request())
+        # Sans ce retrait, la demande resterait servie au favori jusqu'à
+        # expiration alors que son parcours n'existe plus.
+        self.delete(f"/api/parcours/{parcours['id']}")
+        self.assertIsNone(self.gc_logs.current_collect_request())
+
+        # La demande d'un autre parcours, elle, survit à la suppression.
+        asker = self.create(name="Demande")
+        other = self.create(name="Étranger")
+        self.post(f"/api/parcours/{asker['id']}/collect", {"mode": "all"})
+        self.delete(f"/api/parcours/{other['id']}")
+        self.assertIsNotNone(self.gc_logs.current_collect_request())
+
     def test_refusals(self):
         self.find("GC1", "2025-07-12")
         self.find("GC2", "2025-07-12")

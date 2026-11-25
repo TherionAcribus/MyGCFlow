@@ -1339,7 +1339,9 @@ corrigées » de la liste.
   `total`, `unread`, la demande du parcours (`request`) ou celle d'un autre
   (`otherRequest`, remplacée par la suivante) ; `DELETE` l'annule. Une
   seule demande à la fois, fichier `logs_collect_request.json` des
-  données (24 h), servi au favori par `/api/logs/receive/state`.
+  données (24 h), servi au favori par `/api/logs/receive/state` ;
+  supprimer le parcours retire sa demande (celle d'un autre parcours
+  survit).
 - **Collecte** : le favori confirme (« Parcours « … » : relire ses N
   caches ? »), ne lit que ces codes et n'envoie aucune couverture ; chaque
   fragment porte `X-MyGCFlow-Request`. Au scellement, l'aperçu garde

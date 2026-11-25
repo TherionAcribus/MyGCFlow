@@ -117,6 +117,11 @@ def delete_parcours(parcours_id):
         store.delete(db.session, parcours_id)
     except store.ParcoursError as exc:
         return _store_error(exc)
+    # Sa demande de collecte mourrait avec lui : elle resterait servie au
+    # favori jusqu'à expiration.
+    current = gc_logs.current_collect_request()
+    if current is not None and current.get('parcours_id') == parcours_id:
+        gc_logs.clear_collect_request(current['id'])
     return jsonify({'success': True})
 
 
