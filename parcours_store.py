@@ -392,7 +392,8 @@ def duplicate(session, parcours_id: int) -> Parcours:
         session.add(ParcoursPlace(
             parcours_id=row.id, kind=p.kind, name=p.name,
             latitude=p.latitude, longitude=p.longitude,
-            date=p.date, time=p.time, role=p.role or 'both', created_at=now))
+            date=p.date, time=p.time, role=p.role or 'both',
+            category=p.category, icon=p.icon, created_at=now))
     session.commit()
     return row
 

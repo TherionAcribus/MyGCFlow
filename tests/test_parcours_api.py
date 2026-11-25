@@ -629,6 +629,9 @@ class AdjustmentTests(_Base):
             {"key": "GC2", "position": {"lat": 45.2, "lon": 5.2}}]})
         self.post(f"/api/parcours/{pid}/places",
                   {"kind": "base", "name": "Hôtel", "lat": 45.9, "lon": 6.12, "role": "end"})
+        self.post(f"/api/parcours/{pid}/places",
+                  {"kind": "place", "name": "Resto", "lat": 45.5, "lon": 6.5,
+                   "date": "2025-07-12", "category": "custom", "icon": "ti-tree"})
 
         # Duplication : sélection, ajustements et lieux copiés.
         copy = self.post(f"/api/parcours/{pid}/duplicate", {})
@@ -639,13 +642,15 @@ class AdjustmentTests(_Base):
         self.assertEqual(inputs["overrides"][0]["visitMin"], 30)
         self.assertEqual(inputs["overrides"][1]["position"], {"lat": 45.2, "lon": 5.2})
         self.assertEqual(inputs["places"][0]["role"], "end")
+        self.assertEqual((inputs["places"][1]["category"], inputs["places"][1]["icon"]),
+                         ("custom", "ti-tree"))
 
         # Export : le document porte tout le nécessaire.
         exported = self.get(f"/api/parcours/{pid}/export").get_json()
         self.assertEqual(exported["format"], "mygcflow-parcours")
         self.assertEqual(exported["version"], 1)
         self.assertEqual(len(exported["overrides"]), 2)
-        self.assertEqual(len(exported["places"]), 1)
+        self.assertEqual(len(exported["places"]), 2)
 
         # Import : le parcours recréé retrouve ajustements et lieux.
         exported["parcours"]["name"] = "Réimporté"
