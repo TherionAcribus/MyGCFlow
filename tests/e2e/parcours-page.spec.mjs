@@ -436,12 +436,19 @@ test('suggestions : six visibles, « et N autres » déplie le reste', async ({ 
     kind: 'trip', start: `2025-0${i + 1}-10`, end: `2025-0${i + 1}-14`,
     days: 5, findDays: 4, finds: 20, place: `Lieu ${i + 1}`,
   }));
-  // La réponse plafonnée à 6, puis entière sur limit=0.
+  // Les suggestions arrivent avec la liste : injection plafonnée à 6 dans
+  // GET /api/parcours ; « et N autres » redemande tout (limit=0).
+  await page.route('**/api/parcours', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const body = await (await route.fetch()).json();
+    body.suggestions = trips.slice(0, 6);
+    body.suggestionsTotal = 8;
+    await route.fulfill({ json: body });
+  });
   await page.route('**/api/parcours/suggestions**', (route) => {
-    const all = route.request().url().includes('limit=0');
     route.fulfill({
       contentType: 'application/json',
-      body: JSON.stringify({ suggestions: all ? trips : trips.slice(0, 6), total: 8 }),
+      body: JSON.stringify({ suggestions: trips, total: 8 }),
     });
   });
   await openParcoursPage(page);

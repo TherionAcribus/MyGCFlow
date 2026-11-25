@@ -4,6 +4,7 @@
 import unittest
 from collections import Counter
 from datetime import date, datetime, timedelta
+from unittest import mock
 
 import parcours_suggest as suggest
 from extensions import db
@@ -137,6 +138,35 @@ class SuggestApiTests(_Base):
         payload = self.get('/api/parcours/suggestions?limit=0').get_json()
         self.assertEqual(len(payload['suggestions']), 7)
         self.assertEqual(payload['total'], 7)
+
+    def test_list_carries_suggestions_from_a_single_find_days(self):
+        # Le centre habituel et les suggestions partagent le même relevé des
+        # journées : une seule passe sur les trouvailles par GET /api/parcours.
+        for k in range(6):
+            self.add(f'GCH{k}', f'2025-03-0{k + 1}', ANNECY)
+        for k, iso in enumerate(['2025-07-12', '2025-07-12', '2025-07-13', '2025-07-13']):
+            self.add(f'GCC{k}', iso, SPLIT, country='Croatia', state='Splitsko-dalmatinska')
+        db.session.commit()
+        calls = 0
+        real = suggest.find_days
+
+        def counted(session):
+            nonlocal calls
+            calls += 1
+            return real(session)
+
+        with mock.patch.object(suggest, 'find_days', counted):
+            payload = self.get('/api/parcours').get_json()
+        self.assertEqual(calls, 1)
+        self.assertEqual(payload['suggestions'], [{
+            'kind': 'trip', 'start': '2025-07-12', 'end': '2025-07-13', 'days': 2, 'findDays': 2,
+            'finds': 4, 'place': 'Splitsko-dalmatinska',
+        }])
+        self.assertEqual(payload['suggestionsTotal'], 1)
+        self.assertEqual(payload['home'], {'lat': mock.ANY, 'lon': mock.ANY})
+        # Une plage enregistrée n'y est plus proposée.
+        self.create(name='Croatie', date_start='2025-07-12', date_end='2025-07-13')
+        self.assertEqual(self.get('/api/parcours').get_json()['suggestions'], [])
 
 
 if __name__ == '__main__':

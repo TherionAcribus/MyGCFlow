@@ -149,9 +149,13 @@ def _suggestion(kind: str, days: list[dict], finds: int) -> dict:
 
 
 def suggestions(session, existing_rows, *, max_days: int = 92,
-                limit: int | None = LIMIT) -> dict:
-    """Suggestions tronquées à `limit` (None : toutes), avec leur total."""
+                limit: int | None = LIMIT, days: list | None = None) -> dict:
+    """Suggestions tronquées à `limit` (None : toutes), avec leur total.
+    `days` : relevé des journées déjà calculé — GET /api/parcours le partage
+    entre le centre habituel et les suggestions plutôt que de le refaire."""
     existing = {(row['date_start'], row['date_end']) for row in existing_rows}
-    full = suggest(find_days(session), existing, max_days=max_days, limit=None)
+    if days is None:
+        days = find_days(session)
+    full = suggest(days, existing, max_days=max_days, limit=None)
     return {'suggestions': full[:limit], 'total': len(full)}
 

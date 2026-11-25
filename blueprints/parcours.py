@@ -61,13 +61,21 @@ def parcours_page():
 @parcours_bp.route('/api/parcours', methods=['GET'])
 def list_parcours():
     # Centre habituel des trouvailles : repère du client pour signaler un
-    # fuseau « ordinateur » probablement faux sur un parcours lointain.
-    home = parcours_suggest.home_center(parcours_suggest.find_days(db.session))
+    # fuseau « ordinateur » probablement faux sur un parcours lointain. Le
+    # relevé des journées sert aussi aux suggestions, renvoyées avec la
+    # liste — le second appel qui le recalculait disparaît (« … et N
+    # autres » garde /suggestions, limit=0).
+    days = parcours_suggest.find_days(db.session)
+    home = parcours_suggest.home_center(days)
+    rows = store.list_parcours(db.session)
+    sug = parcours_suggest.suggestions(db.session, rows, max_days=store.MAX_DAYS, days=days)
     return jsonify({
-        'parcours': store.list_parcours(db.session),
+        'parcours': rows,
         'finds': parcours_dataset.finds_extent(db.session),
         'maxDays': store.MAX_DAYS,
         'home': {'lat': home[0], 'lon': home[1]} if home else None,
+        'suggestions': sug['suggestions'],
+        'suggestionsTotal': sug['total'],
     })
 
 

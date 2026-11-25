@@ -300,8 +300,9 @@ export async function initParcoursPage() {
 }
 
 export async function refreshParcoursList({ select = selectedId } = {}) {
+    let body;
     try {
-        const body = await fetchJson('/api/parcours');
+        body = await fetchJson('/api/parcours');
         listing = Array.isArray(body.parcours) ? body.parcours : [];
         findsExtent = body.finds || findsExtent;
         maxDays = Number(body.maxDays) || maxDays;
@@ -315,7 +316,7 @@ export async function refreshParcoursList({ select = selectedId } = {}) {
         return;
     }
     fillFormDefaults();
-    loadSuggestions();
+    loadSuggestions(body);
     const target = listing.find((item) => item.id === select) || listing[0] || null;
     renderList(target?.id ?? null);
     if (target) {
@@ -907,7 +908,7 @@ function bindForm() {
     });
 }
 function fillFormDefaults() { listUI.fillFormDefaults(); }
-function loadSuggestions() { return listUI.loadSuggestions(); }
+function loadSuggestions(body) { listUI.loadSuggestions(body); }
 function exportGpx() { listUI.exportGpx(); }
 export function duplicateParcours(id) { return listUI.duplicate(id); }
 export function exportParcours(item) { return listUI.exportItem(item); }
@@ -1055,6 +1056,24 @@ function placeById(id) { return adjust.placeById(id); }
 async function createPlace(data, options) { return adjust.createPlace(data, options); }
 async function updatePlace(id, data) { return adjust.updatePlace(id, data); }
 async function deletePlace(id, options) { return adjust.deletePlace(id, options); }
+
+// Fermeture ou rechargement avec des ajustements encore en file : dernier
+// envoi en keepalive, qui survit au déchargement (les patches sont
+// minuscules, loin de la limite keepalive de 64 Kio — cf. la sauvegarde de
+// secours des tableaux de bord, stats_page_save.js). Une écriture déjà
+// reçue est appliquée une seconde fois sans effet.
+window.addEventListener('pagehide', () => {
+    for (const request of adjust.closingWrites()) {
+        try {
+            fetch(`${CONFIG.BASE_URL}${request.url}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: request.body,
+                keepalive: true,
+            }).catch(() => {});
+        } catch (_) {}
+    }
+});
 
 // Reconstruction complète : ordre et heures, traces GPS (heures de passage,
 // vrai chemin) et photos (rattachement, heures) comme ancres

@@ -484,20 +484,14 @@ export function createParcoursList(deps) {
         });
     }
 
-    async function loadSuggestions() {
-        const seq = ++suggestionsSeq;
-        let next = [];
-        let total = 0;
-        try {
-            const body = await deps.fetchJson('/api/parcours/suggestions');
-            next = Array.isArray(body.suggestions) ? body.suggestions : [];
-            total = typeof body.total === 'number' ? body.total : next.length;
-        } catch (error) {
-            console.warn('[PARCOURS] Suggestions indisponibles :', error);
-        }
-        if (seq !== suggestionsSeq) return;
-        suggestions = next;
-        suggestionsTotal = total;
+    // Les suggestions arrivent avec la liste (GET /api/parcours) : le relevé
+    // des journées de trouvailles n'est calculé qu'une fois côté serveur.
+    // « … et N autres » garde son appel à part (limit=0).
+    function loadSuggestions(body) {
+        suggestionsSeq++;
+        suggestions = Array.isArray(body?.suggestions) ? body.suggestions : [];
+        suggestionsTotal = typeof body?.suggestionsTotal === 'number'
+            ? body.suggestionsTotal : suggestions.length;
         suggestionsExpanded = false;
         renderSuggestions();
     }

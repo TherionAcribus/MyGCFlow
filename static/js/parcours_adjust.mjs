@@ -81,6 +81,11 @@ export function createParcoursAdjust(deps) {
     // file rejetée et les gestes suivants ne partiraient jamais ; le drapeau
     // reste alors posé et la tentative se refait au geste suivant.
     let resyncNeeded = false;
+    // Écritures en file ou en vol : si la page se ferme avant leur envoi, la
+    // sauvegarde de secours (closingWrites) les renvoie par un fetch
+    // keepalive. Une écriture en sort à sa réponse — appliquée ou refusée,
+    // elle n'est plus « en attente ».
+    let pendingWrites = [];
 
     // Fusion identique au serveur (parcours_store.patch_overrides) : champ
     // présent → remplacé (null l'efface), absent → gardé ; ligne vidée → retirée.
@@ -159,6 +164,8 @@ export function createParcoursAdjust(deps) {
         deps.renderStops();
         deps.applyTimeline();
         pendingHistory.push(historySlot);
+        const pending = { pid, patches };
+        pendingWrites.push(pending);
         overridesQueued++;
         overridesChain = overridesChain.then(async () => {
             overridesQueued--;
@@ -167,6 +174,9 @@ export function createParcoursAdjust(deps) {
                 const payload = await deps.fetchJson(`/api/parcours/${pid}/overrides`, {
                     method: 'PATCH',
                     body: JSON.stringify({ overrides: patches }),
+                    // Survit à la fermeture de la page (les patches sont
+                    // minuscules, loin de la limite keepalive de 64 Kio).
+                    keepalive: true,
                 });
                 // Une écriture plus récente attend encore : l'état local la
                 // précède déjà, et le serveur renvoie toujours l'ensemble — la
@@ -187,6 +197,8 @@ export function createParcoursAdjust(deps) {
                     updateButtons();
                 }
                 resyncNeeded = true;
+            } finally {
+                pendingWrites = pendingWrites.filter((w) => w !== pending);
             }
             // File écoulée et état à resynchroniser : la relecture est
             // absorbée (voir `resyncNeeded` ci-dessus).
@@ -374,6 +386,23 @@ export function createParcoursAdjust(deps) {
         save(day.stops.filter((stop) => stop.kind !== KIND_BASE).map((stop) => ({ key: stop.key, rank: null })));
     }
 
+    // Écritures encore en file ou en vol quand la page se ferme : renvoyées
+    // par un fetch keepalive, qui survit au déchargement (parcours_data.js
+    // les écoute sur `pagehide`). Concaténées par parcours dans l'ordre des
+    // gestes — le serveur les applique pareil, et une écriture déjà reçue
+    // est appliquée une seconde fois sans effet.
+    function closingWrites() {
+        const byPid = new Map();
+        for (const write of pendingWrites) {
+            const list = byPid.get(write.pid) || [];
+            byPid.set(write.pid, list.concat(write.patches));
+        }
+        return [...byPid.entries()].map(([pid, patches]) => ({
+            url: `/api/parcours/${pid}/overrides`,
+            body: JSON.stringify({ overrides: patches }),
+        }));
+    }
+
     function resetAll() {
         // Même file que les PATCH : un déplacement encore en vol doit être
         // écrit AVANT la remise à zéro, sinon il ressusciterait ses ajustements.
@@ -396,7 +425,7 @@ export function createParcoursAdjust(deps) {
         const pid = s().selectedId;
         if (!pid || locked()) return false;
         try {
-            const { place } = await deps.fetchJson(`/api/parcours/${pid}/places`, { method: 'POST', body: JSON.stringify(data) });
+            const { place } = await deps.fetchJson(`/api/parcours/${pid}/places`, { method: 'POST', body: JSON.stringify(data), keepalive: true });
             await reload(pid);
             if (record && place?.id != null) push({ placeCreate: place.id });
             return place || false;
@@ -410,7 +439,7 @@ export function createParcoursAdjust(deps) {
         const pid = s().selectedId;
         if (!pid || locked()) return false;
         try {
-            await deps.fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+            await deps.fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'PATCH', body: JSON.stringify(data), keepalive: true });
             await reload(pid);
             return true;
         } catch (error) {
@@ -426,7 +455,7 @@ export function createParcoursAdjust(deps) {
         // le lieu tel qu'il était.
         const place = placeById(id);
         try {
-            await deps.fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'DELETE' });
+            await deps.fetchJson(`/api/parcours/${pid}/places/${id}`, { method: 'DELETE', keepalive: true });
             // Les déplacements et créations citant le lieu deviennent morts ;
             // les entrées « suppression », elles, restent rejouables.
             const kept = (entry) => typeof entry === 'string'
@@ -464,6 +493,7 @@ export function createParcoursAdjust(deps) {
         resetHistory: () => { undoStack = []; redoStack = []; },
         depths: () => ({ undo: undoStack.length, redo: redoStack.length }),
         queued: () => overridesQueued,
+        closingWrites,
         revision: () => adjustmentRevision,
     };
 }

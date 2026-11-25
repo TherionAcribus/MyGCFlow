@@ -366,13 +366,16 @@ test('parcours suggérés : liste masquée sans séjour, un clic remplit le form
   await expect(page.locator('#parcoursSuggestions')).toBeHidden();
   expect((await snapshot(page)).suggestions).toEqual([]);
 
-  await page.route('**/api/parcours/suggestions', (route) => route.fulfill({
-    json: {
-      suggestions: [{
-        kind: 'trip', start: '2025-07-12', end: '2025-07-13', days: 2, findDays: 2, finds: 5, place: 'Haute-Savoie',
-      }],
-    },
-  }));
+  // Les suggestions arrivent avec la liste : injection dans GET /api/parcours.
+  await page.route('**/api/parcours', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const body = await (await route.fetch()).json();
+    body.suggestions = [{
+      kind: 'trip', start: '2025-07-12', end: '2025-07-13', days: 2, findDays: 2, finds: 5, place: 'Haute-Savoie',
+    }];
+    body.suggestionsTotal = 1;
+    await route.fulfill({ json: body });
+  });
   await openReady(page);
   // Un parcours existe : les suggestions vivent dans le formulaire replié.
   await page.locator('#btnParcoursNew').click();

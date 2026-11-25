@@ -32,6 +32,7 @@ function mergeInto(serverRows, patches) {
 function harness() {
     const calls = [];
     const failures = new Set();
+    const holds = new Map();   // 'METHOD url' → promesse à attendre avant de répondre (consommée une fois)
     const server = { overrides: [] };
     const toasts = [];
     const state = { selectedId: 7, inputs: { overrides: [], places: [], photos: [], cameras: [], tracks: [] } };
@@ -40,6 +41,8 @@ function harness() {
         fetchJson: async (url, options = {}) => {
             const method = options.method || 'GET';
             calls.push(`${method} ${url}`);
+            const gate = holds.get(`${method} ${url}`);
+            if (gate) { holds.delete(`${method} ${url}`); await gate; }
             if (failures.delete(`${method} ${url}`)) throw new Error('HTTP 503');
             if (method === 'PATCH' && url.endsWith('/overrides')) {
                 server.overrides = mergeInto(server.overrides, JSON.parse(options.body).overrides);
@@ -62,7 +65,7 @@ function harness() {
         showToast: (message, type) => toasts.push({ message, type }),
         t: (x) => x,
     });
-    return { adjust, calls, failures, server, state, toasts };
+    return { adjust, calls, failures, holds, server, state, toasts };
 }
 
 // Les envois passent par une file de promesses : quelques macrotâches la
@@ -116,4 +119,26 @@ test('relecture impossible après un refus : les gestes suivants partent quand m
     assert.equal(reloadCalls(calls).length, 2);
     assert.deepEqual(server.overrides.map((o) => o.key), ['gc:2']);
     assert.deepEqual(state.inputs.overrides.map((o) => o.key), ['gc:2']);
+});
+
+// La page se ferme avec des écritures en file ou en vol : la sauvegarde de
+// secours (fetch keepalive sur `pagehide`) les renvoie toutes, concaténées
+// dans l'ordre des gestes — une écriture déjà reçue s'applique sans effet.
+test('fermeture avec des écritures en file : closingWrites les renvoie toutes', async () => {
+    const { adjust, holds, server } = harness();
+    let release;
+    holds.set('PATCH /api/parcours/7/overrides', new Promise((r) => { release = r; }));
+    adjust.save([{ key: 'gc:1', rank: 0 }]);
+    // Le premier envoi part et reste en vol ; le second reste en file.
+    await new Promise((r) => setImmediate(r));
+    adjust.save([{ key: 'gc:2', rank: 0 }]);
+    const closing = adjust.closingWrites();
+    assert.equal(closing.length, 1);
+    assert.equal(closing[0].url, '/api/parcours/7/overrides');
+    assert.deepEqual(JSON.parse(closing[0].body).overrides, [
+        { key: 'gc:1', rank: 0 }, { key: 'gc:2', rank: 0 }]);
+    release();
+    await drain();
+    assert.equal(adjust.closingWrites().length, 0);
+    assert.deepEqual(server.overrides.map((o) => o.key).sort(), ['gc:1', 'gc:2']);
 });
