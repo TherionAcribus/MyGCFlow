@@ -717,6 +717,24 @@ class AdjustmentTests(_Base):
         names = [p["name"] for p in self.get("/api/parcours").get_json()["parcours"]]
         self.assertEqual(names.count("Réimporté"), 1)
 
+    def test_a_failed_import_leaves_nothing_pending(self):
+        """Tout ou rien, même hors contrat : deux ajustements sur la même
+        clé violent l'unicité (IntegrityError, pas un ParcoursError) et la
+        transaction est relâchée — la session ne garde rien en attente."""
+        import parcours_store as store
+        from sqlalchemy.exc import IntegrityError
+        payload = {
+            "format": "mygcflow-parcours", "version": 1,
+            "parcours": {"name": "Doublon", "date_start": "2025-07-12",
+                         "date_end": "2025-07-13"},
+            "overrides": [{"key": "GC1", "rank": 0}, {"key": "GC1", "rank": 1}],
+            "places": [{"kind": "place", "lat": 45, "lon": 6, "date": "2025-07-12"}],
+        }
+        with self.assertRaises(IntegrityError):
+            store.import_parcours(db.session, payload)
+        self.assertFalse(list(db.session.new))
+        self.assertFalse(list(db.session.dirty))
+
     def test_deleting_a_parcours_deletes_its_adjustments(self):
         pid = self.create()["id"]
         self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [{"key": "GC1", "rank": 1}]})

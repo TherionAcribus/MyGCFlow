@@ -496,7 +496,7 @@ def import_parcours(session, data: dict) -> Parcours:
                 continue
             session.add(o)
         session.commit()
-    except ParcoursError:
+    except Exception:
         session.rollback()
         raise
     return row
@@ -674,7 +674,7 @@ def patch_overrides(session, parcours_id: int, patches) -> dict:
                     session.expunge(row)
         parcours.updated_at = datetime.now()
         session.commit()
-    except ParcoursError:
+    except Exception:
         session.rollback()
         raise
     # Seuls les ajustements changent : la réponse n'a pas à porter lieux,
@@ -771,7 +771,7 @@ def update_place(session, parcours_id: int, place_id: int, data: dict) -> dict:
     try:
         for name, value in _place_fields(data, parcours, row).items():
             setattr(row, name, value)
-    except ParcoursError:
+    except Exception:
         session.rollback()
         raise
     parcours.updated_at = datetime.now()
