@@ -553,6 +553,9 @@ Autres repères :
   (document JSON enrichi — sur-ensemble v1, ignoré par l'import — + photos
   + traces reconstruites en GPX) ; `parcours_export.py` tient l'assemblage
   car `parcours_store` ne peut pas importer `parcours_photos` (circulaire).
+  Toute erreur de l'API Parcours annule la transaction : `db.session.rollback()`
+  vit dans `_store_error` et dans les chemins « refusé »
+  (`InvalidImage`/`InvalidTrack`/`RoutingError`), pas dans les routes.
 - Page Statistiques (`/stats`, docs/page-statistiques.md) : sans carte ni
   `index.js` — signal `window.mygcflowStatsReady` (pas `mygcflowReady`),
   relevé `getStatsPageSnapshot()` (`cards[].keys/series`), pas de modale de

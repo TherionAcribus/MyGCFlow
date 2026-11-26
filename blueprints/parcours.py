@@ -27,6 +27,9 @@ parcours_bp = Blueprint('parcours', __name__)
 
 
 def _store_error(exc: store.ParcoursError):
+    # Toute erreur de l'API annule la transaction : un appelant qui a
+    # échoué après session.add/flush ne laisse rien en attente.
+    db.session.rollback()
     messages = {
         'not-found': (_('Parcours introuvable'), 404),
         'name-empty': (_('Le nom du parcours est obligatoire'), 400),
@@ -115,7 +118,6 @@ def update_parcours(parcours_id):
     try:
         row = store.update(db.session, parcours_id, request.get_json(silent=True))
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, 'parcours': store.to_dict(row)})
 
@@ -140,7 +142,6 @@ def duplicate_parcours(parcours_id):
     try:
         row = store.duplicate(db.session, parcours_id)
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, 'parcours': store.to_dict(row)}), 201
 
@@ -170,7 +171,6 @@ def import_parcours():
     try:
         row = store.import_parcours(db.session, request.get_json(silent=True))
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, 'parcours': store.to_dict(row)}), 201
 
@@ -285,7 +285,6 @@ def create_place(parcours_id):
     try:
         place = store.create_place(db.session, parcours_id, request.get_json(silent=True))
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, 'place': place}), 201
 
@@ -334,6 +333,7 @@ def upload_photo(parcours_id):
     try:
         photo = parcours_photos.save_photo(db.session, parcours_id, data, upload.filename or '')
     except image_library.InvalidImage as exc:
+        db.session.rollback()
         return _photo_refused(exc.reason)
     except store.ParcoursError as exc:
         return _store_error(exc)
@@ -368,7 +368,6 @@ def update_photo(parcours_id, photo_id):
     try:
         photo = parcours_photos.update_photo(db.session, parcours_id, photo_id, request.get_json(silent=True))
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, 'photo': photo})
 
@@ -390,7 +389,6 @@ def update_photos(parcours_id):
     try:
         payload = parcours_photos.update_photos(db.session, parcours_id, data.get('ids'), data.get('changes'))
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, **payload})
 
@@ -401,7 +399,6 @@ def delete_photos(parcours_id):
     try:
         payload = parcours_photos.delete_photos(db.session, parcours_id, data.get('ids'))
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, **payload})
 
@@ -413,7 +410,6 @@ def set_camera(parcours_id):
         payload = parcours_photos.set_camera_offset(db.session, parcours_id, data.get('camera'),
                                                     data.get('offsetMinutes'))
     except store.ParcoursError as exc:
-        db.session.rollback()
         return _store_error(exc)
     return jsonify({'success': True, **payload})
 
@@ -441,6 +437,7 @@ def upload_track(parcours_id):
     try:
         track = parcours_tracks.save_track(db.session, parcours_id, data, upload.filename or '')
     except parcours_tracks.InvalidTrack as exc:
+        db.session.rollback()
         return _track_refused(exc.reason)
     except store.ParcoursError as exc:
         return _store_error(exc)
@@ -480,6 +477,7 @@ def compute_routes():
         result = parcours_routing.route_legs(db.session, config, data.get('profile'), data.get('waypoints'),
                                              force=data.get('force') is True)
     except parcours_routing.RoutingError as exc:
+        db.session.rollback()
         return jsonify({'success': False, 'error': 'routing-invalid', 'message': _("Requête d'itinéraire invalide")}), 400
     message = _ROUTING_MESSAGES[result['error']]() if result['error'] in _ROUTING_MESSAGES else None
     return jsonify({'success': True, **result, 'message': message})

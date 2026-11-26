@@ -54,6 +54,10 @@ parcours ; les étapes exclues ou sans position n'y figurent pas.
 
 ## API (`blueprints/parcours.py`)
 
+Toute erreur annule la transaction : `db.session.rollback()` vit dans
+`_store_error` et dans les chemins « refusé » (fichier non pris, itinéraire
+invalide), jamais dans les routes.
+
 | Route | Rôle |
 |---|---|
 | `GET /parcours` | La page (`render_app_page('parcours')`) |
