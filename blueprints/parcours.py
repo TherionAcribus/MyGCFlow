@@ -12,6 +12,7 @@ from flask_babel import gettext as _
 
 import image_library
 import parcours_dataset
+import parcours_export
 import parcours_photos
 import parcours_routing
 import parcours_store as store
@@ -150,6 +151,18 @@ def export_parcours(parcours_id):
         return jsonify(store.export_payload(db.session, parcours_id))
     except store.ParcoursError as exc:
         return _store_error(exc)
+
+
+@parcours_bp.route('/api/parcours/<int:parcours_id>/export.zip')
+def export_parcours_zip(parcours_id):
+    """Sauvegarde complète : document JSON enrichi, photos et traces."""
+    try:
+        archive = parcours_export.export_zip(db.session, parcours_id)
+        parcours = store.get(db.session, parcours_id)
+    except store.ParcoursError as exc:
+        return _store_error(exc)
+    return send_file(archive, mimetype='application/zip', as_attachment=True,
+                     download_name=f'parcours-{parcours_export.slug(parcours.name)}.zip')
 
 
 @parcours_bp.route('/api/parcours/import', methods=['POST'])

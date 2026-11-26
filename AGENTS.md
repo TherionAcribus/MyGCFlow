@@ -549,6 +549,10 @@ Autres repères :
   `perPage(...)`. Un module de page exporte des noms uniques
   (`posesXxx`, `parcoursXxx`) : `export *` d'index.js écarte EN SILENCE un
   nom exporté par deux modules.
+  `GET /api/parcours/<id>/export.zip` = sauvegarde complète du parcours
+  (document JSON enrichi — sur-ensemble v1, ignoré par l'import — + photos
+  + traces reconstruites en GPX) ; `parcours_export.py` tient l'assemblage
+  car `parcours_store` ne peut pas importer `parcours_photos` (circulaire).
 - Page Statistiques (`/stats`, docs/page-statistiques.md) : sans carte ni
   `index.js` — signal `window.mygcflowStatsReady` (pas `mygcflowReady`),
   relevé `getStatsPageSnapshot()` (`cards[].keys/series`), pas de modale de

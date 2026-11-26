@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-26 13:19+0100\n"
+"POT-Creation-Date: 2026-11-26 13:28+0100\n"
 "PO-Revision-Date: 2024-04-08 15:42+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -1275,11 +1275,11 @@ msgstr "Image trop lourde : %(max)d Mo au maximum."
 msgid "Format non pris en charge : PNG, JPEG, WebP, GIF, SVG ou HEIC."
 msgstr "Format non pris en charge : PNG, JPEG, WebP, GIF, SVG ou HEIC."
 
-#: blueprints/images.py:48 blueprints/parcours.py:307
+#: blueprints/images.py:48 blueprints/parcours.py:320
 msgid "Image trop grande (dimensions démesurées)."
 msgstr "Image trop grande (dimensions démesurées)."
 
-#: blueprints/images.py:49 blueprints/parcours.py:309
+#: blueprints/images.py:49 blueprints/parcours.py:322
 msgid "Ce fichier n'est pas une image lisible."
 msgstr "Ce fichier n'est pas une image lisible."
 
@@ -1523,150 +1523,150 @@ msgstr "Une fenêtre de choix du dossier est déjà ouverte."
 msgid "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 msgstr "Le sélecteur de dossier n'est pas disponible : saisissez le chemin."
 
-#: blueprints/parcours.py:30
+#: blueprints/parcours.py:31
 msgid "Parcours introuvable"
 msgstr "Parcours introuvable"
 
-#: blueprints/parcours.py:31
+#: blueprints/parcours.py:32
 msgid "Le nom du parcours est obligatoire"
 msgstr "Le nom du parcours est obligatoire"
 
-#: blueprints/parcours.py:32
+#: blueprints/parcours.py:33
 #, python-format
 msgid "Le nom du parcours est trop long (%(max)s caractères au plus)"
 msgstr "Le nom du parcours est trop long (%(max)s caractères au plus)"
 
-#: blueprints/parcours.py:34
+#: blueprints/parcours.py:35
 msgid "Date invalide"
 msgstr "Date invalide"
 
-#: blueprints/parcours.py:35 static/js/parcours_list.mjs:452
+#: blueprints/parcours.py:36 static/js/parcours_list.mjs:467
 msgid "La date de fin précède la date de début"
 msgstr "La date de fin précède la date de début"
 
-#: blueprints/parcours.py:36
+#: blueprints/parcours.py:37
 #, python-format
 msgid "Un parcours couvre %(max)s jours au plus"
 msgstr "Un parcours couvre %(max)s jours au plus"
 
-#: blueprints/parcours.py:37
+#: blueprints/parcours.py:38
 msgid "Heure invalide (HH:MM attendu)"
 msgstr "Heure invalide (HH:MM attendu)"
 
-#: blueprints/parcours.py:38
+#: blueprints/parcours.py:39
 msgid "Cette journée est hors du parcours"
 msgstr "Cette journée est hors du parcours"
 
-#: blueprints/parcours.py:39
+#: blueprints/parcours.py:40
 msgid "Ajustement invalide"
 msgstr "Ajustement invalide"
 
-#: blueprints/parcours.py:40
+#: blueprints/parcours.py:41
 msgid "Lieu invalide"
 msgstr "Lieu invalide"
 
-#: blueprints/parcours.py:41
+#: blueprints/parcours.py:42
 msgid "Lieu introuvable"
 msgstr "Lieu introuvable"
 
-#: blueprints/parcours.py:42
+#: blueprints/parcours.py:43
 msgid "Photo introuvable"
 msgstr "Photo introuvable"
 
-#: blueprints/parcours.py:43
+#: blueprints/parcours.py:44
 msgid "Rattachement invalide"
 msgstr "Rattachement invalide"
 
-#: blueprints/parcours.py:44
+#: blueprints/parcours.py:45
 #, python-format
 msgid "Un parcours garde %(max)s photos au plus"
 msgstr "Un parcours garde %(max)s photos au plus"
 
-#: blueprints/parcours.py:45
+#: blueprints/parcours.py:46
 msgid "Décalage d'horloge invalide"
 msgstr "Décalage d'horloge invalide"
 
-#: blueprints/parcours.py:46
+#: blueprints/parcours.py:47
 msgid "Décalage UTC invalide (de −12 h à +14 h)"
 msgstr "Décalage UTC invalide (de −12 h à +14 h)"
 
-#: blueprints/parcours.py:47
+#: blueprints/parcours.py:48
 #, python-format
 msgid "Un parcours garde %(max)s traces au plus"
 msgstr "Un parcours garde %(max)s traces au plus"
 
-#: blueprints/parcours.py:48
+#: blueprints/parcours.py:49
 msgid "Trace introuvable"
 msgstr "Trace introuvable"
 
-#: blueprints/parcours.py:49
+#: blueprints/parcours.py:50
 msgid "Ce fichier n'est pas un export de parcours valide"
 msgstr "Ce fichier n'est pas un export de parcours valide"
 
-#: blueprints/parcours.py:50
+#: blueprints/parcours.py:51
 msgid "La nouvelle plage laisse des lieux ou des étapes déplacées dehors"
 msgstr "La nouvelle plage laisse des lieux ou des étapes déplacées dehors"
 
-#: blueprints/parcours.py:221
+#: blueprints/parcours.py:234
 msgid "Choix de caches invalide"
 msgstr "Choix de caches invalide"
 
-#: blueprints/parcours.py:229
+#: blueprints/parcours.py:242
 msgid "Aucune cache à relire"
 msgstr "Aucune cache à relire"
 
-#: blueprints/parcours.py:232
+#: blueprints/parcours.py:245
 #, python-format
 msgid "%(count)s caches à relire : le favori en lit %(max)s au plus par collecte"
 msgstr "%(count)s caches à relire : le favori en lit %(max)s au plus par collecte"
 
-#: blueprints/parcours.py:302
+#: blueprints/parcours.py:315
 #, python-format
 msgid "Photo trop lourde : %(max)d Mo au maximum."
 msgstr "Photo trop lourde : %(max)d Mo au maximum."
 
-#: blueprints/parcours.py:305
+#: blueprints/parcours.py:318
 msgid "Format non pris en charge : JPEG, PNG, WebP, GIF ou HEIC."
 msgstr "Format non pris en charge : JPEG, PNG, WebP, GIF ou HEIC."
 
-#: blueprints/parcours.py:318
+#: blueprints/parcours.py:331
 msgid "Aucune photo fournie"
 msgstr "Aucune photo fournie"
 
-#: blueprints/parcours.py:412
+#: blueprints/parcours.py:425
 #, python-format
 msgid "Trace trop lourde : %(max)d Mo au maximum."
 msgstr "Trace trop lourde : %(max)d Mo au maximum."
 
-#: blueprints/parcours.py:415
+#: blueprints/parcours.py:428
 msgid "Cette trace n'a aucun point horodaté : impossible d'en tirer des heures."
 msgstr "Cette trace n'a aucun point horodaté : impossible d'en tirer des heures."
 
-#: blueprints/parcours.py:417
+#: blueprints/parcours.py:430
 msgid "Ce fichier n'est pas une trace GPX lisible."
 msgstr "Ce fichier n'est pas une trace GPX lisible."
 
-#: blueprints/parcours.py:426
+#: blueprints/parcours.py:439
 msgid "Aucune trace fournie"
 msgstr "Aucune trace fournie"
 
-#: blueprints/parcours.py:449
+#: blueprints/parcours.py:462
 msgid "Service d'itinéraires injoignable : trajets en ligne droite."
 msgstr "Service d'itinéraires injoignable : trajets en ligne droite."
 
-#: blueprints/parcours.py:450
+#: blueprints/parcours.py:463
 msgid "Le service d'itinéraires limite les requêtes : réessayez plus tard."
 msgstr "Le service d'itinéraires limite les requêtes : réessayez plus tard."
 
-#: blueprints/parcours.py:451
+#: blueprints/parcours.py:464
 msgid "Clé openrouteservice absente ou refusée."
 msgstr "Clé openrouteservice absente ou refusée."
 
-#: blueprints/parcours.py:465
+#: blueprints/parcours.py:478
 msgid "Les itinéraires ne sont pas activés."
 msgstr "Les itinéraires ne sont pas activés."
 
-#: blueprints/parcours.py:470
+#: blueprints/parcours.py:483
 msgid "Requête d'itinéraire invalide"
 msgstr "Requête d'itinéraire invalide"
 
@@ -1846,7 +1846,7 @@ msgid "… et 1 autre"
 msgstr "… et 1 autre"
 
 #: static/js/bdd.js:694 static/js/gc_logs.js:89 static/js/labs.js:730
-#: static/js/parcours_list.mjs:611
+#: static/js/parcours_list.mjs:626
 #, python-brace-format
 msgid "… et ${n} autres"
 msgstr "… et ${n} autres"
@@ -4866,7 +4866,7 @@ msgstr "Cette image sera supprimée définitivement de la bibliothèque."
 
 #: static/js/images_ui.js:1107 static/js/images_ui.js:1153
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
-#: static/js/parcours_list.mjs:168 static/js/parcours_list.mjs:327
+#: static/js/parcours_list.mjs:171 static/js/parcours_list.mjs:342
 #: static/js/parcours_photos_panel.mjs:561
 #: static/js/parcours_photos_panel.mjs:568 static/js/parcours_plan.mjs:416
 #: static/js/parcours_plan.mjs:423 static/js/profiles.js:978
@@ -5531,7 +5531,7 @@ msgstr "Utiliser la suggestion"
 msgid "Date de découverte"
 msgstr "Date de découverte"
 
-#: static/js/labs.js:1866 static/js/parcours_list.mjs:408
+#: static/js/labs.js:1866 static/js/parcours_list.mjs:423
 #: static/js/stats_page_image.js:102 templates/menu_data_parcours.html:148
 #: templates/menu_images.html:117 templates/menu_stats.html:70
 #: templates/stats_page.html:506
@@ -6069,7 +6069,7 @@ msgid "Flash"
 msgstr "Flash"
 
 #: static/js/notifications.js:120 static/js/notifications.js:484
-#: static/js/parcours_list.mjs:413 static/js/stats_page_links.js:283
+#: static/js/parcours_list.mjs:428 static/js/stats_page_links.js:283
 #: static/js/stats_page_video.js:75 templates/menu_data.html:512
 #: templates/menu_data.html:554 templates/menu_data.html:566
 #: templates/menu_data.html:600 templates/menu_data.html:632
@@ -6264,12 +6264,12 @@ msgid "Lire depuis ici"
 msgstr "Lire depuis ici"
 
 #: static/js/parcours_data.js:716 static/js/parcours_list.mjs:113
-#: static/js/parcours_list.mjs:454
+#: static/js/parcours_list.mjs:469
 msgid "Une journée"
 msgstr "Une journée"
 
 #: static/js/parcours_data.js:716 static/js/parcours_list.mjs:113
-#: static/js/parcours_list.mjs:454 static/js/parcours_stops_panel.mjs:185
+#: static/js/parcours_list.mjs:469 static/js/parcours_stops_panel.mjs:185
 #: static/js/stats_panels.js:1534 static/js/ui.js:8729
 #, python-brace-format
 msgid "${n} jours"
@@ -6471,14 +6471,14 @@ msgstr "PF donné"
 msgid "déplacée du ${day}"
 msgstr "déplacée du ${day}"
 
-#: static/js/parcours_labels.mjs:180 static/js/parcours_list.mjs:192
+#: static/js/parcours_labels.mjs:180 static/js/parcours_list.mjs:195
 #: static/js/parcours_photos_panel.mjs:410
 #: static/js/parcours_photos_panel.mjs:677 static/js/parcours_tbar.mjs:190
 msgid "1 photo"
 msgstr "1 photo"
 
-#: static/js/parcours_labels.mjs:180 static/js/parcours_list.mjs:192
-#: static/js/parcours_list.mjs:316 static/js/parcours_photos_panel.mjs:410
+#: static/js/parcours_labels.mjs:180 static/js/parcours_list.mjs:195
+#: static/js/parcours_list.mjs:331 static/js/parcours_photos_panel.mjs:410
 #: static/js/parcours_photos_panel.mjs:677 static/js/parcours_tbar.mjs:190
 #, python-brace-format
 msgid "${n} photos"
@@ -6497,7 +6497,7 @@ msgstr "${n} PF"
 msgid "1 trouvaille"
 msgstr "1 trouvaille"
 
-#: static/js/parcours_labels.mjs:197 static/js/parcours_list.mjs:599
+#: static/js/parcours_labels.mjs:197 static/js/parcours_list.mjs:614
 #: static/js/stats_page_dashboard.js:252 static/js/zone_layer.js:1273
 #: static/js/zone_layer.js:1308 static/js/zone_report_ui.js:86
 #, python-brace-format
@@ -6598,7 +6598,7 @@ msgid "Aucun parcours pour l’instant : créez-en un ci-dessous."
 msgstr "Aucun parcours pour l’instant : créez-en un ci-dessous."
 
 #: static/js/parcours_list.mjs:123 static/js/parcours_list.mjs:124
-#: static/js/parcours_list.mjs:404
+#: static/js/parcours_list.mjs:419
 msgid "Modifier le parcours"
 msgstr "Modifier le parcours"
 
@@ -6624,60 +6624,68 @@ msgstr "Exporter"
 msgid "Exporter le parcours (sélection, ajustements, lieux)"
 msgstr "Exporter le parcours (sélection, ajustements, lieux)"
 
-#: static/js/parcours_list.mjs:169 static/js/parcours_list.mjs:324
+#: static/js/parcours_list.mjs:165
+msgid "Exporter tout"
+msgstr "Exporter tout"
+
+#: static/js/parcours_list.mjs:166
+msgid "Exporter le parcours complet : JSON, photos et traces (ZIP)"
+msgstr "Exporter le parcours complet : JSON, photos et traces (ZIP)"
+
+#: static/js/parcours_list.mjs:172 static/js/parcours_list.mjs:339
 msgid "Supprimer le parcours"
 msgstr "Supprimer le parcours"
 
-#: static/js/parcours_list.mjs:193 static/js/parcours_tracks_panel.mjs:60
+#: static/js/parcours_list.mjs:196 static/js/parcours_tracks_panel.mjs:60
 msgid "1 trace"
 msgstr "1 trace"
 
-#: static/js/parcours_list.mjs:193 static/js/parcours_list.mjs:317
+#: static/js/parcours_list.mjs:196 static/js/parcours_list.mjs:332
 #: static/js/parcours_tracks_panel.mjs:60
 #, python-brace-format
 msgid "${n} traces"
 msgstr "${n} traces"
 
-#: static/js/parcours_list.mjs:194
+#: static/js/parcours_list.mjs:197
 msgid "1 lieu ou base"
 msgstr "1 lieu ou base"
 
-#: static/js/parcours_list.mjs:194 static/js/parcours_list.mjs:314
+#: static/js/parcours_list.mjs:197 static/js/parcours_list.mjs:329
 #, python-brace-format
 msgid "${n} lieux ou bases"
 msgstr "${n} lieux ou bases"
 
-#: static/js/parcours_list.mjs:196
+#: static/js/parcours_list.mjs:199
 msgid "1 ajustement"
 msgstr "1 ajustement"
 
-#: static/js/parcours_list.mjs:196 static/js/parcours_list.mjs:315
+#: static/js/parcours_list.mjs:199 static/js/parcours_list.mjs:330
 #, python-brace-format
 msgid "${n} ajustements"
 msgstr "${n} ajustements"
 
-#: static/js/parcours_list.mjs:224
+#: static/js/parcours_list.mjs:227
 msgid "Parcours dupliqué — les photos et traces ne sont pas copiées"
 msgstr "Parcours dupliqué — les photos et traces ne sont pas copiées"
 
-#: static/js/parcours_list.mjs:275
+#: static/js/parcours_list.mjs:290
 msgid "Ce fichier n'est pas un JSON lisible"
 msgstr "Ce fichier n'est pas un JSON lisible"
 
-#: static/js/parcours_list.mjs:286
+#: static/js/parcours_list.mjs:301
 msgid "Parcours importé"
 msgstr "Parcours importé"
 
-#: static/js/parcours_list.mjs:319
+#: static/js/parcours_list.mjs:334
 #, python-brace-format
 msgid "Supprimés avec lui : ${items}."
 msgstr "Supprimés avec lui : ${items}."
 
-#: static/js/parcours_list.mjs:320
+#: static/js/parcours_list.mjs:335
 msgid "Ses lieux, ajustements, photos et traces seront supprimés avec lui."
 msgstr "Ses lieux, ajustements, photos et traces seront supprimés avec lui."
 
-#: static/js/parcours_list.mjs:322
+#: static/js/parcours_list.mjs:337
 #, python-brace-format
 msgid ""
 "Supprimer le parcours « ${name} » ? ${detail} Les trouvailles ne sont pas"
@@ -6686,44 +6694,44 @@ msgstr ""
 "Supprimer le parcours « ${name} » ? ${detail} Les trouvailles ne sont pas"
 " touchées."
 
-#: static/js/parcours_list.mjs:404 templates/menu_data_parcours.html:21
+#: static/js/parcours_list.mjs:419 templates/menu_data_parcours.html:21
 #: templates/menu_data_parcours.html:32
 msgid "Nouveau parcours"
 msgstr "Nouveau parcours"
 
-#: static/js/parcours_list.mjs:408 templates/menu_data_parcours.html:68
+#: static/js/parcours_list.mjs:423 templates/menu_data_parcours.html:68
 msgid "Créer le parcours"
 msgstr "Créer le parcours"
 
-#: static/js/parcours_list.mjs:413 templates/menu_data_parcours.html:78
+#: static/js/parcours_list.mjs:428 templates/menu_data_parcours.html:78
 msgid "Annuler la modification"
 msgstr "Annuler la modification"
 
-#: static/js/parcours_list.mjs:453
+#: static/js/parcours_list.mjs:468
 #, python-brace-format
 msgid "Un parcours couvre ${max} jours au plus"
 msgstr "Un parcours couvre ${max} jours au plus"
 
-#: static/js/parcours_list.mjs:528
+#: static/js/parcours_list.mjs:543
 #, python-brace-format
 msgid "${n} lieux ou bases seront supprimés"
 msgstr "${n} lieux ou bases seront supprimés"
 
-#: static/js/parcours_list.mjs:529
+#: static/js/parcours_list.mjs:544
 #, python-brace-format
 msgid "${n} étapes retrouveront leur journée d’origine"
 msgstr "${n} étapes retrouveront leur journée d’origine"
 
-#: static/js/parcours_list.mjs:532
+#: static/js/parcours_list.mjs:547
 #, python-brace-format
 msgid "La nouvelle plage laisse des éléments dehors : ${items}."
 msgstr "La nouvelle plage laisse des éléments dehors : ${items}."
 
-#: static/js/parcours_list.mjs:533
+#: static/js/parcours_list.mjs:548
 msgid "Raccourcir le parcours"
 msgstr "Raccourcir le parcours"
 
-#: static/js/parcours_list.mjs:537
+#: static/js/parcours_list.mjs:552
 msgid "Raccourcir quand même"
 msgstr "Raccourcir quand même"
 

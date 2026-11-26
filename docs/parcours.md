@@ -33,11 +33,19 @@ ses ajustements et ses lieux.
 Les parcours vivent hors de `/clear_database` : vider la base des
 trouvailles laisse les parcours, qui se retrouvent simplement vides.
 
-Deux exports, deux usages. Sur la liste, « Exporter » produit le document
+Trois exports, trois usages. Sur la liste, « Exporter » produit le document
 JSON réimportable (sélection, ajustements, lieux — pas de photos ni de
 traces). Les lieux copiés ou recréés reçoivent un nouvel id : les clés
 « place:<id> » des ajustements y sont recollées (duplication comme
-import). Sur un parcours ouvert, le bouton GPX de la barre des étapes
+import). Toujours sur la liste, « Exporter tout » produit une archive ZIP
+de sauvegarde (`parcours_export.py`, `GET /api/parcours/<id>/export.zip`) :
+le même document JSON **enrichi** des métadonnées `photos`, `cameras` et
+`tracks` — un sur-ensemble du document v1, que l'import actuel ignore sans
+relever de version — plus les fichiers, photos normalisées sous `photos/`
+et traces reconstruites en GPX sous `tracks/` (géométrie et heures de la
+trace simplifiée ; le fichier d'origine n'est pas conservé). But :
+sauvegarde et transfert entre machines ; la réimportation de l'archive
+reste à faire. Sur un parcours ouvert, le bouton GPX de la barre des étapes
 (`#btnParcoursExportGpx`, `parcours_gpx.mjs` côté client — l'itinéraire
 reconstruit suffit, rien ne repasse par le serveur) télécharge un fichier
 lisible par un GPS : une `<rte>` par journée, les étapes dans l'ordre,
@@ -55,6 +63,7 @@ parcours ; les étapes exclues ou sans position n'y figurent pas.
 | `GET` / `PATCH` / `DELETE /api/parcours/<id>` | Lecture, patch (clé absente = inchangée), suppression. Un rétrécissement de la plage qui laisserait des lieux datés ou des ajustements « journée » dehors est refusé (409 `out-of-range`, compteurs `places`/`days`) : confirmation puis renvoi avec `drop_orphans` — les lieux datés sont supprimés, la journée des ajustements effacée |
 | `POST /api/parcours/<id>/duplicate` | Copie sélection, ajustements et lieux (`<nom> (copie)` ; pas les photos ni les traces) |
 | `GET /api/parcours/<id>/export` | Document JSON réimportable `{format: mygcflow-parcours, version: 1, parcours, overrides, places}` |
+| `GET /api/parcours/<id>/export.zip` | Sauvegarde complète (« Exporter tout ») : le même document enrichi (`photos`, `cameras`, `tracks` — clés ignorées par l'import v1) + photos normalisées et traces reconstruites en GPX (`parcours_export.py`) |
 | `POST /api/parcours/import` | Recrée un parcours depuis un export — mêmes validations qu'à la création, tout ou rien |
 | `GET /api/parcours/<id>/inputs` | Entrées de la reconstruction (ci-dessous), avec `overrides` et `places` |
 | `GET /api/parcours/<id>/adjustments` | Relecture légère après un geste : `{overrides, places, photos, cameras}` (journées et parkings ne sont pas reconstruits) ; `?tracks=1` ajoute les traces avec leurs points |

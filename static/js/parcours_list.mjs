@@ -138,6 +138,9 @@ export function createParcoursList(deps) {
                 menuItem('parcours-export', 'ti-download', t('Exporter'),
                     t('Exporter le parcours (sélection, ajustements, lieux)'), false,
                     () => exportParcours(item)),
+                menuItem('parcours-export-zip', 'ti-archive', t('Exporter tout'),
+                    t('Exporter le parcours complet : JSON, photos et traces (ZIP)'), false,
+                    () => exportZip(item)),
             );
             const divider = document.createElement('li');
             divider.innerHTML = '<hr class="dropdown-divider">';
@@ -218,6 +221,16 @@ export function createParcoursList(deps) {
         }
         downloadText(`parcours-${parcoursSlug(item.name)}.json`,
             'application/json', JSON.stringify(payload, null, 2));
+    }
+
+    // Sauvegarde complète (JSON enrichi + photos + traces) : le nom du
+    // fichier arrive par Content-Disposition, un lien suffit.
+    function exportZip(item) {
+        const link = document.createElement('a');
+        link.href = `/api/parcours/${item.id}/export.zip`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
     }
 
     // Export GPX pour le GPS : l'itinéraire reconstruit (étapes dans l'ordre,

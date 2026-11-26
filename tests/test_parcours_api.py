@@ -1,17 +1,22 @@
 """Page Parcours : parcours enregistrés et entrées de la reconstruction
 (parcours_store.py, parcours_dataset.py, blueprints/parcours.py)."""
 
+import io
+import json
 import os
 import tempfile
 import unittest
+import zipfile
 from datetime import date, datetime
 from pathlib import Path
 from unittest import mock
 
 import migrations
+import parcours_store as store
 from app import create_app
 from extensions import db
 from models import CacheRef, CacheWaypoint, Geocache, LabCollection, LabDiscovery, LogCollection, LogEvent
+from tests.test_parcours_photos import photo_bytes
 
 ME = 1234567
 OTHER = 7654321
@@ -217,6 +222,58 @@ class CrudTests(_Base):
         response = self.get("/parcours")
         self.assertEqual(response.status_code, 200)
         self.assertIn('data-mode="parcours"', response.get_data(as_text=True))
+
+    def test_export_zip(self):
+        """Sauvegarde complète : parcours.json enrichi + photos + GPX."""
+        pid = self.create()["id"]
+        photos_dir = Path(self.tmpdir.name) / "parcours_photos"
+        with mock.patch("paths.parcours_photos_dir", return_value=photos_dir):
+            response = self.client.post(
+                f"/api/parcours/{pid}/photos",
+                data={"photo": (io.BytesIO(photo_bytes()), "IMG_0001.jpg")},
+                content_type="multipart/form-data", headers={"Origin": HOST}, base_url=HOST)
+            self.assertEqual(response.status_code, 201, response.get_json())
+            photo_file = response.get_json()["photo"]["file"]
+
+            gpx = (b'<?xml version="1.0" encoding="UTF-8"?>'
+                   b'<gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">'
+                   b'<trk><name>Balade</name><trkseg>'
+                   b'<trkpt lat="45.9" lon="6.1"><time>2025-07-12T08:00:00Z</time></trkpt>'
+                   b'</trkseg></trk></gpx>')
+            response = self.client.post(
+                f"/api/parcours/{pid}/tracks",
+                data={"track": (io.BytesIO(gpx), "balade.gpx")},
+                content_type="multipart/form-data", headers={"Origin": HOST}, base_url=HOST)
+            self.assertEqual(response.status_code, 201, response.get_json())
+
+            response = self.get(f"/api/parcours/{pid}/export.zip")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.mimetype, "application/zip")
+            self.assertIn(".zip", response.headers["Content-Disposition"])
+
+            archive = zipfile.ZipFile(io.BytesIO(response.data))
+            names = archive.namelist()
+            self.assertIn("parcours.json", names)
+            self.assertIn(f"photos/{photo_file}", names)
+            track_members = [n for n in names if n.startswith("tracks/")]
+            self.assertEqual(len(track_members), 1)
+            self.assertRegex(track_members[0], r"^tracks/1-.+\.gpx$")
+
+            document = json.loads(archive.read("parcours.json"))
+            self.assertEqual(document["format"], store.EXPORT_FORMAT)
+            self.assertEqual(document["version"], store.EXPORT_VERSION)
+            self.assertEqual(document["photos"][0]["path"], f"photos/{photo_file}")
+            self.assertNotIn("id", document["photos"][0])
+            self.assertEqual(document["tracks"][0]["file"], track_members[0])
+            self.assertIn("cameras", document)
+
+            gpx_out = archive.read(track_members[0]).decode("utf-8")
+            self.assertIn("<trkpt", gpx_out)
+            self.assertIn("<time>", gpx_out)
+
+        # Sur-ensemble du document v1 : les clés en plus sont ignorées.
+        self.assertEqual(self.post("/api/parcours/import", document).status_code, 201)
+        self.assertEqual(self.get("/api/parcours/999999/export.zip").status_code, 404)
 
 
 class InputsTests(_Base):
