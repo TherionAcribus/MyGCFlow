@@ -396,6 +396,11 @@ def _summary(plan: _Plan, parsed: LogsParseResult) -> dict:
                               and plan.account_user_id is not None
                               and d.author_id == plan.account_user_id),
         "parkings": sum(1 for c in parsed.caches for w in (c.waypoints or []) if w["kind"] == "parking"),
+        # Fiches dont les compteurs (trouvailles, PF) ont été lus : 0 sur
+        # une collecte qui devait en porter = sélecteurs de la fiche cassés
+        # côté favori — visible dans le bilan au lieu d'un silence console.
+        "facts_count": sum(1 for c in parsed.caches
+                         if c.found_count is not None or c.favorite_points is not None),
     }
 
 

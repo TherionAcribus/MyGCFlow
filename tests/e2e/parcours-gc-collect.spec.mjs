@@ -98,6 +98,8 @@ test('demande limitée au parcours, export reçu puis validé dans la page', asy
   await expect(page.locator('#parcoursCollectReady')).toBeHidden();
   await expect(page.locator('#parcoursCollectPendingText')).toContainText('1 aux coordonnées corrigées');
   await expect(page.locator('#parcoursCollectPendingText')).toContainText('1 points favoris');
+  await expect(page.locator('#parcoursCollectPendingText')).toContainText('1 parkings');
+  await expect(page.locator('#parcoursCollectPendingText')).toContainText('compteurs de trouvailles lus sur 1 fiches');
 
   await page.locator('#btnParcoursCollectApply').click();
   await expect(pending).toBeHidden({ timeout: 15_000 });

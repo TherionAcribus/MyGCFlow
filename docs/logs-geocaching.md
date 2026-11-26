@@ -487,8 +487,10 @@ le manifest `frag-<run>` garde `request_id` (exposé par
 retirée — seulement si c'est encore elle. Le plan de reprise du favori
 porte l'id de la demande : un plan d'une autre demande, ou d'une collecte
 ordinaire, n'est pas repris. Le bilan d'aperçu compte aussi
-`caches_corrected` (fiches aux coordonnées corrigées) et `favorites_mine`
-(PF donnés par le joueur).
+`caches_corrected` (fiches aux coordonnées corrigées), `favorites_mine`
+(PF donnés par le joueur), `parkings` (waypoints parking des fiches) et
+`facts_count` (fiches dont les compteurs de trouvailles/PF ont été lus —
+un 0 inattendu = sélecteurs de la fiche cassés côté favori).
 
 Le favori ne déclare la liste « Vos journaux » complète que s'il y a
 reconnu au moins une ligne (`collectJournal`) : une page sans ligne

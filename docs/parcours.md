@@ -1375,7 +1375,8 @@ corrigées » de la liste.
   qu'une demande ou un export est attendu (onglet Données affiché) :
   `collection_in_progress.request_id` → « Collecte en cours », puis
   `pending_import` du parcours → bilan (`caches_in_file`,
-  `caches_corrected`, `favorites_mine`) et « Valider l'import »
+  `caches_corrected`, `favorites_mine`, `parkings`, `facts_count`) et
+  « Valider l'import »
   (`/api/logs/import/commit`, tâche suivie, puis rechargement du
   parcours). Pas la fenêtre d'aperçu de « Mes logs » : sans couverture,
   rien ne peut être retiré.
@@ -1385,7 +1386,10 @@ corrigées » de la liste.
   PF et nombre de trouvailles dans la bulle (§ Entrées). Le favori lit le
   nombre de trouvailles dans les compteurs de la fiche
   (`#ctl00_ContentBody_lblFindCounts` : Found it + Attended + Webcam) ;
-  sans compteurs lisibles, il le signale une fois dans la console.
+  sans compteurs lisibles, il le signale une fois dans la console. Le
+  bilan de la collecte affiche le nombre de parkings relevés et les
+  fiches dont les compteurs ont été lus (`facts_count`) : un « 0 »
+  inattendu y trahit une casse des sélecteurs de la fiche, muette sinon.
 - **Parkings** (lot 14) : sous le bilan de chaque journée, un bloc replié
   « N parkings connus pour cette journée » (`suggestParkings`,
   parcours_parkings.mjs) : parkings des étapes gardées de la journée, ceux

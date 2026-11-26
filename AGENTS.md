@@ -174,7 +174,11 @@ Autres repères :
   des données, servie au favori par `/receive/state` et qui y prime sur le
   périmètre) — un spec qui en pose une la retire en sortie
   (`DELETE /api/parcours/<id>/collect`) AVANT de supprimer le parcours,
-  sinon elle reste 24 h ; exemple : `parcours-gc-collect.spec.mjs`.
+  sinon elle reste 24 h ; exemple : `parcours-gc-collect.spec.mjs`. Le
+  bilan de collecte affiche `parkings` et `facts_count` (fiches dont les
+  compteurs de la fiche ont été lus) — un 0 inattendu = sélecteurs du
+  favori cassés ; testable via `summary["facts_count"]` et le texte
+  `#parcoursCollectPendingText`.
 - `reportSave` (saved_indicator.mjs) résout `true`/`false`, ne rejette
   jamais : un `try/catch` autour est du code mort — l'échec se teste sur le
   retour (`revertSetting` de dnf_data.js/owner_data.js remet alors la case

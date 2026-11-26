@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-26 08:01+0100\n"
+"POT-Creation-Date: 2026-11-26 13:19+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -633,7 +633,7 @@ msgstr ""
 msgid "import refusé : le fichier a des erreurs structurelles"
 msgstr "import refused: the file has structural errors"
 
-#: log_store.py:462
+#: log_store.py:467
 msgid "les logs ont changé depuis l'aperçu : relancez-le"
 msgstr "the logs have changed since the preview: run it again"
 
@@ -4307,7 +4307,7 @@ msgid "Forcer une collecte complète la prochaine fois"
 msgstr "Force a full collect next time"
 
 #: static/js/gc_logs.js:176 static/js/gc_logs.js:816
-#: static/js/parcours_collect.js:290
+#: static/js/parcours_collect.js:291
 msgid "Import de vos logs…"
 msgstr "Importing your logs…"
 
@@ -4572,7 +4572,7 @@ msgid "doublons ignorés"
 msgstr "duplicates ignored"
 
 #: static/js/gc_logs.js:784 static/js/labs.js:1106
-#: static/js/parcours_collect.js:281 static/js/profiles.js:336
+#: static/js/parcours_collect.js:282 static/js/profiles.js:336
 msgid "Import échoué"
 msgstr "Import failed"
 
@@ -4589,7 +4589,7 @@ msgid "Logs importés"
 msgstr "Logs imported"
 
 #: static/js/gc_logs.js:831 static/js/labs.js:1033 static/js/labs.js:1277
-#: static/js/parcours_collect.js:307
+#: static/js/parcours_collect.js:308
 msgid "Erreur lors de l'import"
 msgstr "Error while importing"
 
@@ -4622,12 +4622,12 @@ msgid "Erreur lors de la suppression"
 msgstr "Error while deleting"
 
 #: static/js/gc_logs.js:894 static/js/gc_logs.js:1050
-#: static/js/parcours_collect.js:169 templates/guide.html:603
+#: static/js/parcours_collect.js:170 templates/guide.html:603
 msgid "MyGCFlow — Mes logs"
 msgstr "MyGCFlow — My logs"
 
 #: static/js/gc_logs.js:914 static/js/labs.js:1414
-#: static/js/parcours_collect.js:173
+#: static/js/parcours_collect.js:174
 msgid "Favori indisponible"
 msgstr "Bookmarklet unavailable"
 
@@ -6197,17 +6197,19 @@ msgstr "Collecting — ${count} caches read…"
 #, python-brace-format
 msgid ""
 "Export reçu : ${caches} fiches de caches, dont ${corrected} aux "
-"coordonnées corrigées, et ${favorites} points favoris donnés."
+"coordonnées corrigées, ${favorites} points favoris donnés, ${parkings} "
+"parkings — compteurs de trouvailles lus sur ${facts} fiches."
 msgstr ""
 "Export received: ${caches} cache pages, ${corrected} with corrected "
-"coordinates, and ${favorites} favorite points given."
+"coordinates, ${favorites} favorite points given, ${parkings} parkings — "
+"find counters read on ${facts} pages."
 
-#: static/js/parcours_collect.js:301
+#: static/js/parcours_collect.js:302
 #, python-brace-format
 msgid "${count} fiches de caches ajoutées ou mises à jour."
 msgstr "${count} cache pages added or updated."
 
-#: static/js/parcours_collect.js:302 static/js/parcours_collect.js:307
+#: static/js/parcours_collect.js:303 static/js/parcours_collect.js:308
 #: templates/menu_data_parcours.html:185
 msgid "Compléter depuis geocaching.com"
 msgstr "Complete from geocaching.com"

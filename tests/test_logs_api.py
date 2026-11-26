@@ -1009,6 +1009,9 @@ class LogsAutomationTests(LogsApiTests):
 
         doc = json.loads(CONTRACT.read_text(encoding="utf-8"))
         doc["coverage"] = []
+        # GC9ZZZZ porte un waypoint parking : le bilan le compte.
+        doc["caches"][1]["waypoints"] = [
+            {"kind": "parking", "name": "P", "latitude": 48.02, "longitude": 7.02}]
         headers = {"X-MyGCFlow-Token": "tok-receive", "X-MyGCFlow-Run-Id": "run-parcours-1",
                    "X-MyGCFlow-Request": asked["id"]}
         rv = self.client.post('/api/logs/receive/fragment', data=json.dumps(doc),
@@ -1025,6 +1028,9 @@ class LogsAutomationTests(LogsApiTests):
         self.assertEqual((pending["request_id"], pending["parcours_id"], pending["label"]),
                          (asked["id"], 5, "Vacances"))
         self.assertEqual(pending["summary"]["caches_corrected"], 1)   # GC9ZZZZ
+        self.assertEqual(pending["summary"]["parkings"], 1)
+        # Les deux fiches portent favorite_points → compteurs lus sur les 2.
+        self.assertEqual(pending["summary"]["facts_count"], 2)
         self.assertIsNone(gc_logs_mod.current_collect_request())
         self.assertIsNone(self._state().get_json()["request"])
 

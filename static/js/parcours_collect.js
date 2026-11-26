@@ -112,8 +112,9 @@ function render() {
         const s = pending.summary || {};
         const text = el('parcoursCollectPendingText');
         if (text) {
-            text.textContent = t('Export reçu : ${caches} fiches de caches, dont ${corrected} aux coordonnées corrigées, et ${favorites} points favoris donnés.',
-                { caches: s.caches_in_file || 0, corrected: s.caches_corrected || 0, favorites: s.favorites_mine || 0 });
+            text.textContent = t('Export reçu : ${caches} fiches de caches, dont ${corrected} aux coordonnées corrigées, ${favorites} points favoris donnés, ${parkings} parkings — compteurs de trouvailles lus sur ${facts} fiches.',
+                { caches: s.caches_in_file || 0, corrected: s.caches_corrected || 0, favorites: s.favorites_mine || 0,
+                  parkings: s.parkings || 0, facts: s.facts_count || 0 });
         }
         const apply = el('btnParcoursCollectApply');
         if (apply) apply.disabled = busy;
