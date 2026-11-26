@@ -913,8 +913,13 @@ marque ni modèle partagent la clé `UNKNOWN_CAMERA` (« ? », ligne
   pleines tailles seulement pour les créneaux proches de la tête (~4 jours
   d'avance, un peu derrière pour l'effacement et les retours) — ouvrir un
   long parcours très illustré ne télécharge plus des centaines d'images
-  2048 px. En lecture, une photo encore en chargement n'est simplement pas
-  dessinée. Avant un enregistrement, elles sont toutes chargées et
+  2048 px. Hors enregistrement, la lecture libère en plus les pleines
+  tailles passées : au-delà de ~40 quanta derrière la tête, l'image est
+  relâchée — un retour en arrière la recharge depuis le cache disque
+  (`Cache-Control: immutable`), quasi gratuit ; les photos des cartons et
+  les vignettes ne sont jamais évincées. En lecture, une photo encore en
+  chargement n'est simplement pas dessinée. Avant un enregistrement, elles
+  sont toutes chargées et
   attendues (`parcoursPhotosReady`, branché sur le `whenImagesReady` de
   l'image par image et, en capture rapide, avant le départ de
   l'animation) : une photo encore en vol ne manque pas dans la vidéo.

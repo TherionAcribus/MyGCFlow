@@ -415,7 +415,12 @@ Autres repères :
   une vignette prête sort la photo du compte `photosMissing` : un spec qui veut
   le toast « manquer » doit retarder `…/file` ET `…/thumb`. Le toast d'action
   « Filmer sans les photos restantes » vit dans `parcoursPhotosPrep` (mapgl.js)
-  et apparaît après ~800 ms d'attente.
+  et apparaît après ~800 ms d'attente. Hors enregistrement, `photoImages`
+  évince les pleines tailles passées (`PHOTO_EVICT_BEHIND_Q` = 40 quanta
+  derrière la tête, rechargées au retour depuis le cache disque) :
+  `photosLoaded` du snapshot peut REDESCENDRE en lecture — un spec qui
+  compte les images chargées doit viser la fenêtre autour de la tête ;
+  photos des cartons et vignettes non évincées.
   En spec, faire échouer les images via `page.route('**/api/parcours/*/photos/**')`
   — le `**` final requis : `photos/*` n'atteint que l'identifiant, pas
   `…/file` ni `…/thumb` — exemple « image échoue » de

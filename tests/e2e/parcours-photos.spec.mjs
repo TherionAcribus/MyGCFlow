@@ -21,6 +21,7 @@ import {
   openParcoursPage,
   snapshot,
 } from './parcours-helpers.mjs';
+import { importGpx } from './gpx-import.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PHOTOS = path.join(HERE, 'fixtures', 'parcours-photos');
@@ -446,20 +447,34 @@ test('lecture et vidéo : étapes à photos plus longues, carte postale filmée 
   // Une photo : 15 quanta de plus à l'écran.
   expect(state.timeline.quanta).toBe(before + 15);
   // La miniature est chargée d'office ; la pleine taille n'arrive que quand
-  // la tête de lecture approche du créneau de la photo (préchargement
-  // fenêtré, vérifié plus bas : elle est là après la lecture).
+  // la tête de lecture approche du créneau de la photo, et est libérée
+  // après son passage (préchargement fenêtré + éviction : `photosLoaded`
+  // retombe à 0 une fois la lecture finie — la carte peinte est relevée
+  // pendant la lecture, ci-dessous).
   await expect.poll(async () => (await snapshot(page)).photosThumbs).toBe(1);
 
   expect((await request.put('/api/settings', { data: { parcours_animation: { rhythm_mode: 'rate', days_per_second: 20 } } })).ok())
     .toBeTruthy();
   await openReady(page);
+  // Relevé des cartes peintes à chaque image de la lecture (le créneau
+  // d'une photo dure ~0,9 s à ce rythme : trop court pour un sondage).
+  await page.evaluate(() => {
+    const seen = new Set();
+    window.__seenPhotoCards = seen;
+    const watch = () => {
+      for (const card of window.getParcoursSnapshot().photoCards) seen.add(card.photoId);
+      requestAnimationFrame(watch);
+    };
+    watch();
+  });
   await page.locator('#btnQuickPreview').click();
   await expect.poll(async () => (await snapshot(page)).running).toBe(true);
   await expect.poll(async () => (await snapshot(page)).running, { timeout: 30_000 }).toBe(false);
 
   // Export image par image : la photo dessinée dans le canevas (même
   // origine) ne doit pas le « contaminer » — toBlob échouerait.
-  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(1);
+  const [{ id: photoId }] = (await snapshot(page)).photos;
+  expect(await page.evaluate(() => [...window.__seenPhotoCards])).toContain(photoId);
   await page.locator('a[href="#animation"]').click();
   await page.locator('#recordingConfigTab').click();
   await page.locator('#selectRecordMode').selectOption('images');
@@ -789,5 +804,84 @@ test('enregistrement : filmer sans les photos en attente', async ({ page, reques
   for (const name of mp4Names().filter((n) => !existing.has(n))) {
     rmSync(path.join(RUNTIME, 'video', name), { force: true });
   }
+  expect(errors).toEqual([]);
+});
+
+test('lecture : les pleines tailles passées sont libérées hors enregistrement', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  // Base « jours vides » (my-finds-gap.gpx) : deux trouvailles à 5 jours
+  // d'écart — leurs créneaux photo sont à plus de 40 quanta l'un de
+  // l'autre, au-delà de l'horizon derrière la tête qui libère les pleines
+  // tailles. Base vidée puis page rechargée : import direct, sans la
+  // modale « Remplacer ma base ».
+  await request.post('/clear_database');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.mygcflowReady === true);
+  await importGpx(page, path.join(HERE, 'fixtures', 'my-finds-gap.gpx'));
+  // Fin réelle de l'import avant de créer le parcours (le POST lirait
+  // sinon la base pas encore remplie — parcours vide).
+  await expect.poll(async () => (await (await request.get('/api/parcours')).json()).finds,
+    { timeout: 30_000 }).toEqual({ first: '2026-01-01', last: '2026-01-06' });
+  const created = await request.post('/api/parcours',
+    { data: { name: 'Photos espacées', date_start: '2026-01-01', date_end: '2026-01-06' } });
+  expect(created.status()).toBe(201);
+  const parcours = (await created.json()).parcours;
+  // Cartons coupés : une photo favorite y serait chargée en pleine taille
+  // dès l'ouverture et jamais évincée — elle fausserait le compte. Rythme
+  // naturel (10 j/s) posé aussi : il est partagé avec les autres specs.
+  expect((await request.put('/api/settings', {
+    data: {
+      parcours_playback: { day_cards: false },
+      parcours_animation: { rhythm_mode: 'rate', days_per_second: 10 },
+    },
+  })).ok()).toBeTruthy();
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles(
+    ['telephone.jpg', 'appareil.jpg'].map((name) => path.join(PHOTOS, name)));
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(2);
+  const { photos } = await (await request.get(`/api/parcours/${parcours.id}/inputs`)).json();
+  const ids = Object.fromEntries(photos.map((p) => [p.name, p.id]));
+  const early = ids['telephone.jpg'];
+  const late = ids['appareil.jpg'];
+  // Rattachement à la main : les EXIF (juillet 2025, Annecy) ne disent rien
+  // sur ce parcours de janvier 2026 — une photo par étape, une par journée.
+  const dayKeys = (await snapshot(page)).days.map((day) => day.keys);
+  await request.patch(`/api/parcours/${parcours.id}/photos/${early}`, { data: { stopKey: dayKeys[0][0] } });
+  await request.patch(`/api/parcours/${parcours.id}/photos/${late}`,
+    { data: { stopKey: dayKeys[dayKeys.length - 1][0] } });
+  await openReady(page);
+  await openPhotosTab(page);
+  const [earlySlot, lateSlot] = (await snapshot(page)).photoSlots;
+  expect(earlySlot.photoId).toBe(early);
+  expect(lateSlot.photoId).toBe(late);
+  expect(lateSlot.fromQ - earlySlot.toQ).toBeGreaterThan(40);
+
+  // « Voir sur la carte » du détail : aperçu en pause calé sur le créneau
+  // de la photo ; la carte n'est peinte qu'une fois l'image prête.
+  const show = async (id) => {
+    await page.locator(`.parcours-photo-thumb[data-photo-id="${id}"]`).click();
+    await page.locator('.parcours-photo-preview').click();
+    await expect.poll(async () => (await snapshot(page)).photoCards.map((c) => c.photoId))
+      .toContain(id);
+  };
+
+  await show(early);
+  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(1);
+
+  // La tête a dépassé la précoce de plus de 40 quanta : sa pleine taille
+  // est relâchée — sans éviction, les deux resteraient chargées.
+  await show(late);
+  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(1);
+
+  // Retour en arrière : la précoce est rechargée depuis le cache disque ;
+  // la tardive — devant la tête — n'est pas évincée.
+  await show(early);
+  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(2);
+
+  // Et repartie vers l'avant : la précoce est libérée de nouveau.
+  await show(late);
+  await expect.poll(async () => (await snapshot(page)).photosLoaded).toBe(1);
+  await page.locator('#btnQuickStop').click();
   expect(errors).toEqual([]);
 });

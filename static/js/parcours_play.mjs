@@ -1084,12 +1084,49 @@ export function createParcoursPlayDraw(deps) {
     // centaines de photos 2048 px.
     const PHOTO_AHEAD_Q = 40;     // ~4 jours devant la tête
     const PHOTO_BEHIND_Q = 8;     // effacement + petit retour en arrière
+    // Éviction des pleines tailles passées (hors enregistrement) : au-delà de
+    // cet écart derrière la tête, l'image est relâchée — un retour dans la
+    // fenêtre la recharge depuis le cache disque (en-têtes immutable).
+    const PHOTO_EVICT_BEHIND_Q = 40;
     // Attente des photos avant un enregistrement (photosReady) : plafond
     // proportionnel à leur nombre, scrutation cadencée.
     const PHOTO_WAIT_BASE_MS = 3000;
     const PHOTO_WAIT_PER_MS = 30;
     const PHOTO_WAIT_MAX_MS = 30000;
     const PHOTO_WAIT_POLL_MS = 120;
+
+    // Fin d'affichage de chaque photo (dernier créneau + fondu de sortie),
+    // mémoïsée par chronologie.
+    let photoEndsMemo = { timeline: null, ends: new Map() };
+    function photoEnds(timeline) {
+        if (photoEndsMemo.timeline !== timeline) {
+            const ends = new Map();
+            for (const slot of photoSlots(timeline)) {
+                const end = slot.toQ + PHOTO_FADE_Q;
+                if ((ends.get(slot.photoId) ?? -Infinity) < end) ends.set(slot.photoId, end);
+            }
+            photoEndsMemo = { timeline, ends };
+        }
+        return photoEndsMemo.ends;
+    }
+
+    // Libère les pleines tailles dont le dernier créneau est assez loin
+    // derrière la tête : un long parcours très illustré ne les garde pas
+    // toutes en mémoire. Jamais en enregistrement (un saut ou la mosaïque
+    // finale ne doit rien re-télécharger) ; les photos des cartons sont
+    // épargnées ; les vignettes restent toutes chargées — un id sans
+    // créneau n'est pas touché.
+    function evictPhotosBehind(timeline, currentQ) {
+        if (!timeline || deps.isRecording()) return;
+        const horizon = currentQ - PHOTO_EVICT_BEHIND_Q;
+        const ends = photoEnds(timeline);
+        const cards = new Set(cardPhotoIds());
+        for (const id of photoImages.keys()) {
+            if (cards.has(id)) continue;
+            const end = ends.get(id);
+            if (end !== undefined && end < horizon) photoImages.delete(id);
+        }
+    }
 
     // Pleines tailles des créneaux proches de `currentQ`. Relancée à chaque
     // image de la lecture : le `break` sur les créneaux triés la rend quasi
@@ -1103,6 +1140,7 @@ export function createParcoursPlayDraw(deps) {
             if (slot.fromQ > currentQ + PHOTO_AHEAD_Q) break;
             loadPhotoImage(slot.photoId, false);
         }
+        evictPhotosBehind(timeline, currentQ);
     }
 
     // Charge (une fois) les photos rattachées : la carte postale n'est
