@@ -123,6 +123,10 @@ un voyage), chacun avec ses étapes :
   Valeurs **du jour de la collecte**, jamais de celui du passage : la bulle
   de l'étape les date (« 87 PF · 1 505 trouvailles au 21 nov. 2026 »), la
   liste dit « PF donné ».
+- **Propriétaire** (`owner`, fiche des caches) : le « placée par » du My
+  Finds (`geocache.placed_by`, le nom que montre geocaching.com), sinon le
+  propriétaire lu par le favori (`cache_ref.owner_name`), sinon le compte
+  propriétaire du GPX (`geocache.owner`) ; `null` pour une étape Lab.
 - **Parkings** (lot 14) : `parkings` à côté de `days`, `[{code, name, lat,
   lon}]` — waypoints « parking » des caches du parcours (`cache_waypoint`,
   lus sur leur fiche par le favori). Proposés par la page, jamais posés
@@ -531,6 +535,54 @@ Une vidéo de parcours sur plusieurs journées porte un chapitre par journée
 
 Relevé : `getParcoursSnapshot().chapters` (journal de la dernière capture,
 ms bruts) et `timeline.dayStartQ`.
+
+### Fiche des caches (`points.parcours_info`)
+
+Nom, D/T, propriétaire et PF de la fiche (`favoritePoints`) d'une étape,
+**au choix** (quatre cases ; rien de coché = rien d'affiché). Bloc du thème
+`points.parcours_info` (`parcours_info.py`, copie `parcours_info.mjs`, table
+comparée via `tests/fixtures/parcours/parcours_info.json`), sous-onglet
+Style › Fiches propre à la page (`menu_info_parcours.html`,
+`parcours_info_ui.mjs`). **Coupée par défaut** (`near` et `fixed` à
+`none`) : un thème antérieur garde son rendu.
+
+- **Contenu** (`infoContent`) : un élément inconnu est omis — Lab sans D/T
+  ni propriétaire, PF connus seulement après « Compléter depuis
+  geocaching.com ». Lieux et bases n'ont jamais de fiche.
+- **À côté de la cache** (`near`) : `current` (« temporaire ») = la
+  dernière étape comptée atteinte, de son arrivée jusqu'à son départ et au
+  moins `duration` s d'écran (converties en quanta par `msPerDay`), coupée
+  à l'arrivée de la suivante (`infoAlpha`, `currentInfo`) ; `all`
+  (« permanent ») = toutes les étapes atteintes. Placement glouton sans
+  chevauchement (`placeInfoLabels` : droite, gauche, dessus, dessous) par
+  priorité — étape en cours toujours posée (`force`), puis de la plus
+  récente à la plus ancienne ; les fiches sans place sont masquées
+  (`hidden` du relevé). Obstacles : pastilles des étapes et cartouches HTML
+  de la carte (titre, ligne d'infos, légende). Dans une pile, seule la plus
+  récente garde sa fiche. L'étape en cours la pose au-delà de l'anneau et
+  du géocacheur (`ring`), avec un trait de rappel.
+- **Ailleurs** (`fixed`) : cartouche de l'étape en cours (même fenêtre que
+  le temporaire), 1,3× plus grand, en haut, en bas ou dans un coin ;
+  `fixedInfoPosition` le décale sous (en haut) ou au-dessus (en bas) des
+  cartouches HTML qu'il chevaucherait.
+- **Au repos** (couche du plan, postrender) : permanent = toutes les
+  étapes seules à leur place (une pile fermée n'en a pas, son éventail
+  oui) ; temporaire = l'étape survolée, sur la carte ou dans la liste.
+- **Design** (`parcours_info_draw.mjs`, canevas, filmé) : `tag` (une
+  ligne en pilule), `card` (nom, D et T en pastilles, PF, propriétaire,
+  barre d'accent), `banner` (fond à la couleur d'accent, texte contrasté),
+  `text` (texte seul, liseré de la couleur du fond) ; police (piles de
+  `name_labels.mjs`), taille, couleurs du texte et du fond, opacité,
+  accent « couleur de l'étape » (`paintOfStop`) ou fixe. Fondu de 0,3 s
+  (et glissement du cartouche), sans mouvement en lecture réduite. Les
+  vignettes des designs dessinent une fiche d'exemple avec les réglages
+  courants.
+
+Relevé : `getParcoursSnapshot().info` — `settings`, `play` (`current`,
+`near`, `hidden`, `fixed`, `alpha`, `size` de la dernière image) et `rest`
+(`near`, `hidden`, `hover`). Tests : `tests/test_parcours_info.py`,
+`tests/js/parcours_info.test.mjs`, `test_stop_owner_for_the_cache_card` de
+test_parcours_api.py, e2e `tests/e2e/parcours-info.spec.mjs`.
 
 ### Finitions (lot 7)
 

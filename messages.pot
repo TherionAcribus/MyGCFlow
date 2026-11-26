@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-26 19:57+0100\n"
+"POT-Creation-Date: 2026-11-26 20:32+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -744,52 +744,52 @@ msgstr ""
 msgid "Archivée"
 msgstr ""
 
-#: settings_manager.py:3129
+#: settings_manager.py:3135
 #, python-format
 msgid ""
 "Le nom '%(name)s' ne contient aucun caractère utilisable (au moins une "
 "lettre ou un chiffre est nécessaire)"
 msgstr ""
 
-#: blueprints/profiles.py:607 settings_manager.py:3169 settings_manager.py:3246
-#: settings_manager.py:3298
+#: blueprints/profiles.py:607 settings_manager.py:3175 settings_manager.py:3252
+#: settings_manager.py:3304
 #, python-format
 msgid "Thème '%(name)s' introuvable"
 msgstr ""
 
-#: settings_manager.py:3190
+#: settings_manager.py:3196
 #, python-format
 msgid "Aucun thème trouvé avec l'UUID: %(uid)s"
 msgstr ""
 
-#: settings_manager.py:3226 settings_manager.py:3251
+#: settings_manager.py:3232 settings_manager.py:3257
 #, python-format
 msgid "Un thème nommé '%(name)s' existe déjà"
 msgstr ""
 
-#: settings_manager.py:3263
+#: settings_manager.py:3269
 #, python-format
 msgid "Thème source '%(name)s' introuvable"
 msgstr ""
 
-#: settings_manager.py:3279
+#: settings_manager.py:3285
 msgid "Mode de thème inconnu"
 msgstr ""
 
-#: settings_manager.py:3282
+#: settings_manager.py:3288
 #, python-format
 msgid "Le thème '%(name)s' appartient déjà à ce mode"
 msgstr ""
 
-#: settings_manager.py:3474
+#: settings_manager.py:3481
 msgid "Payload invalide"
 msgstr ""
 
-#: settings_manager.py:3477
+#: settings_manager.py:3484
 msgid "Fichier de thème invalide (détrompeur manquant)"
 msgstr ""
 
-#: settings_manager.py:3481
+#: settings_manager.py:3488
 msgid "Section 'profile' manquante"
 msgstr ""
 
@@ -863,7 +863,7 @@ msgid "Choisir fichier"
 msgstr ""
 
 #: blueprints/core.py:199 templates/guide.html:211 templates/menu_style.html:77
-#: templates/menu_style.html:99
+#: templates/menu_style.html:100
 msgid "Cartes"
 msgstr ""
 
@@ -908,10 +908,10 @@ msgstr ""
 #: templates/menu_data.html:616 templates/menu_data.html:646
 #: templates/menu_data_parcours.html:163 templates/menu_data_parcours.html:249
 #: templates/menu_data_parcours.html:347 templates/menu_images.html:118
-#: templates/menu_stats.html:71 templates/menu_style.html:279
-#: templates/menu_style.html:304 templates/menu_style.html:329
-#: templates/menu_style.html:357 templates/menu_style.html:388
-#: templates/menu_style.html:416 templates/modal_evolution.html:18
+#: templates/menu_stats.html:71 templates/menu_style.html:284
+#: templates/menu_style.html:309 templates/menu_style.html:334
+#: templates/menu_style.html:362 templates/menu_style.html:393
+#: templates/menu_style.html:421 templates/modal_evolution.html:18
 #: templates/modal_evolution.html:60 templates/modal_evolution.html:84
 #: templates/modal_loading.html:14 templates/stats_page.html:505
 #: templates/stats_page.html:580 templates/stats_page.html:667
@@ -2222,12 +2222,12 @@ msgstr ""
 msgid "Terrain"
 msgstr ""
 
-#: static/js/chart_labels.mjs:117
+#: static/js/chart_labels.mjs:117 templates/menu_info_parcours.html:23
 msgid "Difficulté / terrain"
 msgstr ""
 
 #: static/js/chart_labels.mjs:120 templates/menu_filtre.html:184
-#: templates/menu_filtre.html:185
+#: templates/menu_filtre.html:185 templates/menu_info_parcours.html:27
 msgid "Propriétaire"
 msgstr ""
 
@@ -3540,7 +3540,7 @@ msgstr ""
 msgid "${period} (au ${date})"
 msgstr ""
 
-#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:755
+#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:929
 #: static/js/parcours_tbar.mjs:71 static/js/parcours_tbar.mjs:158
 #, python-brace-format
 msgid "Jour ${n}"
@@ -4501,7 +4501,7 @@ msgid "doublons ignorés"
 msgstr ""
 
 #: static/js/gc_logs.js:784 static/js/labs.js:1106
-#: static/js/parcours_collect.js:282 static/js/profiles.js:336
+#: static/js/parcours_collect.js:282 static/js/profiles.js:337
 msgid "Import échoué"
 msgstr ""
 
@@ -4770,15 +4770,15 @@ msgstr ""
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
 #: static/js/parcours_list.mjs:171 static/js/parcours_list.mjs:342
 #: static/js/parcours_photos_panel.mjs:561
-#: static/js/parcours_photos_panel.mjs:568 static/js/parcours_plan.mjs:416
-#: static/js/parcours_plan.mjs:423 static/js/profiles.js:978
+#: static/js/parcours_photos_panel.mjs:568 static/js/parcours_plan.mjs:362
+#: static/js/parcours_plan.mjs:369 static/js/profiles.js:979
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
 #: static/js/stats_page_card_actions.js:130 static/js/stats_page_cards.js:410
 #: static/js/stats_page_cards.js:497 static/js/stats_page_dashboard.js:614
 #: static/js/stats_page_dashboard.js:623 static/js/stats_page_themes.js:342
 #: static/js/stats_ui.js:580 static/js/stats_ui.js:1837 static/js/ui.js:6459
-#: templates/menu_filtre.html:87 templates/menu_style.html:305
+#: templates/menu_filtre.html:87 templates/menu_style.html:310
 #: templates/modal_evolution.html:85
 msgid "Supprimer"
 msgstr ""
@@ -4826,7 +4826,7 @@ msgid "Descendre"
 msgstr ""
 
 #: static/js/images_ui.js:1355 static/js/parcours_list.mjs:160
-#: static/js/profiles.js:969 static/js/profiles.js:2822
+#: static/js/profiles.js:970 static/js/profiles.js:2826
 #: static/js/stats_page_cards.js:403 static/js/stats_page_cards.js:486
 #: static/js/stats_ui.js:579
 msgid "Dupliquer"
@@ -5208,7 +5208,7 @@ msgstr ""
 msgid "Garder"
 msgstr ""
 
-#: static/js/labs.js:938 templates/menu_style.html:417
+#: static/js/labs.js:938 templates/menu_style.html:422
 msgid "Remplacer"
 msgstr ""
 
@@ -5926,9 +5926,9 @@ msgstr ""
 #: templates/menu_data.html:661 templates/menu_data.html:678
 #: templates/menu_data.html:690 templates/menu_data.html:707
 #: templates/menu_stats.html:565 templates/menu_style.html:52
-#: templates/menu_style.html:266 templates/menu_style.html:298
-#: templates/menu_style.html:323 templates/menu_style.html:351
-#: templates/menu_style.html:374 templates/menu_style.html:410
+#: templates/menu_style.html:271 templates/menu_style.html:303
+#: templates/menu_style.html:328 templates/menu_style.html:356
+#: templates/menu_style.html:379 templates/menu_style.html:415
 #: templates/modal_evolution.html:9 templates/modal_evolution.html:39
 #: templates/modal_evolution.html:78 templates/modal_first_use.html:33
 #: templates/modal_infos.html:11 templates/modal_video_ready.html:11
@@ -6045,8 +6045,8 @@ msgstr ""
 msgid "Arrêtez la lecture avant d’ajuster le parcours."
 msgstr ""
 
-#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:372
-#: static/js/parcours_data.js:877 static/js/parcours_data.js:1180
+#: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:373
+#: static/js/parcours_data.js:878 static/js/parcours_data.js:1181
 #: static/js/parcours_photos_panel.mjs:1067
 #: static/js/parcours_photos_panel.mjs:1110
 #: static/js/parcours_playback_ui.mjs:109 static/js/parcours_upload.mjs:120
@@ -6102,63 +6102,72 @@ msgstr ""
 msgid "Compléter depuis geocaching.com"
 msgstr ""
 
-#: static/js/parcours_data.js:372
+#: static/js/parcours_data.js:373
 msgid "Le parcours s’ouvrira à la fin de l’animation."
 msgstr ""
 
-#: static/js/parcours_data.js:695 static/js/parcours_stops_panel.mjs:697
+#: static/js/parcours_data.js:696 static/js/parcours_stops_panel.mjs:697
 msgid "Lire depuis ici"
 msgstr ""
 
-#: static/js/parcours_data.js:719 static/js/parcours_list.mjs:113
+#: static/js/parcours_data.js:720 static/js/parcours_list.mjs:113
 #: static/js/parcours_list.mjs:469
 msgid "Une journée"
 msgstr ""
 
-#: static/js/parcours_data.js:719 static/js/parcours_list.mjs:113
+#: static/js/parcours_data.js:720 static/js/parcours_list.mjs:113
 #: static/js/parcours_list.mjs:469 static/js/parcours_stops_panel.mjs:216
 #: static/js/stats_panels.js:1534 static/js/ui.js:8729
 #, python-brace-format
 msgid "${n} jours"
 msgstr ""
 
-#: static/js/parcours_data.js:785
+#: static/js/parcours_data.js:786
 msgid "Reprendre le suivi"
 msgstr ""
 
-#: static/js/parcours_data.js:832
+#: static/js/parcours_data.js:833
 msgid "Itinéraires © contributeurs OpenStreetMap, openrouteservice"
 msgstr ""
 
-#: static/js/parcours_data.js:833
+#: static/js/parcours_data.js:834
 msgid "Itinéraires © contributeurs OpenStreetMap, FOSSGIS"
 msgstr ""
 
-#: static/js/parcours_data.js:877
+#: static/js/parcours_data.js:878
 msgid "Les réglages de lecture n’ont pas pu être enregistrés."
 msgstr ""
 
-#: static/js/parcours_data.js:1112
+#: static/js/parcours_data.js:1113
 msgid ""
 "Annuler tous les ajustements de ce parcours (ordre, heures, journées, "
 "exclusions) ? Les lieux posés sont gardés."
 msgstr ""
 
-#: static/js/parcours_data.js:1113
+#: static/js/parcours_data.js:1114
 msgid "Annuler les ajustements"
 msgstr ""
 
-#: static/js/parcours_data.js:1116
+#: static/js/parcours_data.js:1117
 msgid "Tout annuler"
 msgstr ""
 
-#: static/js/parcours_data.js:1180
+#: static/js/parcours_data.js:1181
 msgid "Les réglages des photos n’ont pas pu être enregistrés."
 msgstr ""
 
-#: static/js/parcours_data.js:1283
+#: static/js/parcours_data.js:1284
 #, python-brace-format
 msgid "Ouvrir la photo ${name} dans l’onglet Photos"
+msgstr ""
+
+#: static/js/parcours_info_ui.mjs:57
+msgid "Le trésor du vieux moulin"
+msgstr ""
+
+#: static/js/parcours_info_ui.mjs:94 static/js/parcours_play.mjs:792
+#, python-brace-format
+msgid "par ${owner}"
 msgstr ""
 
 #: static/js/parcours_labels.mjs:71 static/js/parcours_labels.mjs:220
@@ -6456,7 +6465,7 @@ msgstr ""
 msgid "Dupliquer le parcours"
 msgstr ""
 
-#: static/js/parcours_list.mjs:162 static/js/profiles.js:976
+#: static/js/parcours_list.mjs:162 static/js/profiles.js:977
 #: static/js/stats_page_cards.js:455 templates/app.html:263
 #: templates/app.html:264 templates/guide.html:136 templates/guide.html:345
 #: templates/guide.html:351 templates/guide.html:585 templates/guide.html:782
@@ -6956,97 +6965,97 @@ msgstr ""
 msgid "Icône ${icon}"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:381 static/js/parcours_stops_panel.mjs:774
+#: static/js/parcours_plan.mjs:327 static/js/parcours_stops_panel.mjs:774
 #: templates/menu_informations.html:86
 msgid "Heure"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:384 static/js/parcours_stops_panel.mjs:781
+#: static/js/parcours_plan.mjs:330 static/js/parcours_stops_panel.mjs:781
 msgid "Épingler cette heure"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:385 static/js/parcours_stops_panel.mjs:782
+#: static/js/parcours_plan.mjs:331 static/js/parcours_stops_panel.mjs:782
 msgid "Épingler"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:393 static/js/parcours_stops_panel.mjs:786
+#: static/js/parcours_plan.mjs:339 static/js/parcours_stops_panel.mjs:786
 msgid "Retirer l’heure épinglée"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:404 static/js/parcours_stops_panel.mjs:1039
+#: static/js/parcours_plan.mjs:350 static/js/parcours_stops_panel.mjs:1039
 msgid "Exclure du parcours"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:404
+#: static/js/parcours_plan.mjs:350
 msgid "Exclure"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:409
+#: static/js/parcours_plan.mjs:355
 msgid "Revenir à la position de la cache"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:409
+#: static/js/parcours_plan.mjs:355
 msgid "Position d’origine"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:414 static/js/parcours_stops_panel.mjs:1044
+#: static/js/parcours_plan.mjs:360 static/js/parcours_stops_panel.mjs:1044
 #: static/js/parcours_stops_panel.mjs:1045
 #: templates/menu_data_evolution.html:34 templates/modal_evolution.html:74
 msgid "Supprimer la base"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:414 static/js/parcours_stops_panel.mjs:1044
+#: static/js/parcours_plan.mjs:360 static/js/parcours_stops_panel.mjs:1044
 #: static/js/parcours_stops_panel.mjs:1045
 msgid "Supprimer le lieu"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:419
+#: static/js/parcours_plan.mjs:365
 msgid "Supprimer cette base du parcours ?"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:419
+#: static/js/parcours_plan.mjs:365
 msgid "Supprimer ce lieu du parcours ?"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:429
+#: static/js/parcours_plan.mjs:375
 msgid "Tous les réglages de l’étape"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:429
+#: static/js/parcours_plan.mjs:375
 msgid "Détails"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:436
+#: static/js/parcours_plan.mjs:382
 msgid "Glissez le repère sur la carte pour le déplacer."
 msgstr ""
 
-#: static/js/parcours_plan.mjs:437
+#: static/js/parcours_plan.mjs:383
 msgid "Glissez l’étape sur la carte pour corriger sa position."
 msgstr ""
 
-#: static/js/parcours_plan.mjs:468
+#: static/js/parcours_plan.mjs:410
 msgid "Poser un lieu ici"
 msgstr ""
 
-#: static/js/parcours_plan.mjs:469
+#: static/js/parcours_plan.mjs:411
 msgid "Poser une base ici"
 msgstr ""
 
-#: static/js/parcours_play.mjs:749
+#: static/js/parcours_play.mjs:923
 #, python-brace-format
 msgid "${n} jours plus tard · ${date}"
 msgstr ""
 
-#: static/js/parcours_play.mjs:770 static/js/parcours_play.mjs:785
+#: static/js/parcours_play.mjs:944 static/js/parcours_play.mjs:959
 #, python-brace-format
 msgid "${n} journées"
 msgstr ""
 
-#: static/js/parcours_play.mjs:772
+#: static/js/parcours_play.mjs:946
 msgid "Le parcours"
 msgstr ""
 
-#: static/js/parcours_play.mjs:786 static/js/parcours_tbar.mjs:94
+#: static/js/parcours_play.mjs:960 static/js/parcours_tbar.mjs:94
 msgid "Fin du parcours"
 msgstr ""
 
@@ -7258,8 +7267,8 @@ msgstr ""
 msgid "Journée"
 msgstr ""
 
-#: static/js/parcours_stops_panel.mjs:910 static/js/profiles.js:975
-#: static/js/profiles.js:2802 templates/stats_page.html:737
+#: static/js/parcours_stops_panel.mjs:910 static/js/profiles.js:976
+#: static/js/profiles.js:2806 templates/stats_page.html:737
 msgid "Renommer"
 msgstr ""
 
@@ -7592,287 +7601,287 @@ msgstr ""
 msgid "un par visiteur"
 msgstr ""
 
-#: static/js/profiles.js:51 static/js/stats_page_links.js:358
+#: static/js/profiles.js:52 static/js/stats_page_links.js:358
 #: templates/_app_header.html:19 templates/_app_header.html:21
 #: templates/app.html:41 templates/guide.html:131 templates/guide.html:640
 msgid "Évolution"
 msgstr ""
 
-#: static/js/profiles.js:51 static/js/stats_page_links.js:356
+#: static/js/profiles.js:52 static/js/stats_page_links.js:356
 #: templates/_app_header.html:14 templates/_app_header.html:16
 #: templates/guide.html:131 templates/guide.html:174 templates/guide.html:640
 #: templates/menu_data.html:27
 msgid "Mes Géocaches"
 msgstr ""
 
-#: static/js/profiles.js:125
+#: static/js/profiles.js:126
 msgid "espace"
 msgstr ""
 
-#: static/js/profiles.js:346
+#: static/js/profiles.js:347
 #, python-brace-format
 msgid "Thème \"${name}\" importé dans le mode « ${mode} »"
 msgstr ""
 
-#: static/js/profiles.js:350
+#: static/js/profiles.js:351
 #, python-brace-format
 msgid "Thème \"${name}\" importé"
 msgstr ""
 
-#: static/js/profiles.js:355
+#: static/js/profiles.js:356
 msgid "Erreur import du thème"
 msgstr ""
 
-#: static/js/profiles.js:381
+#: static/js/profiles.js:382
 msgid "Erreur API"
 msgstr ""
 
-#: static/js/profiles.js:387
+#: static/js/profiles.js:388
 #, python-brace-format
 msgid "Erreur: ${message}"
 msgstr ""
 
-#: static/js/profiles.js:520 static/js/profiles.js:1632
+#: static/js/profiles.js:521 static/js/profiles.js:1633
 #, python-brace-format
 msgid "Thème \"${name}\" chargé"
 msgstr ""
 
-#: static/js/profiles.js:557
+#: static/js/profiles.js:558
 #, python-brace-format
 msgid "Thème \"${name}\" sauvegardé"
 msgstr ""
 
-#: static/js/profiles.js:612
+#: static/js/profiles.js:613
 #, python-brace-format
 msgid "Thème \"${name}\" créé, mais l'enregistrement des réglages a échoué"
 msgstr ""
 
-#: static/js/profiles.js:622
+#: static/js/profiles.js:623
 #, python-brace-format
 msgid "Thème \"${name}\" créé"
 msgstr ""
 
-#: static/js/profiles.js:638
+#: static/js/profiles.js:639
 #, python-brace-format
 msgid "Thème dupliqué: \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:662
+#: static/js/profiles.js:663
 #, python-brace-format
 msgid "Thème copié dans le mode « ${mode} » : \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:678
+#: static/js/profiles.js:679
 #, python-brace-format
 msgid "Thème \"${name}\" supprimé"
 msgstr ""
 
-#: static/js/profiles.js:748
+#: static/js/profiles.js:749
 #, python-brace-format
 msgid "Thème \"${name}\" réinitialisé"
 msgstr ""
 
-#: static/js/profiles.js:783 static/js/stats_page_exports.js:320
+#: static/js/profiles.js:784 static/js/stats_page_exports.js:320
 #: static/js/stats_page_exports.js:346
 msgid "Export échoué"
 msgstr ""
 
-#: static/js/profiles.js:794
+#: static/js/profiles.js:795
 #, python-brace-format
 msgid "Thème \"${name}\" exporté"
 msgstr ""
 
-#: static/js/profiles.js:797
+#: static/js/profiles.js:798
 msgid "Erreur export du thème"
 msgstr ""
 
-#: static/js/profiles.js:817
+#: static/js/profiles.js:818
 msgid "Thème introuvable ou UID manquant"
 msgstr ""
 
-#: static/js/profiles.js:832
+#: static/js/profiles.js:833
 msgid "Échec de la sauvegarde du thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:837
+#: static/js/profiles.js:838
 #, python-brace-format
 msgid "Thème \"${name}\" défini comme thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:850
+#: static/js/profiles.js:851
 msgid "Erreur lors de la définition du thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:865 static/js/profiles.js:1164
+#: static/js/profiles.js:866 static/js/profiles.js:1165
 msgid "Aucun thème"
 msgstr ""
 
-#: static/js/profiles.js:972
+#: static/js/profiles.js:973
 #, python-brace-format
 msgid "Copier vers « ${mode} »"
 msgstr ""
 
-#: static/js/profiles.js:977 templates/menu_style.html:330
+#: static/js/profiles.js:978 templates/menu_style.html:335
 msgid "Réinitialiser"
 msgstr ""
 
-#: static/js/profiles.js:982
+#: static/js/profiles.js:983
 msgid "Définir comme par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1068
+#: static/js/profiles.js:1069
 msgid "Thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1127 static/js/stats_page.js:515
-#: templates/menu_style.html:347
+#: static/js/profiles.js:1128 static/js/stats_page.js:515
+#: templates/menu_style.html:352
 msgid "Modifications non enregistrées"
 msgstr ""
 
-#: static/js/profiles.js:1175
+#: static/js/profiles.js:1176
 msgid "Choisir un thème"
 msgstr ""
 
-#: static/js/profiles.js:1427
+#: static/js/profiles.js:1428
 #, python-brace-format
 msgid ""
 "Le thème \"${name}\" contient des modifications non enregistrées. Que "
 "voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1428
+#: static/js/profiles.js:1429
 msgid "Vous avez des modifications non enregistrées. Que voulez-vous faire ?"
 msgstr ""
 
-#: static/js/profiles.js:1636
+#: static/js/profiles.js:1637
 msgid "Erreur lors du chargement du thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1669
+#: static/js/profiles.js:1670
 msgid "Aucun thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1776
+#: static/js/profiles.js:1777
 #, python-brace-format
 msgid "Thème \"${selectedProfile}\" appliqué et défini comme thème par défaut"
 msgstr ""
 
-#: static/js/profiles.js:1777
+#: static/js/profiles.js:1778
 msgid "Aucun thème par défaut défini"
 msgstr ""
 
-#: static/js/profiles.js:2002
+#: static/js/profiles.js:2003
 msgid "Le thème n'a pas pu être chargé : aucun thème n'est actif."
 msgstr ""
 
-#: static/js/profiles.js:2503
+#: static/js/profiles.js:2507
 #, python-brace-format
 msgid "Créer le thème \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2618 static/js/profiles.js:3039
+#: static/js/profiles.js:2622 static/js/profiles.js:3043
 msgid "Veuillez saisir un nom de thème"
 msgstr ""
 
-#: static/js/profiles.js:2681
+#: static/js/profiles.js:2685
 #, python-brace-format
 msgid ""
 "Le thème « ${name} » existe déjà. Les réglages affichés remplaceront ceux"
 " enregistrés."
 msgstr ""
 
-#: static/js/profiles.js:2727
+#: static/js/profiles.js:2731
 #, python-brace-format
 msgid "Réglages enregistrés dans \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:2787
+#: static/js/profiles.js:2791
 msgid "Enregistrer dans un nouveau thème"
 msgstr ""
 
-#: static/js/profiles.js:2787 templates/menu_style.html:265
+#: static/js/profiles.js:2791 templates/menu_style.html:270
 #: templates/stats_page.html:172
 msgid "Nouveau thème"
 msgstr ""
 
-#: static/js/profiles.js:2793 templates/menu_style.html:389
+#: static/js/profiles.js:2797 templates/menu_style.html:394
 msgid "Enregistrer le thème"
 msgstr ""
 
-#: static/js/profiles.js:2793 templates/menu_style.html:280
+#: static/js/profiles.js:2797 templates/menu_style.html:285
 #: templates/stats_page.html:668
 msgid "Créer"
 msgstr ""
 
-#: static/js/profiles.js:2800
+#: static/js/profiles.js:2804
 msgid "Renommer le thème"
 msgstr ""
 
-#: static/js/profiles.js:2820
+#: static/js/profiles.js:2824
 msgid "Dupliquer le thème"
 msgstr ""
 
-#: static/js/profiles.js:2841
+#: static/js/profiles.js:2845
 #, python-brace-format
 msgid "Copier le thème vers « ${mode} »"
 msgstr ""
 
-#: static/js/profiles.js:2843
+#: static/js/profiles.js:2847
 msgid "Copier"
 msgstr ""
 
-#: static/js/profiles.js:2897
+#: static/js/profiles.js:2901
 msgid "Le nom doit contenir au moins une lettre ou un chiffre"
 msgstr ""
 
-#: static/js/profiles.js:2922 static/js/profiles.js:2942
+#: static/js/profiles.js:2926 static/js/profiles.js:2946
 #, python-brace-format
 msgid "« ${conflict} » existe déjà : la copie sera nommée « ${suggested} »"
 msgstr ""
 
-#: static/js/profiles.js:2928
+#: static/js/profiles.js:2932
 #, python-brace-format
 msgid "Ce nom est déjà pris par un thème du mode « ${mode} »"
 msgstr ""
 
-#: static/js/profiles.js:2958
+#: static/js/profiles.js:2962
 #, python-brace-format
 msgid "« ${name} » est le thème actif : ses réglages seront mis à jour"
 msgstr ""
 
-#: static/js/profiles.js:2964
+#: static/js/profiles.js:2968
 #, python-brace-format
 msgid "« ${name} » existe déjà : ses réglages seront remplacés"
 msgstr ""
 
-#: static/js/profiles.js:2971
+#: static/js/profiles.js:2975
 #, python-brace-format
 msgid "Un thème nommé « ${name} » existe déjà"
 msgstr ""
 
-#: static/js/profiles.js:2972
+#: static/js/profiles.js:2976
 #, python-brace-format
 msgid ""
 "Ce nom est déjà pris par « ${conflict} » : les deux se réduisent au "
 "fichier « ${key} »"
 msgstr ""
 
-#: static/js/profiles.js:2981
+#: static/js/profiles.js:2985
 #, python-brace-format
 msgid "Caractères ignorés (${dropped}) : le thème sera enregistré sous « ${key} »"
 msgstr ""
 
-#: static/js/profiles.js:3100
+#: static/js/profiles.js:3104
 #, python-brace-format
 msgid "Thème renommé en \"${name}\""
 msgstr ""
 
-#: static/js/profiles.js:3114
+#: static/js/profiles.js:3118
 #, python-brace-format
 msgid "Êtes-vous sûr de vouloir supprimer le thème \"${name}\" ?"
 msgstr ""
 
-#: static/js/profiles.js:3133
+#: static/js/profiles.js:3137
 #, python-brace-format
 msgid ""
 "Êtes-vous sûr de vouloir réinitialiser le thème \"${name}\" aux valeurs "
@@ -8385,14 +8394,16 @@ msgid "Comme l'écran"
 msgstr ""
 
 #: static/js/stats_page_dashboard.js:351 templates/_app_header.html:52
-#: templates/menu_options.html:34 templates/menu_stats.html:368
-#: templates/menu_style.html:168 templates/stats_page.html:800
+#: templates/menu_info_parcours.html:142 templates/menu_options.html:34
+#: templates/menu_stats.html:368 templates/menu_style.html:169
+#: templates/stats_page.html:800
 msgid "Clair"
 msgstr ""
 
 #: static/js/stats_page_dashboard.js:352 templates/_app_header.html:53
-#: templates/menu_options.html:35 templates/menu_stats.html:367
-#: templates/menu_style.html:171 templates/stats_page.html:801
+#: templates/menu_info_parcours.html:145 templates/menu_options.html:35
+#: templates/menu_stats.html:367 templates/menu_style.html:172
+#: templates/stats_page.html:801
 msgid "Sombre"
 msgstr ""
 
@@ -12545,7 +12556,7 @@ msgstr ""
 msgid "noir et blanc, version claire ou sombre"
 msgstr ""
 
-#: templates/guide.html:215 templates/menu_style.html:119
+#: templates/guide.html:215 templates/menu_style.html:120
 msgid "Vectorielle"
 msgstr ""
 
@@ -12555,8 +12566,8 @@ msgid ""
 "fond) et l'épaisseur des traits"
 msgstr ""
 
-#: templates/guide.html:216 templates/menu_style.html:124
-#: templates/menu_style.html:126
+#: templates/guide.html:216 templates/menu_style.html:125
+#: templates/menu_style.html:127
 msgid "Aquarelle"
 msgstr ""
 
@@ -12669,7 +12680,7 @@ msgstr ""
 msgid "Ajoutez un titre et des informations"
 msgstr ""
 
-#: templates/guide.html:246 templates/menu_style.html:92
+#: templates/guide.html:246 templates/menu_style.html:93
 msgid "Titres"
 msgstr ""
 
@@ -12706,8 +12717,9 @@ msgstr ""
 msgid "Réglez le"
 msgstr ""
 
-#: templates/guide.html:249 templates/menu_informations.html:144
-#: templates/menu_informations.html:285 templates/menu_stats.html:383
+#: templates/guide.html:249 templates/menu_info_parcours.html:126
+#: templates/menu_informations.html:144 templates/menu_informations.html:285
+#: templates/menu_stats.html:383
 msgid "Texte"
 msgstr ""
 
@@ -16567,8 +16579,8 @@ msgstr ""
 msgid "Emplacement"
 msgstr ""
 
-#: templates/menu_images.html:170 templates/menu_informations.html:324
-#: templates/menu_photos_parcours.html:174
+#: templates/menu_images.html:170 templates/menu_info_parcours.html:59
+#: templates/menu_informations.html:324 templates/menu_photos_parcours.html:174
 #: templates/menu_photos_parcours.html:182 templates/menu_stats.html:310
 #: templates/menu_zones.html:170
 msgid "En haut à gauche"
@@ -16579,8 +16591,8 @@ msgstr ""
 msgid "En haut au centre"
 msgstr ""
 
-#: templates/menu_images.html:170 templates/menu_informations.html:324
-#: templates/menu_photos_parcours.html:173
+#: templates/menu_images.html:170 templates/menu_info_parcours.html:60
+#: templates/menu_informations.html:324 templates/menu_photos_parcours.html:173
 #: templates/menu_photos_parcours.html:184 templates/menu_stats.html:310
 #: templates/menu_zones.html:171
 msgid "En haut à droite"
@@ -16596,8 +16608,8 @@ msgstr ""
 msgid "Au milieu à droite"
 msgstr ""
 
-#: templates/menu_images.html:172 templates/menu_informations.html:326
-#: templates/menu_photos_parcours.html:176
+#: templates/menu_images.html:172 templates/menu_info_parcours.html:61
+#: templates/menu_informations.html:326 templates/menu_photos_parcours.html:176
 #: templates/menu_photos_parcours.html:187 templates/menu_stats.html:312
 #: templates/menu_zones.html:168
 msgid "En bas à gauche"
@@ -16608,8 +16620,8 @@ msgstr ""
 msgid "En bas au centre"
 msgstr ""
 
-#: templates/menu_images.html:172 templates/menu_informations.html:326
-#: templates/menu_photos_parcours.html:175
+#: templates/menu_images.html:172 templates/menu_info_parcours.html:62
+#: templates/menu_informations.html:326 templates/menu_photos_parcours.html:175
 #: templates/menu_photos_parcours.html:189 templates/menu_stats.html:312
 #: templates/menu_zones.html:169
 msgid "En bas à droite"
@@ -16729,14 +16741,14 @@ msgstr ""
 msgid "Retourner en miroir"
 msgstr ""
 
-#: templates/menu_images.html:293 templates/menu_informations.html:212
-#: templates/menu_names.html:352 templates/menu_stats.html:379
-#: templates/stats_page.html:797
+#: templates/menu_images.html:293 templates/menu_info_parcours.html:130
+#: templates/menu_informations.html:212 templates/menu_names.html:352
+#: templates/menu_stats.html:379 templates/stats_page.html:797
 msgid "Fond"
 msgstr ""
 
-#: templates/menu_images.html:297 templates/menu_names.html:364
-#: templates/menu_stats.html:391
+#: templates/menu_images.html:297 templates/menu_info_parcours.html:134
+#: templates/menu_names.html:364 templates/menu_stats.html:391
 msgid "Opacité du fond"
 msgstr ""
 
@@ -16861,6 +16873,191 @@ msgstr ""
 
 #: templates/menu_images.html:434
 msgid "Durée (ms)"
+msgstr ""
+
+#: templates/menu_info_parcours.html:8
+msgid "Fiche des caches"
+msgstr ""
+
+#: templates/menu_info_parcours.html:13 templates/menu_stats.html:90
+msgid "Contenu"
+msgstr ""
+
+#: templates/menu_info_parcours.html:19 templates/menu_names.html:134
+msgid "Nom de la cache"
+msgstr ""
+
+#: templates/menu_info_parcours.html:31
+msgid "Points favoris"
+msgstr ""
+
+#: templates/menu_info_parcours.html:34
+msgid ""
+"Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni "
+"propriétaire, et les points favoris ne sont connus qu'après « Compléter "
+"depuis geocaching.com » (onglet Données). Les lieux et les bases n'ont "
+"pas de fiche."
+msgstr ""
+
+#: templates/menu_info_parcours.html:35
+msgid "Aucun élément coché : la fiche ne s'affiche nulle part."
+msgstr ""
+
+#: templates/menu_info_parcours.html:41
+msgid "Où et quand"
+msgstr ""
+
+#: templates/menu_info_parcours.html:46
+msgid "À côté de la cache"
+msgstr ""
+
+#: templates/menu_info_parcours.html:48
+msgid "Jamais"
+msgstr ""
+
+#: templates/menu_info_parcours.html:49
+msgid "Étape en cours (temporaire)"
+msgstr ""
+
+#: templates/menu_info_parcours.html:50
+msgid "Toutes les étapes atteintes (permanent)"
+msgstr ""
+
+#: templates/menu_info_parcours.html:54
+msgid "Ailleurs sur l'image"
+msgstr ""
+
+#: templates/menu_info_parcours.html:56
+msgid "Nulle part"
+msgstr ""
+
+#: templates/menu_info_parcours.html:57 templates/menu_photos_parcours.html:196
+msgid "En haut"
+msgstr ""
+
+#: templates/menu_info_parcours.html:58 templates/menu_photos_parcours.html:195
+msgid "En bas"
+msgstr ""
+
+#: templates/menu_info_parcours.html:66
+msgid "Durée minimale"
+msgstr ""
+
+#: templates/menu_info_parcours.html:69 templates/menu_names.html:107
+msgid "s"
+msgstr ""
+
+#: templates/menu_info_parcours.html:73
+msgid ""
+"Temporaire : la fiche de l'étape apparaît à l'arrivée du géocacheur et "
+"reste le temps de la visite, au moins la durée minimale, jusqu'à l'étape "
+"suivante. Permanent : chaque étape atteinte garde la sienne ; celles qui "
+"n'ont pas la place sont masquées, l'étape en cours passe toujours. "
+"Ailleurs : un cartouche reprend la fiche de l'étape en cours, en haut, en"
+" bas ou dans un coin — à éviter là où se trouve le titre. Au repos, le "
+"permanent montre toutes les fiches et le temporaire celle de l'étape "
+"survolée. Sur la carte et dans la vidéo."
+msgstr ""
+
+#: templates/menu_info_parcours.html:74
+msgid ""
+"La fiche est coupée : choisissez « À côté de la cache » ou « Ailleurs sur"
+" l'image » pour l'afficher."
+msgstr ""
+
+#: templates/menu_info_parcours.html:80
+msgid "Design"
+msgstr ""
+
+#: templates/menu_info_parcours.html:83
+msgid "Design de la fiche"
+msgstr ""
+
+#: templates/menu_info_parcours.html:85
+msgid "Étiquette"
+msgstr ""
+
+#: templates/menu_info_parcours.html:86
+msgid "Fiche"
+msgstr ""
+
+#: templates/menu_info_parcours.html:87
+msgid "Bandeau"
+msgstr ""
+
+#: templates/menu_info_parcours.html:88
+msgid "Texte seul"
+msgstr ""
+
+#: templates/menu_info_parcours.html:98 templates/menu_informations.html:164
+#: templates/menu_names.html:284
+msgid "Police"
+msgstr ""
+
+#: templates/menu_info_parcours.html:100 templates/menu_names.html:286
+msgid "Sans empattement"
+msgstr ""
+
+#: templates/menu_info_parcours.html:101 templates/menu_names.html:287
+msgid "Avec empattement"
+msgstr ""
+
+#: templates/menu_info_parcours.html:102 templates/menu_names.html:289
+msgid "Arrondie"
+msgstr ""
+
+#: templates/menu_info_parcours.html:103
+msgid "Condensée"
+msgstr ""
+
+#: templates/menu_info_parcours.html:104 templates/menu_names.html:43
+#: templates/menu_names.html:288
+msgid "Machine à écrire"
+msgstr ""
+
+#: templates/menu_info_parcours.html:105 templates/menu_names.html:291
+msgid "Manuscrite"
+msgstr ""
+
+#: templates/menu_info_parcours.html:109 templates/menu_names.html:79
+#: templates/menu_stats.html:404
+msgid "Taille du texte"
+msgstr ""
+
+#: templates/menu_info_parcours.html:112 templates/menu_names.html:82
+#: templates/menu_points.html:37 templates/menu_points.html:207
+#: templates/menu_points.html:272 templates/menu_points.html:331
+#: templates/menu_points.html:381 templates/menu_points.html:545
+#: templates/menu_trail.html:111 templates/menu_trail_parcours.html:30
+msgid "px"
+msgstr ""
+
+#: templates/menu_info_parcours.html:116
+msgid "Couleur d'accent"
+msgstr ""
+
+#: templates/menu_info_parcours.html:119
+msgid "Celle de l'étape"
+msgstr ""
+
+#: templates/menu_info_parcours.html:120
+msgid "Couleur fixe"
+msgstr ""
+
+#: templates/menu_info_parcours.html:122
+msgid "Couleur d'accent fixe"
+msgstr ""
+
+#: templates/menu_info_parcours.html:148 templates/stats_page.html:414
+msgid "Par défaut"
+msgstr ""
+
+#: templates/menu_info_parcours.html:152
+msgid ""
+"Les vignettes montrent une fiche d'exemple avec vos réglages. Bandeau : "
+"le fond prend la couleur d'accent, le texte s'y adapte. Texte seul : le "
+"fond devient le liseré des lettres. Le cartouche « ailleurs » est un peu "
+"plus grand que la fiche posée à côté de la cache."
 msgstr ""
 
 #: templates/menu_informations.html:11
@@ -17008,10 +17205,6 @@ msgstr ""
 
 #: templates/menu_informations.html:158
 msgid "Taille (px)"
-msgstr ""
-
-#: templates/menu_informations.html:164 templates/menu_names.html:284
-msgid "Police"
 msgstr ""
 
 #: templates/menu_informations.html:178 templates/menu_trail.html:108
@@ -17196,10 +17389,6 @@ msgstr ""
 msgid "Arrive de loin et se pose"
 msgstr ""
 
-#: templates/menu_names.html:43 templates/menu_names.html:288
-msgid "Machine à écrire"
-msgstr ""
-
 #: templates/menu_names.html:43 templates/menu_names.html:244
 msgid "Lettre à lettre"
 msgstr ""
@@ -17248,18 +17437,6 @@ msgid ""
 "fidèle. Utile quand les logs défilent très vite."
 msgstr ""
 
-#: templates/menu_names.html:79 templates/menu_stats.html:404
-msgid "Taille du texte"
-msgstr ""
-
-#: templates/menu_names.html:82 templates/menu_points.html:37
-#: templates/menu_points.html:207 templates/menu_points.html:272
-#: templates/menu_points.html:331 templates/menu_points.html:381
-#: templates/menu_points.html:545 templates/menu_trail.html:111
-#: templates/menu_trail_parcours.html:30
-msgid "px"
-msgstr ""
-
 #: templates/menu_names.html:92
 msgid "Selon le rythme"
 msgstr ""
@@ -17276,10 +17453,6 @@ msgstr ""
 msgid "entre"
 msgstr ""
 
-#: templates/menu_names.html:107
-msgid "s"
-msgstr ""
-
 #: templates/menu_names.html:124
 msgid "Personnaliser"
 msgstr ""
@@ -17294,10 +17467,6 @@ msgstr ""
 
 #: templates/menu_names.html:134
 msgid "Pseudo"
-msgstr ""
-
-#: templates/menu_names.html:134
-msgid "Nom de la cache"
 msgstr ""
 
 #: templates/menu_names.html:135
@@ -17526,24 +17695,8 @@ msgstr ""
 msgid "Trait reliant le pseudo à la cache"
 msgstr ""
 
-#: templates/menu_names.html:286
-msgid "Sans empattement"
-msgstr ""
-
-#: templates/menu_names.html:287
-msgid "Avec empattement"
-msgstr ""
-
-#: templates/menu_names.html:289
-msgid "Arrondie"
-msgstr ""
-
 #: templates/menu_names.html:290
 msgid "Étroite"
-msgstr ""
-
-#: templates/menu_names.html:291
-msgid "Manuscrite"
 msgstr ""
 
 #: templates/menu_names.html:300
@@ -17924,14 +18077,6 @@ msgstr ""
 
 #: templates/menu_photos_parcours.html:193
 msgid "Bande"
-msgstr ""
-
-#: templates/menu_photos_parcours.html:195
-msgid "En bas"
-msgstr ""
-
-#: templates/menu_photos_parcours.html:196
-msgid "En haut"
 msgstr ""
 
 #: templates/menu_photos_parcours.html:208
@@ -18795,10 +18940,6 @@ msgstr ""
 msgid "Panneau sélectionné"
 msgstr ""
 
-#: templates/menu_stats.html:90
-msgid "Contenu"
-msgstr ""
-
 #: templates/menu_stats.html:108
 msgid "Statistique"
 msgstr ""
@@ -19503,7 +19644,7 @@ msgstr ""
 msgid "Autres options d'enregistrement"
 msgstr ""
 
-#: templates/menu_style.html:29 templates/menu_style.html:373
+#: templates/menu_style.html:29 templates/menu_style.html:378
 msgid "Enregistrer sous…"
 msgstr ""
 
@@ -19524,146 +19665,150 @@ msgstr ""
 msgid "Importer un thème JSON"
 msgstr ""
 
-#: templates/menu_style.html:103
+#: templates/menu_style.html:91
+msgid "Fiches"
+msgstr ""
+
+#: templates/menu_style.html:104
 msgid "OpenStreetMap"
 msgstr ""
 
-#: templates/menu_style.html:110
+#: templates/menu_style.html:111
 msgid "Stamen Toner"
 msgstr ""
 
-#: templates/menu_style.html:117 templates/menu_style.html:138
+#: templates/menu_style.html:118 templates/menu_style.html:139
 msgid "Carte vectorielle"
 msgstr ""
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:143
 msgid "Définit la couleur des contours de la carte"
 msgstr ""
 
-#: templates/menu_style.html:142
+#: templates/menu_style.html:143
 msgid "Couleur contour"
 msgstr ""
 
-#: templates/menu_style.html:143
+#: templates/menu_style.html:144
 msgid "Cliquez pour choisir la couleur des contours"
 msgstr ""
 
-#: templates/menu_style.html:146
+#: templates/menu_style.html:147
 msgid "Définit la couleur de remplissage de la carte"
 msgstr ""
 
-#: templates/menu_style.html:146
+#: templates/menu_style.html:147
 msgid "Couleur remplissage"
 msgstr ""
 
-#: templates/menu_style.html:147
+#: templates/menu_style.html:148
 msgid "Cliquez pour choisir la couleur de remplissage"
 msgstr ""
 
-#: templates/menu_style.html:150
+#: templates/menu_style.html:151
 msgid "Définit la couleur de fond de la carte"
 msgstr ""
 
-#: templates/menu_style.html:150
+#: templates/menu_style.html:151
 msgid "Couleur fond"
 msgstr ""
 
-#: templates/menu_style.html:151
+#: templates/menu_style.html:152
 msgid "Cliquez pour choisir la couleur de fond"
 msgstr ""
 
-#: templates/menu_style.html:154
+#: templates/menu_style.html:155
 msgid "Définit l'épaisseur des contours de la carte (0 = aucun contour)"
 msgstr ""
 
-#: templates/menu_style.html:154
+#: templates/menu_style.html:155
 msgid "Largeur contour (0 = aucun)"
 msgstr ""
 
-#: templates/menu_style.html:156
+#: templates/menu_style.html:157
 msgid "Faites glisser pour ajuster l'épaisseur"
 msgstr ""
 
-#: templates/menu_style.html:164 templates/menu_style.html:166
+#: templates/menu_style.html:165 templates/menu_style.html:167
 msgid "Style Toner"
 msgstr ""
 
-#: templates/menu_style.html:189
+#: templates/menu_style.html:190
 msgid "Aperçu du flash"
 msgstr ""
 
-#: templates/menu_style.html:191
+#: templates/menu_style.html:192
 msgid ""
 "Rejoue le flash en boucle sur quelques caches visibles, sans lancer "
 "l'animation : pratique pour vérifier la forme, la taille et les couleurs."
 " En mode « Couleurs GC », plusieurs types de caches clignotent ensemble."
 msgstr ""
 
-#: templates/menu_style.html:241
+#: templates/menu_style.html:246
 msgid "Titre et informations"
 msgstr ""
 
-#: templates/menu_style.html:270 templates/menu_style.html:271
+#: templates/menu_style.html:275 templates/menu_style.html:276
 #: templates/stats_page.html:184
 msgid "Nom du thème"
 msgstr ""
 
-#: templates/menu_style.html:294
+#: templates/menu_style.html:299
 msgid "Confirmer la suppression"
 msgstr ""
 
-#: templates/menu_style.html:295 templates/menu_style.html:320
+#: templates/menu_style.html:300 templates/menu_style.html:325
 #: templates/modal_evolution.html:75
 msgid "Cette action est définitive"
 msgstr ""
 
-#: templates/menu_style.html:301
+#: templates/menu_style.html:306
 msgid "Êtes-vous sûr de vouloir supprimer ce thème ?"
 msgstr ""
 
-#: templates/menu_style.html:319
+#: templates/menu_style.html:324
 msgid "Confirmer la réinitialisation"
 msgstr ""
 
-#: templates/menu_style.html:326
+#: templates/menu_style.html:331
 msgid "Êtes-vous sûr de vouloir réinitialiser ce thème aux valeurs par défaut ?"
 msgstr ""
 
-#: templates/menu_style.html:348
+#: templates/menu_style.html:353
 msgid "Le thème actif a été modifié"
 msgstr ""
 
-#: templates/menu_style.html:354
+#: templates/menu_style.html:359
 msgid "Vous avez des modifications non enregistrées."
 msgstr ""
 
-#: templates/menu_style.html:358
+#: templates/menu_style.html:363
 msgid "Abandonner"
 msgstr ""
 
-#: templates/menu_style.html:359
+#: templates/menu_style.html:364
 msgid "Enregistrer et charger"
 msgstr ""
 
-#: templates/menu_style.html:378
+#: templates/menu_style.html:383
 msgid "Thème de destination"
 msgstr ""
 
-#: templates/menu_style.html:379
+#: templates/menu_style.html:384
 msgid "Choisir un thème ou saisir un nouveau nom"
 msgstr ""
 
-#: templates/menu_style.html:380
+#: templates/menu_style.html:385
 msgid ""
 "Choisissez un thème existant pour y enregistrer les réglages affichés, ou"
 " saisissez un nouveau nom pour créer un thème."
 msgstr ""
 
-#: templates/menu_style.html:406
+#: templates/menu_style.html:411
 msgid "Remplacer le thème ?"
 msgstr ""
 
-#: templates/menu_style.html:407
+#: templates/menu_style.html:412
 msgid "Les réglages enregistrés du thème seront perdus"
 msgstr ""
 
@@ -20446,10 +20591,6 @@ msgstr ""
 
 #: templates/stats_page.html:407
 msgid "Nombre de valeurs affichées"
-msgstr ""
-
-#: templates/stats_page.html:414
-msgid "Par défaut"
 msgstr ""
 
 #: templates/stats_page.html:415

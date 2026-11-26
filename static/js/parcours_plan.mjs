@@ -13,6 +13,7 @@ import { KIND_BASE, KIND_PLACE, isCountedStop, minutesToTime } from './parcours_
 import { stopDetail, stopFacts, stopLabel, stopTime } from './parcours_labels.mjs';
 import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
 import { parcoursExtent, parcoursStops } from './parcours_model.mjs';
+import { infoEnabled } from './parcours_info.mjs';
 
 const el = (id) => document.getElementById(id);
 
@@ -75,6 +76,7 @@ export function createParcoursPlan(deps) {
                 },
             });
             parcoursLayer.set('name', 'parcours');
+            parcoursLayer.on('postrender', drawRestInfo);
         }
         if (!map.getLayers().getArray().includes(parcoursLayer)) map.addLayer(parcoursLayer);
         bindMapLink(map);
@@ -106,6 +108,7 @@ export function createParcoursPlan(deps) {
             if (event.dragging || dragging) return;
             const feature = planFeatureAt(map, event.pixel, ['stop', 'draft', 'fan']);
             highlightRowsFor(feature?.get('role') === 'draft' ? null : feature);
+            setInfoHover(feature);
             const target = map.getTargetElement();
             if (target && !placeForm.isPicking()) target.style.cursor = feature ? (isDraggable(feature) ? 'grab' : 'pointer') : '';
         });
@@ -443,6 +446,73 @@ export function createParcoursPlan(deps) {
         hoveredFeature?.set('hovered', false);
         hoveredFeature = feature;
         hoveredFeature?.set('hovered', true);
+        // La fiche suit l'étape de la ligne survolée (pas la pile qui la
+        // porte : celle de l'étape elle-même).
+        setInfoHover(stop ? { key: stop.key, feature } : null);
+    }
+
+    // --- Fiche des caches au repos (points.parcours_info) ---------------------
+    //
+    // Permanent (« toutes les étapes ») : une fiche par étape comptée seule à
+    // sa place (une pile n'en a pas ; ouverte en éventail, chacune la sienne).
+    // Temporaire (« étape en cours ») : celle de l'étape survolée, sur la
+    // carte ou dans la liste. Dessinée par la lecture (`drawInfoLabels`),
+    // au-dessus du plan.
+    let infoHover = null;          // { key, feature } de l'étape survolée
+    let restInfo = { near: [], hidden: 0 };
+
+    function setInfoHover(target) {
+        let next = null;
+        if (target?.key) next = target;
+        else if (target && typeof target.get === 'function') {
+            const role = target.get('role');
+            const kind = target.get('kind');
+            if ((role === 'stop' || role === 'fan') && kind !== KIND_PLACE && kind !== KIND_BASE && !target.get('stackKeys')) {
+                next = { key: target.get('key'), feature: target };
+            }
+        }
+        if ((next?.key ?? null) === (infoHover?.key ?? null)) return;
+        infoHover = next;
+        const info = paints.infoSettings();
+        if (info.near !== 'none' && infoEnabled(info)) parcoursLayer?.changed();
+    }
+
+    function restInfoEntries(info) {
+        const source = parcoursLayer?.getSource();
+        if (!source || S().clock?.running) return [];
+        const entryOf = (feature, force = false) => {
+            const stop = deps.stopByKey(feature.get('key'));
+            return stop ? { stop, coords: feature.getGeometry().getCoordinates(), alpha: 1, force } : null;
+        };
+        let first = null;
+        if (infoHover?.key) {
+            const stop = deps.stopByKey(infoHover.key);
+            const feature = infoHover.feature && source.hasFeature(infoHover.feature) ? infoHover.feature : null;
+            if (stop && feature && !feature.get('stacked')) {
+                first = { stop, coords: feature.getGeometry().getCoordinates(), alpha: 1, force: true };
+            }
+        }
+        if (info.near === 'current') return first ? [first] : [];
+        const entries = source.getFeatures()
+            .filter((f) => {
+                const role = f.get('role');
+                const kind = f.get('kind');
+                if (kind === KIND_PLACE || kind === KIND_BASE) return false;
+                if (role === 'fan') return true;
+                return role === 'stop' && !f.get('stacked') && !f.get('stackKeys');
+            })
+            .sort((a, b) => (a.get('index') ?? 0) - (b.get('index') ?? 0))
+            .map((f) => entryOf(f))
+            .filter((entry) => entry && entry.stop.key !== first?.stop.key);
+        return first ? [first, ...entries] : entries;
+    }
+
+    function drawRestInfo(event) {
+        const info = paints.infoSettings();
+        restInfo = { near: [], hidden: 0 };
+        if (!infoEnabled(info) || info.near === 'none') return;
+        const entries = restInfoEntries(info);
+        if (entries.length) restInfo = deps.drawInfoLabels(event, entries, info);
     }
 
     // Lignes de la liste correspondant à un point du plan (toutes celles
@@ -580,6 +650,8 @@ export function createParcoursPlan(deps) {
         fit: fitParcours,
         popupAt: parcoursPopupAt,
         setVisible: (visible) => parcoursLayer?.setVisible(visible),
+        infoState: () => ({ ...restInfo, hover: infoHover?.key ?? null }),
+        refreshInfo: () => parcoursLayer?.changed(),
         layer: () => parcoursLayer,
         fan: () => fan,
         closeFan,

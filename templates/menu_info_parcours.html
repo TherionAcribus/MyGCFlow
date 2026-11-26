@@ -1,0 +1,155 @@
+{% from '_scope_badges.html' import profile_scope_badge with context %}
+<!-- Page Parcours : fiche des caches — nom, D/T, propriétaire, PF — à côté
+     des étapes ou dans un cartouche, et son design (points.parcours_info du
+     thème, parcours_info.mjs, docs/parcours.md « Fiche des caches »).
+     Piloté par parcours_info_ui.mjs (bindParcoursStyle de parcours_data.js). -->
+<div id="parcoursInfo">
+    <h5 class="gc-section-title">
+        <i class="ti ti-info-circle text-muted me-1"></i>{{ _("Fiche des caches") }}{{ profile_scope_badge() }}
+    </h5>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">{{ _("Contenu") }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-3">
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoName" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Nom de la cache") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoDt" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Difficulté / terrain") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoOwner" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Propriétaire") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoFavorites" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Points favoris") }}</span>
+                </label>
+            </div>
+            <small class="form-hint text-muted">{{ _("Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni propriétaire, et les points favoris ne sont connus qu'après « Compléter depuis geocaching.com » (onglet Données). Les lieux et les bases n'ont pas de fiche.") }}</small>
+            <small id="parcoursInfoEmptyHint" class="form-hint text-warning" hidden>{{ _("Aucun élément coché : la fiche ne s'affiche nulle part.") }}</small>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">{{ _("Où et quand") }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-5">
+                    <label class="form-label" for="parcoursInfoNear">{{ _("À côté de la cache") }}</label>
+                    <select id="parcoursInfoNear" class="form-select" aria-describedby="helpParcoursInfoWhere">
+                        <option value="none">{{ _("Jamais") }}</option>
+                        <option value="current">{{ _("Étape en cours (temporaire)") }}</option>
+                        <option value="all">{{ _("Toutes les étapes atteintes (permanent)") }}</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="parcoursInfoFixed">{{ _("Ailleurs sur l'image") }}</label>
+                    <select id="parcoursInfoFixed" class="form-select" aria-describedby="helpParcoursInfoWhere">
+                        <option value="none">{{ _("Nulle part") }}</option>
+                        <option value="top">{{ _("En haut") }}</option>
+                        <option value="bottom">{{ _("En bas") }}</option>
+                        <option value="top_left">{{ _("En haut à gauche") }}</option>
+                        <option value="top_right">{{ _("En haut à droite") }}</option>
+                        <option value="bottom_left">{{ _("En bas à gauche") }}</option>
+                        <option value="bottom_right">{{ _("En bas à droite") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label" for="parcoursInfoDuration">{{ _("Durée minimale") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input id="parcoursInfoDuration" type="number" class="form-control" min="1" max="15" step="1">
+                        <span class="input-group-text">{{ _("s") }}</span>
+                    </div>
+                </div>
+            </div>
+            <small id="helpParcoursInfoWhere" class="form-hint text-muted">{{ _("Temporaire : la fiche de l'étape apparaît à l'arrivée du géocacheur et reste le temps de la visite, au moins la durée minimale, jusqu'à l'étape suivante. Permanent : chaque étape atteinte garde la sienne ; celles qui n'ont pas la place sont masquées, l'étape en cours passe toujours. Ailleurs : un cartouche reprend la fiche de l'étape en cours, en haut, en bas ou dans un coin — à éviter là où se trouve le titre. Au repos, le permanent montre toutes les fiches et le temporaire celle de l'étape survolée. Sur la carte et dans la vidéo.") }}</small>
+            <small id="parcoursInfoOffHint" class="form-hint text-info" hidden>{{ _("La fiche est coupée : choisissez « À côté de la cache » ou « Ailleurs sur l'image » pour l'afficher.") }}</small>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">{{ _("Design") }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="parcours-info-designs" role="group" aria-label="{{ _('Design de la fiche') }}">
+                {% for name, label in [
+                    ('tag', _('Étiquette')),
+                    ('card', _('Fiche')),
+                    ('banner', _('Bandeau')),
+                    ('text', _('Texte seul'))] %}
+                <button type="button" class="btn parcours-info-design" data-info-design="{{ name }}" aria-pressed="false">
+                    <canvas aria-hidden="true"></canvas>
+                    <span class="parcours-info-design-label">{{ label }}</span>
+                </button>
+                {% endfor %}
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-6 col-md-4">
+                    <label class="form-label" for="parcoursInfoFont">{{ _("Police") }}</label>
+                    <select id="parcoursInfoFont" class="form-select">
+                        <option value="sans">{{ _("Sans empattement") }}</option>
+                        <option value="serif">{{ _("Avec empattement") }}</option>
+                        <option value="rounded">{{ _("Arrondie") }}</option>
+                        <option value="condensed">{{ _("Condensée") }}</option>
+                        <option value="mono">{{ _("Machine à écrire") }}</option>
+                        <option value="handwritten">{{ _("Manuscrite") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label" for="parcoursInfoSize">{{ _("Taille du texte") }}</label>
+                    <div class="input-group input-group-sm">
+                        <input id="parcoursInfoSize" type="number" class="form-control" min="9" max="28" step="1">
+                        <span class="input-group-text">{{ _("px") }}</span>
+                    </div>
+                </div>
+                <div class="col-12 col-md-5">
+                    <label class="form-label" for="parcoursInfoAccent">{{ _("Couleur d'accent") }}</label>
+                    <div class="d-flex gap-2 align-items-center">
+                        <select id="parcoursInfoAccent" class="form-select">
+                            <option value="stop">{{ _("Celle de l'étape") }}</option>
+                            <option value="fixed">{{ _("Couleur fixe") }}</option>
+                        </select>
+                        <input type="color" class="form-control form-control-color" id="parcoursInfoAccentColor" value="#0072c6" aria-label="{{ _("Couleur d'accent fixe") }}">
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <label class="form-label" for="parcoursInfoTextColor">{{ _("Texte") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursInfoTextColor" value="#212529">
+                </div>
+                <div class="col-4 col-md-2">
+                    <label class="form-label" for="parcoursInfoBackgroundColor">{{ _("Fond") }}</label>
+                    <input type="color" class="form-control form-control-color" id="parcoursInfoBackgroundColor" value="#ffffff">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="parcoursInfoBackgroundOpacity">{{ _("Opacité du fond") }}</label>
+                    <div class="vector-slider-container">
+                        <input id="parcoursInfoBackgroundOpacity" type="range" min="0" max="100" step="5" value="92" class="form-range vector-slider">
+                        <span id="parcoursInfoBackgroundOpacityValue" class="vector-slider-value">92%</span>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 d-flex align-items-end gap-1 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-ghost-secondary" data-info-colors="light">
+                        <i class="ti ti-palette me-1"></i>{{ _("Clair") }}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary" data-info-colors="dark">
+                        <i class="ti ti-moon me-1"></i>{{ _("Sombre") }}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost-secondary" data-info-colors="reset">
+                        <i class="ti ti-refresh me-1"></i>{{ _("Par défaut") }}
+                    </button>
+                </div>
+            </div>
+            <small class="form-hint text-muted">{{ _("Les vignettes montrent une fiche d'exemple avec vos réglages. Bandeau : le fond prend la couleur d'accent, le texte s'y adapte. Texte seul : le fond devient le liseré des lettres. Le cartouche « ailleurs » est un peu plus grand que la fiche posée à côté de la cache.") }}</small>
+        </div>
+    </div>
+</div>

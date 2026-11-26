@@ -64,6 +64,10 @@ import {
     drawPhotoCard, drawPhotoLeader, drawPhotoMedallion, drawPinBadge, drawShutterFlash,
 } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
+import {
+    currentInfo, fixedInfoPosition, infoContent, infoEnabled, placeInfoLabels, secondsToQuanta,
+} from './parcours_info.mjs';
+import { drawInfo, infoFontFamily, infoLayout } from './parcours_info_draw.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
 import { formatDay, formatKm, formatRange, stopLabel, stopsCountText } from './parcours_labels.mjs';
 import { slotLabels } from './parcours_tbar.mjs';
@@ -316,8 +320,12 @@ export function createParcoursPlayDraw(deps) {
             headPoint.setCoordinates(position);
             context.drawGeometry(headPoint);
         }
+        // Fiches des caches au-dessus du géocacheur, sous les photos ; le
+        // cartouche fixe sous les cartons.
+        drawInfoNear(event);
         // Après le géocacheur : la carte postale passe au-dessus.
         drawPhotoCards(event);
+        drawInfoFixed(ctx, ratio);
         drawDayRecap(ctx, ratio);
         cardPhotosDrawn = [];
         drawOpenCard(ctx, ratio);
@@ -343,7 +351,7 @@ export function createParcoursPlayDraw(deps) {
     // Piles d'étapes atteintes de l'image précédente : `projected` est refait
     // à chaque applyTimeline (invalidation), `fp` empreint les indices
     // atteints.
-    let playStacksMemo = { projected: null, fp: -1, resKey: 0, distance: 0, stacks: [] };
+    let playStacksMemo = { projected: null, fp: -1, resKey: 0, distance: 0, stacks: [], anchors: new Map() };
 
     function emptyPlayStops() {
         return {
@@ -421,10 +429,16 @@ export function createParcoursPlayDraw(deps) {
         const resKey = Math.round(Math.log(resolution) * 32);
         if (playStacksMemo.projected !== projected || playStacksMemo.fp !== fp
             || playStacksMemo.resKey !== resKey || playStacksMemo.distance !== distance) {
-            playStacksMemo = {
-                projected, fp, resKey, distance,
-                stacks: stackStops(reached.map((i) => deps.stackItem(projected[i], timeline.stops[i].key, resolution)), distance),
-            };
+            const built = stackStops(reached.map((i) => deps.stackItem(projected[i], timeline.stops[i].key, resolution)), distance);
+            // Pour la fiche des caches : chaque étape atteinte → étape qui
+            // porte sa pile, et si elle en est la plus récente (seule à
+            // garder sa fiche quand les étapes se recouvrent).
+            const anchors = new Map();
+            for (const { rep: r, members } of built) {
+                const newest = reached[members[members.length - 1]];
+                for (const m of members) anchors.set(reached[m], { anchor: reached[r], newest: reached[m] === newest });
+            }
+            playStacksMemo = { projected, fp, resKey, distance, stacks: built, anchors };
         }
         const stacks = playStacksMemo.stacks;
         // Piles hors écran : pastille, anneau et numéro ne sont pas peints
@@ -727,6 +741,201 @@ export function createParcoursPlayDraw(deps) {
         ctx.fillStyle = '#ffffff';
         ctx.fillText(glyph, x, y + 0.5 * ratio);
         ctx.restore();
+    }
+
+    // --- Fiche des caches (points.parcours_info, parcours_info.mjs) ----------
+    //
+    // À côté des étapes : l'étape en cours le temps de sa visite (au moins
+    // `duration` s d'écran) ou toutes les étapes atteintes, placées sans se
+    // recouvrir (l'étape en cours toujours, puis de la plus récente à la plus
+    // ancienne) ; dans une pile, seule la plus récente garde sa fiche.
+    // Ailleurs : cartouche fixe de l'étape en cours, un peu plus grand.
+    // Fondu d'entrée et de sortie (et léger glissement du cartouche), sans
+    // mouvement en lecture réduite. `drawNearLabels` sert aussi au plan, au
+    // repos.
+    const INFO_FADE_S = 0.3;
+    const INFO_FIXED_SCALE = 1.3;
+    const INFO_MAX_NEAR = 80;
+    let infoDrawn = emptyInfoDrawn();
+    let infoLayoutMemo = { info: null, ratio: 0, family: '', glyph: null, layouts: new Map() };
+
+    function emptyInfoDrawn() {
+        return { current: null, near: [], hidden: 0, fixed: null, alpha: 0, size: null };
+    }
+
+    // Mesure mémorisée par étape et échelle, refaite au changement de
+    // réglages (objet remplacé), de densité de pixels, de police ou quand le
+    // glyphe de l'icône arrive (police d'icônes chargée).
+    function infoLayoutOf(ctx, stop, info, ratio, scale = 1) {
+        const family = infoFontFamily(info.font, pageFontFamily());
+        const glyph = deps.tablerGlyph('ti-user');
+        const memo = infoLayoutMemo;
+        if (memo.info !== info || memo.ratio !== ratio || memo.family !== family || memo.glyph !== glyph) {
+            infoLayoutMemo = { info, ratio, family, glyph, layouts: new Map() };
+        }
+        const key = `${stop.key}|${scale}`;
+        const layouts = infoLayoutMemo.layouts;
+        if (!layouts.has(key)) {
+            layouts.set(key, infoLayout(ctx, infoContent(stop, info), {
+                design: info.design,
+                family,
+                size: info.size * ratio * scale,
+                locale: document.documentElement.lang || undefined,
+                glyphs: { user: glyph },
+                strings: { by: ownerText },
+            }));
+        }
+        return layouts.get(key);
+    }
+
+    // Cartouches HTML posés sur la carte (titre, ligne d'infos, légende —
+    // peints aussi dans la vidéo) en px du canevas : la fiche les évite.
+    // Relus au plus toutes les 250 ms (getBoundingClientRect force la mise
+    // en page).
+    const OVERLAY_IDS = ['titleFrame', 'infosFrame', 'mapLegend'];
+    let overlayMemo = { at: -Infinity, width: 0, rects: [] };
+
+    function overlayRects(canvasWidth) {
+        const now = performance.now();
+        if (now - overlayMemo.at < 250 && overlayMemo.width === canvasWidth) return overlayMemo.rects;
+        const mapEl = deps.getMap()?.getTargetElement?.();
+        const base = mapEl?.getBoundingClientRect();
+        const rects = [];
+        if (base && base.width > 0) {
+            const scale = canvasWidth / base.width;
+            for (const id of OVERLAY_IDS) {
+                const el = document.getElementById(id);
+                if (!el || el.style.display === 'none') continue;
+                const r = el.getBoundingClientRect();
+                if (!(r.width > 0 && r.height > 0)) continue;
+                rects.push({
+                    x: (r.left - base.left) * scale, y: (r.top - base.top) * scale,
+                    w: r.width * scale, h: r.height * scale,
+                });
+            }
+        }
+        overlayMemo = { at: now, width: canvasWidth, rects };
+        return rects;
+    }
+
+    function ownerText(owner) {
+        return t('par ${owner}', { owner });
+    }
+
+    function infoDrawOptions(info, stop, ratio) {
+        return {
+            textColor: info.text_color,
+            backgroundColor: info.background_color,
+            backgroundOpacity: info.background_opacity,
+            accent: info.accent === 'fixed' ? info.accent_color : paints.paintOfStop(stop).fill,
+            ratio,
+        };
+    }
+
+    function infoTiming(info) {
+        const { msPerDay } = S();
+        return {
+            holdQ: secondsToQuanta(info.duration, msPerDay),
+            fadeQ: reducedMotion() ? 0 : secondsToQuanta(INFO_FADE_S, msPerDay),
+        };
+    }
+
+    // Fiches à côté des étapes : `entries` [{ stop, coords (carte), alpha,
+    // force }] par priorité décroissante. Renvoie { near (clés dessinées,
+    // même ordre), hidden (faute de place) }.
+    function drawNearLabels(event, entries, info) {
+        const ctx = event.context;
+        const ratio = event.frameState.pixelRatio || 1;
+        const m = composeTransform(event.inversePixelTransform, event.frameState.coordinateToPixelTransform);
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+        const style = paints.stopStyle();
+        const radius = (style.render === deps.renderTheme ? paints.themePointRadius() + 2 : style.size) * ratio;
+        const items = [];
+        const kept = [];
+        const obstacles = [...overlayRects(width)];
+        for (const entry of entries) {
+            const [cx, cy] = entry.coords;
+            const x = m[0] * cx + m[2] * cy + m[4];
+            const y = m[1] * cx + m[3] * cy + m[5];
+            if (x < -radius || y < -radius || x > width + radius || y > height + radius) continue;
+            obstacles.push({ x: x - radius, y: y - radius, w: 2 * radius, h: 2 * radius });
+            if (items.length >= INFO_MAX_NEAR) continue;
+            const layout = infoLayoutOf(ctx, entry.stop, info, ratio);
+            if (!layout) continue;
+            // `ring` : l'étape en cours porte l'anneau et le géocacheur — la
+            // fiche et son trait de rappel partent au-delà.
+            const reach = entry.ring ? Math.max(radius, entry.ring * ratio) : radius;
+            items.push({ x, y, w: layout.w, h: layout.h, gap: reach + 8 * ratio, force: !!entry.force });
+            kept.push({ entry, layout, x, y, reach });
+        }
+        const rects = placeInfoLabels(items, { width, height, margin: 4 * ratio, obstacles });
+        const near = [];
+        let hidden = 0;
+        // Du moins prioritaire au plus prioritaire : l'étape en cours dessus.
+        for (let i = kept.length - 1; i >= 0; i--) {
+            const rect = rects[i];
+            if (!rect) {
+                hidden++;
+                continue;
+            }
+            const { entry, layout, x, y, reach } = kept[i];
+            drawInfo(ctx, layout, rect.x, rect.y, {
+                ...infoDrawOptions(info, entry.stop, ratio),
+                alpha: entry.alpha,
+                leader: { fromX: x, fromY: y, radius: reach },
+            });
+            near.unshift(entry.stop.key);
+        }
+        return { near, hidden };
+    }
+
+    function drawInfoNear(event) {
+        const info = paints.infoSettings();
+        infoDrawn = emptyInfoDrawn();
+        const { timeline, currentQ, projected } = S();
+        if (!infoEnabled(info) || !timeline) return;
+        const timing = infoTiming(info);
+        const cur = currentInfo(timeline, currentQ, timing);
+        infoDrawn.current = cur ? timeline.stops[cur.index].key : null;
+        if (info.near === 'none') return;
+        const anchors = playStacksMemo.anchors;
+        const anchorOf = (i) => projected[anchors.get(i)?.anchor ?? i];
+        const entries = [];
+        // Anneau pulsé (rayon + 12 au plus) et géocacheur (~14 px) sur l'étape.
+        const ring = paints.stopStyle().size + 13;
+        if (cur) entries.push({ stop: timeline.stops[cur.index], coords: anchorOf(cur.index), alpha: cur.alpha, force: true, ring });
+        if (info.near === 'all') {
+            for (let i = reachedIndex(timeline, currentQ); i >= 0; i--) {
+                const stop = timeline.stops[i];
+                if (!isCountedStop(stop) || (cur && i === cur.index)) continue;
+                if (anchors.get(i)?.newest === false) continue;
+                const alpha = timing.fadeQ > 0 ? Math.min(1, Math.max(0, (currentQ - stop.q) / timing.fadeQ)) : 1;
+                entries.push({ stop, coords: anchorOf(i), alpha });
+            }
+        }
+        const out = drawNearLabels(event, entries, info);
+        infoDrawn.near = out.near;
+        infoDrawn.hidden = out.hidden;
+    }
+
+    function drawInfoFixed(ctx, ratio) {
+        const info = paints.infoSettings();
+        const { timeline, currentQ } = S();
+        if (!infoEnabled(info) || info.fixed === 'none' || !timeline) return;
+        const cur = currentInfo(timeline, currentQ, infoTiming(info));
+        if (!cur) return;
+        const stop = timeline.stops[cur.index];
+        const layout = infoLayoutOf(ctx, stop, info, ratio, INFO_FIXED_SCALE);
+        if (!layout) return;
+        const pos = fixedInfoPosition(info.fixed, layout.w, layout.h, ctx.canvas.width, ctx.canvas.height,
+            { margin: 24 * ratio, avoid: overlayRects(ctx.canvas.width) });
+        if (!pos) return;
+        const slide = reducedMotion() ? 0 : (1 - cur.alpha) * 12 * ratio * (info.fixed.startsWith('top') ? -1 : 1);
+        drawInfo(ctx, layout, pos.x, pos.y + slide, { ...infoDrawOptions(info, stop, ratio), alpha: cur.alpha });
+        infoDrawn.fixed = stop.key;
+        infoDrawn.alpha = +cur.alpha.toFixed(3);
+        infoDrawn.size = [Math.round(layout.w), Math.round(layout.h)];
     }
 
     let pageFont = null;
@@ -1488,6 +1697,8 @@ export function createParcoursPlayDraw(deps) {
         },
         lastCardPhotos: () => cardPhotosDrawn,
         lastRecap: () => recapDrawn,
+        lastInfo: () => infoDrawn,
+        drawNearLabels,
         previewPhoto,
         trailOptions,
         dayCardText,

@@ -111,6 +111,17 @@ def _cache_facts(ref) -> dict:
             'factsAt': at.date().isoformat() if at else None}
 
 
+def _owner(ref, row) -> str | None:
+    """Propriétaire affiché par la fiche de l'étape : le « placée par » du
+    My Finds (le nom que montre geocaching.com), sinon le propriétaire lu
+    par le favori « Mes logs », sinon le compte propriétaire du GPX."""
+    for value in (getattr(row, 'placed_by', None), getattr(ref, 'owner_name', None),
+                  getattr(row, 'owner', None)):
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def _find_stops(session, start: date, end: date, find_logs: dict, favorites: set,
                 counts: dict) -> dict:
     """{jour → [étape]} des trouvailles de la plage."""
@@ -136,6 +147,7 @@ def _find_stops(session, start: date, end: date, find_logs: dict, favorites: set
             'type': row.cache_type,
             'difficulty': row.difficulty,
             'terrain': row.terrain,
+            'owner': _owner(refs.get(row.gc_code), row),
             'lon': float(lon),
             'lat': float(lat),
             'posSource': _pos_source(origin),
@@ -171,6 +183,7 @@ def _lab_stops(session, start: date, end: date, by_day: dict, counts: dict) -> N
             'type': 'Lab Cache',
             'difficulty': None,
             'terrain': None,
+            'owner': None,
             'lon': float(row.longitude),
             'lat': float(row.latitude),
             'logId': None,
@@ -212,6 +225,7 @@ def _dnf_stops(session, dnfs: list, by_day: dict, counts: dict) -> None:
             'type': pick('cache_type'),
             'difficulty': _number(pick('difficulty')),
             'terrain': _number(pick('terrain')),
+            'owner': _owner(ref, row),
             'lon': float(lon),
             'lat': float(lat),
             'posSource': _pos_source(origin),

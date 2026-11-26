@@ -22,6 +22,7 @@ from event_flash import (
 from poses_effects import coerce_poses_effects, poses_effects_defaults
 from poses_names import coerce_names_privacy, coerce_poses_names, poses_names_defaults, privacy_defaults
 from parcours_style import coerce_parcours_style, parcours_style_defaults
+from parcours_info import coerce_parcours_info, parcours_info_defaults
 from image_settings import ImagesSettings, coerce_images_settings
 from stats_settings import StatsSettings, coerce_stats_settings
 
@@ -995,6 +996,10 @@ class PointStyle:
     # nature), ligne du plan et trait de la lecture. Défauts et validation
     # dans parcours_style.py ; sans effet sur les autres pages.
     parcours_style: dict = field(default_factory=parcours_style_defaults)
+    # Page Parcours : fiche des caches (nom, D/T, propriétaire, PF) à côté
+    # de l'étape ou dans un cartouche, et son design. Défauts et validation
+    # dans parcours_info.py ; coupée par défaut.
+    parcours_info: dict = field(default_factory=parcours_info_defaults)
 
 
 @dataclass
@@ -1659,6 +1664,7 @@ def coerce_profile(d: dict, base: Optional[MapProfile] = None) -> MapProfile:
             poses_effects=coerce_poses_effects(pt.get("poses_effects"), pp.poses_effects),
             poses_names=coerce_poses_names(pt.get("poses_names"), pp.poses_names),
             parcours_style=coerce_parcours_style(pt.get("parcours_style"), pp.parcours_style),
+            parcours_info=coerce_parcours_info(pt.get("parcours_info"), pp.parcours_info),
         )
 
         # Options flash
@@ -3389,6 +3395,7 @@ class SettingsManager:
                 'poses_effects': copy.deepcopy(prof.points.poses_effects),
                 'poses_names': copy.deepcopy(prof.points.poses_names),
                 'parcours_style': copy.deepcopy(prof.points.parcours_style),
+                'parcours_info': copy.deepcopy(prof.points.parcours_info),
             },
             'flash': {
                 'mode': prof.flash.mode,

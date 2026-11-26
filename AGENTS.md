@@ -530,7 +530,11 @@ Autres repères :
   peuvent venir de deux images. `stopStyle()` (parcours_data.js) mémoïse par
   IDENTITÉ de `app.options.point.parcoursStyle` : le remplacer par un nouvel
   objet, jamais le muter en place (sinon plan et trait gardent l'ancien
-  style).
+  style). Même contrat pour la fiche des caches (`points.parcours_info`,
+  thème, coupée par défaut, `paints.infoSettings()`) : réglée par Style ›
+  Fiches (`a[href="#tabParcoursInfo"]`), rien à remettre ; relevé `info` de
+  `getParcoursSnapshot()` (`play.current/near/hidden/fixed`,
+  `rest.near/hover`) — exemple `parcours-info.spec.mjs`.
   Actions depuis la carte (bulle d'une étape, glisser un lieu, clic
   droit) : `parcours-map-actions.spec.mjs` — couper
   `DoubleClickZoom` (deux clics d'étape au même pixel), viser une étape par

@@ -88,6 +88,7 @@
                         {# Parcours : son propre trait (trait de la lecture, ligne du plan). #}
                         {% if mode == 'parcours' %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabParcoursTrail" role="tab" aria-selected="false">{{ _("Trajet") }}</a></li>
+                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabParcoursInfo" role="tab" aria-selected="false">{{ _("Fiches") }}</a></li>
                         {% endif %}
                         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabTitles" role="tab" aria-selected="false">{{ _("Titres") }}</a></li>
                     </ul>
@@ -232,6 +233,10 @@
                     <!-- Sous-onglet Trajet de la page Parcours -->
                     <div id="tabParcoursTrail" class="tab-pane fade">
                         {% include 'menu_trail_parcours.html' %}
+                    </div>
+                    <!-- Sous-onglet Fiches : fiche des caches (nom, D/T, propriétaire, PF) -->
+                    <div id="tabParcoursInfo" class="tab-pane fade">
+                        {% include 'menu_info_parcours.html' %}
                     </div>
                     {% endif %}
 

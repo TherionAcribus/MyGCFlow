@@ -23,6 +23,7 @@ import {
     themeNumberBadge,
     trailColorFor,
 } from './parcours_style.mjs';
+import { normalizeParcoursInfo } from './parcours_info.mjs';
 
 const HEART = '♥';
 const PLAN_LINE_ALPHA = 0.55;
@@ -47,6 +48,17 @@ export function createParcoursPaints(deps) {
             styleMemo = { raw, value: normalizeParcoursStyle(raw), cache: new Map() };
         }
         return styleMemo.value;
+    }
+
+    // Fiche des caches : bloc du thème `points.parcours_info`
+    // (parcours_info.mjs), normalisé une fois par objet de réglages — même
+    // contrat que `stopStyle` (remplacé, jamais modifié en place).
+    let infoMemo = { raw: undefined, value: null };
+
+    function infoSettings() {
+        const raw = deps.getPoint()?.parcoursInfo;
+        if (infoMemo.raw !== raw || !infoMemo.value) infoMemo = { raw, value: normalizeParcoursInfo(raw) };
+        return infoMemo.value;
     }
 
     function cachedStyle(key, build) {
@@ -366,7 +378,7 @@ export function createParcoursPaints(deps) {
     });
 
     return {
-        stopStyle, cachedStyle, kindColor, dayIndexes, paintOfStop, featurePaint,
+        stopStyle, infoSettings, cachedStyle, kindColor, dayIndexes, paintOfStop, featurePaint,
         currentStopLabels, haloStyle, featureIconClass, stopIconClass, pointStyle,
         featureShowsFavorite, favoriteBaseRadius, favoriteMarkStyle,
         numberedStyleFor, numberedStyle, featureLabel,

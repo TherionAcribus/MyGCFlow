@@ -411,6 +411,33 @@ class InputsTests(_Base):
             "dnf:12": (False, None, 4, "2026-11-20"),
         })
 
+    def test_stop_owner_for_the_cache_card(self):
+        # Fiche des caches : « placée par » du My Finds, sinon propriétaire
+        # lu par le favori, sinon compte propriétaire du GPX.
+        self.find("GC1", "2025-07-12")
+        self.find("GC2", "2025-07-12")
+        self.find("GC3", "2025-07-12")
+        rows = {row.gc_code: row for row in db.session.query(Geocache).all()}
+        rows["GC1"].placed_by, rows["GC1"].owner = "Famille Dupont", "dupont42"
+        rows["GC2"].owner = "solo"
+        self.logs((10, "GC1", "2025-07-12", 2, ME), (11, "GC2", "2025-07-12", 2, ME),
+                  (12, "GC3", "2025-07-12", 2, ME), (13, "GC4", "2025-07-12", 3, ME))
+        collection = db.session.query(LogCollection).one()
+        db.session.add_all([
+            CacheRef(collection_id=collection.id, gc_code="GC2", owner_name="Solo Team"),
+            CacheRef(collection_id=collection.id, gc_code="GC4", latitude=45.0, longitude=5.0,
+                     owner_name="Poseur DNF"),
+        ])
+        db.session.commit()
+        parcours = self.create(date_end="2025-07-12")
+        stops = {s["key"]: s for s in self.inputs(parcours["id"])["days"][0]["stops"]}
+        self.assertEqual({key: s["owner"] for key, s in stops.items()}, {
+            "GC1": "Famille Dupont",
+            "GC2": "Solo Team",
+            "GC3": None,
+            "dnf:13": "Poseur DNF",
+        })
+
     def test_parkings_of_the_parcours_caches(self):
         self.find("GC1", "2025-07-12")
         self.find("GC9", "2025-08-01")      # hors du parcours

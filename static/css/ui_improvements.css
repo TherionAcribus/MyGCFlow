@@ -4793,3 +4793,49 @@ body[data-mode="parcours"] .rhythm-rate-field {
     display: flex;
     align-items: flex-end;
 }
+
+/* Page Parcours, Style › Fiches : cartes des designs de la fiche des caches
+   (parcours_info_ui.mjs). Chaque carte dessine une fiche d'exemple avec les
+   réglages courants sur un fond de carte stylisé ; celle du thème est
+   enfoncée (aria-pressed). */
+.parcours-info-designs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 0.5rem;
+}
+.parcours-info-design {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    color: inherit;
+    background: var(--tblr-bg-surface, #fff);
+    border: 1px solid var(--tblr-border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+.parcours-info-design:hover {
+    color: inherit;
+    border-color: var(--color-accent, #0072c6);
+}
+.parcours-info-design[aria-pressed="true"],
+.parcours-info-design[aria-pressed="true"]:hover {
+    color: var(--color-accent-on-weak, #005fa3);
+    background: var(--color-accent-weak, #e6f2fb);
+    border-color: var(--color-accent-text, #0072c6);
+    box-shadow: inset 0 0 0 1px var(--color-accent-text, #0072c6);
+}
+.parcours-info-design canvas {
+    display: block;
+    width: 100%;
+    height: 84px;
+    border-radius: 4px;
+    /* Fond de carte stylisé : la fiche se juge sur un fond clair et
+       texturé, comme sur la carte. */
+    background-color: #e9efe6;
+    background-image:
+        linear-gradient(115deg, transparent 46%, rgba(255, 255, 255, 0.9) 46%, rgba(255, 255, 255, 0.9) 50%, transparent 50%),
+        linear-gradient(20deg, transparent 70%, rgba(170, 205, 230, 0.8) 70%);
+}

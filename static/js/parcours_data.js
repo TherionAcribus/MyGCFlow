@@ -76,6 +76,7 @@ import { chaptersForUpload, createChapterLog } from './parcours_chapters.mjs';
 import { createParcoursTimelineBar, slotLabels } from './parcours_tbar.mjs';
 import { createParcoursAdjust } from './parcours_adjust.mjs';
 import { createParcoursStyleUI } from './parcours_style_ui.mjs';
+import { createParcoursInfoUI } from './parcours_info_ui.mjs';
 import { createParcoursPaints } from './parcours_paints.mjs';
 import { createParcoursPlayDraw } from './parcours_play.mjs';
 import { createParcoursList } from './parcours_list.mjs';
@@ -1499,6 +1500,24 @@ const styleUI = createParcoursStyleUI({
     renderTheme: RENDER_THEME,
 });
 
+// Sous-onglet Style › Fiches : fiche des caches (points.parcours_info,
+// parcours_info_ui.mjs). Dessinée par la lecture et par le plan au repos.
+const infoUI = createParcoursInfoUI({
+    getInfo: () => paints.infoSettings(),
+    commitInfo: commitParcoursInfo,
+    accentSample: () => paints.stopStyle().colors.find,
+    tablerGlyph,
+});
+
+function commitParcoursInfo(info) {
+    if (!pkg.options?.point) return;
+    pkg.options.point.parcoursInfo = info;
+    infoUI.sync();
+    // Au repos ou en pause, rien ne redessine la carte de lui-même.
+    planMap.refreshInfo();
+    pkg.getMap?.()?.render();
+}
+
 function commitParcoursStyle(style) {
     if (!pkg.options?.point) return;
     pkg.options.point.parcoursStyle = style;
@@ -1519,10 +1538,12 @@ function parcoursStyleChanged() {
 // qui l'appelle au chargement d'un thème).
 export function syncParcoursStyleUI() {
     styleUI.sync();
+    infoUI.sync();
 }
 
 function bindParcoursStyle() {
     styleUI.bind();
+    infoUI.bind();
 }
 
 
@@ -1551,6 +1572,7 @@ const planMap = createParcoursPlan({
     showPopup: (coordinate, render) => pkg.showMapPopup?.(coordinate, render),
     showDataTab: () => pkg.showBsTab?.(document.querySelector('#mainTabs a[href="#data"]')),
     photoStrip: stopPhotoStrip,
+    drawInfoLabels: (event, entries, info) => playDraw.drawNearLabels(event, entries, info),
 });
 
 function renderLayer(options) { planMap.render(options); }
@@ -1652,6 +1674,15 @@ export function getParcoursSnapshot() {
         // du thème affichée ; `playStops` : étapes peintes à la dernière image
         // de la lecture (dont en train d'apparaître).
         style: stopStyle(),
+        // Fiche des caches (thème, points.parcours_info) : réglages, et ce
+        // qui est dessiné — en lecture (`play` : étape de la fiche
+        // temporaire `current`, fiches à côté des étapes `near`, masquées
+        // faute de place `hidden`, cartouche `fixed`) et au repos (`rest`).
+        info: {
+            settings: paints.infoSettings(),
+            play: { ...playDraw.lastInfo() },
+            rest: planMap.infoState(),
+        },
         stopStyles: Object.fromEntries((source?.getFeatures() || [])
             .filter((f) => f.get('role') === 'stop')
             .map((f) => {
