@@ -10,6 +10,7 @@ import {
   cleanUp,
   clearLogs,
   collectErrors,
+  createWeekend,
   deleteAllParcours,
   importFixture,
   openParcoursPage,
@@ -514,6 +515,43 @@ test('liste : jours, étapes et compteurs sur la ligne', async ({ page, request 
   // Comptes nuls masqués.
   await expect(item.locator('.parcours-count-photos')).toHaveCount(0);
   await expect(item.locator('.parcours-count-tracks')).toHaveCount(0);
+});
+
+test('recherche dans les étapes : nom, code GC, aucun résultat', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await importFixture(page, request);
+  await createWeekend(request);
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  const stops = page.locator('.parcours-stop');
+  await expect(stops).toHaveCount(5);
+  const search = page.locator('#parcoursStopsSearch');
+
+  // Casse et accents ignorés : « belvedere » trouve « Belvédère » ; la
+  // journée sans résultat disparaît, celle du résultat est dépliée.
+  await search.fill('belvedere');
+  await expect(stops).toHaveCount(1);
+  await expect(stops.first()).toContainText('Belvédère');
+  await expect(page.locator('.parcours-day')).toHaveCount(1);
+  await expect(page.locator('#parcoursSummary')).toContainText('1 étapes sur 5');
+  // Liste tronquée : poignées de glisser-déposer et repli masqués.
+  await expect(page.locator('.parcours-stop-grip')).toHaveCount(0);
+  await expect(page.locator('.parcours-day-toggle')).toBeHidden();
+
+  // Recherche par code GC (casse ignorée).
+  await search.fill('gcpar04');
+  await expect(stops).toHaveCount(1);
+  await expect(stops.first()).toContainText('GCPAR04');
+
+  // Aucun résultat : message dédié.
+  await search.fill('zzz');
+  await expect(stops).toHaveCount(0);
+  await expect(page.locator('#parcoursStops')).toContainText('Aucune étape ne correspond');
+
+  // Champ vidé : la liste complète revient.
+  await search.fill('');
+  await expect(stops).toHaveCount(5);
+  expect(errors).toEqual([]);
 });
 
 test('liste indisponible : « Réessayer » recharge la liste', async ({ page, request }) => {

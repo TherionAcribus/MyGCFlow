@@ -136,7 +136,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_stack.mjs` | Pur : étapes empilées (piles, libellé, éventail). Tests : `tests/js/parcours_stack.test.mjs` |
 | `static/js/parcours_labels.mjs` | Libellés et formatage de la page (dates, distances, icônes, diagnostics) — pur, `parcours_data.js` lui passe l'état courant. `parcours_gpx.mjs` : export GPX (ci-dessus) |
 | `static/js/parcours_tbar.mjs` | Barre de chronologie : série, repères (nuits, jours, DNF, photos), textes et sauts de journée pour `timeline_bar.js`. Fabrique `createParcoursTimelineBar` — l'état du parcours ouvert arrive par `getState()` |
-| `static/js/parcours_stops_panel.mjs` | Liste des étapes par journée : pliage, réordonnancement (flèches, glisser-déposer), panneau d'ajustement, parkings suggérés. Fabrique `createStopsPanel` — `editKey`/`collapsedDays`/`dragged` y sont internes |
+| `static/js/parcours_stops_panel.mjs` | Liste des étapes par journée : pliage, recherche (nom, code GC, accents ignorés ; journées dépliées et réordonnancement masqués en vue filtrée), réordonnancement (flèches, glisser-déposer), panneau d'ajustement, parkings suggérés. Fabrique `createStopsPanel` — `editKey`/`collapsedDays`/`dragged`/`filterText` y sont internes |
 | `static/js/parcours_place_form.mjs` | Pose et déplacement d'un lieu au clic carte + formulaire (journée, type, rôle, catégorie, icône). Fabrique `createPlaceForm` — `picking`/`placeDraft`/écouteur de clic y sont internes |
 | `static/js/parcours_adjust.mjs` | Moteur des ajustements : file d'écritures PATCH (fusion locale, ordre des gestes), historique Annuler/Rétablir (y compris lieux recréés : `remapPlaceId`), gestes rang/journée, CRUD des lieux. Écritures en `keepalive` et renvoi de secours de celles encore en file à la fermeture de la page (`closingWrites` sur `pagehide`, dans `parcours_data.js` — une écriture déjà reçue s'applique sans effet). Fabrique `createParcoursAdjust` — `undoStack`/`redoStack`/`overridesQueued`/`pendingWrites` y sont internes |
 | `static/js/parcours_style_ui.mjs` | Panneau « Style du parcours » : contrôles ↔ objet `parcours_style` normalisé (rendu, numéros, palette des journées, lecture, trait). Fabrique `createParcoursStyleUI` — écriture dans le thème injectée |
@@ -688,7 +688,12 @@ Dans l'onglet Données :
   journée, heure facultative, catégorie (parking, repas, point de vue,
   hébergement, ravitaillement, personnalisée à icône libre), et pour une
   base son rôle (départ et retour, ou une seule extrémité — partir d'un
-  hôtel, dormir ailleurs).
+  hôtel, dormir ailleurs) ;
+- **la recherche** (champ de la barre des étapes) filtre la liste sur le
+  nom, le code GC, la clé ou l'adventure d'une Lab — casse et accents
+  ignorés, frappe temporisée. Une journée sans résultat disparaît ; les
+  autres sont dépliées et le réordonnancement y est masqué (inopérant dans
+  une liste tronquée). Le compteur d'en-tête devient « k étapes sur n ».
 
 **Agir depuis la carte** (au repos, depuis le 2026-11-20 ; rien pendant une
 lecture, même en pause) :

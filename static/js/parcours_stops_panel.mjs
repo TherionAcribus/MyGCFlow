@@ -60,6 +60,9 @@ export function createStopsPanel(deps) {
     let editKey = null;            // étape dont le panneau d'ajustement est ouvert
     let collapsedDays = new Set(); // journées repliées dans la liste (dates ISO)
     let playingKey = null;         // étape en cours pendant la lecture
+    let filterText = '';           // recherche dans la liste (nom, code GC)
+    let searchBound = false;
+    let searchTimer = null;
 
     // Glisser-déposer par Pointer Events depuis la poignée de la ligne :
     // un seul chemin pour souris, tactile et stylet (le drag & drop HTML5 ne
@@ -83,6 +86,34 @@ export function createStopsPanel(deps) {
         return cls ? { key, cls } : null;
     }
 
+    // Recherche dans la liste : sous-chaîne sur le nom, le code GC, la clé
+    // ou l'adventure d'une Lab, casse et accents ignorés (« belvedere »
+    // trouve « Belvédère »).
+    function normalized(text) {
+        return (text || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+    }
+
+    function stopMatches(stop, needle) {
+        return [stop.name, stop.code, stop.key, stop.adventure].some(
+            (field) => normalized(field).includes(needle));
+    }
+
+    // Champ lié une fois : la frappe est débouncée, reconstruire toute la
+    // liste à chaque touche serait lourd sur un long séjour.
+    function bindSearch() {
+        if (searchBound) return;
+        const input = el('parcoursStopsSearch');
+        if (!input) return;
+        searchBound = true;
+        input.addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                filterText = input.value.trim();
+                render();
+            }, 150);
+        });
+    }
+
     function render(errorMessage = '') {
         const { status, ordered, counts, logsAvailable } = s();
         const box = el('parcoursStops');
@@ -90,6 +121,7 @@ export function createStopsPanel(deps) {
         const tools = el('parcoursStopsTools');
         if (!box) return;
         bindDrag(box);
+        bindSearch();
         if (tools) tools.hidden = !ordered;
         if (status === 'loading') {
             if (summary) summary.textContent = t('Chargement…');
@@ -105,10 +137,17 @@ export function createStopsPanel(deps) {
             box.replaceChildren();
             return;
         }
+        const needle = normalized(filterText);
         if (summary) {
-            const parts = [t('${n} étapes', { n: ordered.stopCount }), t('${n} jours', { n: ordered.days.length })];
-            if (counts?.missing_position) parts.push(t('${n} sans position', { n: counts.missing_position }));
-            summary.textContent = parts.join(' · ');
+            if (needle) {
+                const matched = ordered.days.reduce(
+                    (n, day) => n + day.stops.filter((stop) => stopMatches(stop, needle)).length, 0);
+                summary.textContent = t('${k} étapes sur ${n}', { k: matched, n: ordered.stopCount });
+            } else {
+                const parts = [t('${n} étapes', { n: ordered.stopCount }), t('${n} jours', { n: ordered.days.length })];
+                if (counts?.missing_position) parts.push(t('${n} sans position', { n: counts.missing_position }));
+                summary.textContent = parts.join(' · ');
+            }
         }
         const reset = el('btnParcoursResetAdjustments');
         if (reset) reset.hidden = !hasAdjustments();
@@ -119,7 +158,13 @@ export function createStopsPanel(deps) {
                 : t('Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie : réimportez votre fichier My Finds pour en profiter. « ≈ » : heure estimée.');
         }
         const focus = box.contains(document.activeElement) ? focusMarkerOf(document.activeElement) : null;
-        box.replaceChildren(...ordered.days.map(renderDay));
+        box.replaceChildren(...ordered.days.map((day) => renderDay(day, needle)).filter(Boolean));
+        if (needle && box.children.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'small text-muted';
+            empty.textContent = t('Aucune étape ne correspond à « ${q} ».', { q: filterText });
+            box.append(empty);
+        }
         deps.pruneHoverRows();
         if (focus) {
             const node = box.querySelector(
@@ -147,9 +192,16 @@ export function createStopsPanel(deps) {
         if (day) collapsedDays.delete(day.date);
     }
 
-    function renderDay(day) {
+    function renderDay(day, needle = '') {
+        const stops = needle ? day.stops.filter((stop) => stopMatches(stop, needle)) : day.stops;
+        const excluded = needle ? day.excluded.filter((stop) => stopMatches(stop, needle)) : day.excluded;
+        // Vue filtrée : une journée sans résultat disparaît ; les autres sont
+        // dépliées (le repli est un état de la lecture sans filtre) et le
+        // réordonnancement est masqué — monter, descendre ou glisser une
+        // étape n'aurait pas de sens dans une liste tronquée.
+        if (needle && stops.length === 0 && excluded.length === 0) return null;
         const section = document.createElement('section');
-        const collapsed = collapsedDays.has(day.date);
+        const collapsed = collapsedDays.has(day.date) && !needle;
         section.className = 'parcours-day mb-3';
         if (collapsed) section.classList.add('is-collapsed');
         section.dataset.date = day.date;
@@ -163,6 +215,7 @@ export function createStopsPanel(deps) {
             collapsed ? t('Déplier la journée') : t('Replier la journée'));
         toggle.setAttribute('aria-expanded', String(!collapsed));
         toggle.setAttribute('aria-controls', body.id);
+        toggle.hidden = !!needle;
         toggle.addEventListener('click', () => {
             // Bascule en place, sans reconstruire la liste : le focus et les
             // poignées de glisser-déposer restent tels quels.
@@ -193,7 +246,7 @@ export function createStopsPanel(deps) {
         // Le nombre d'étapes reste lisible quand la journée est repliée.
         const count = document.createElement('span');
         count.className = 'small text-muted parcours-day-count';
-        count.textContent = stopsCountText(day.stops.length);
+        count.textContent = stopsCountText(needle ? stops.length : day.stops.length);
         header.append(toggle, title, count);
         if (deps.playFromDay && day.stops.length > 0) {
             const play = button('btn btn-link btn-sm p-0 parcours-day-play', 'ti-player-play',
@@ -211,25 +264,25 @@ export function createStopsPanel(deps) {
             header.append(badge, auto);
         }
         section.append(header, body);
-        if (day.stops.length > 0) {
+        if (!needle && day.stops.length > 0) {
             const diagnostic = document.createElement('div');
             diagnostic.className = 'small text-muted mb-1 parcours-day-diagnostic';
             diagnostic.textContent = dayDiagnostic(day);
             body.append(diagnostic);
             const parkings = dayParkings().get(day.date);
             if (parkings) body.append(renderDayParkings(day, parkings));
-        } else {
+        } else if (!needle) {
             const empty = document.createElement('div');
             empty.className = 'small text-muted';
             empty.textContent = t('Aucune étape ce jour-là');
             body.append(empty);
         }
-        if (day.stops.length > 0 || day.excluded.length > 0) {
+        if (stops.length > 0 || excluded.length > 0) {
             const list = document.createElement('ol');
             list.className = 'list-unstyled mb-0 parcours-stop-list';
-            const movable = day.stops.filter((stop) => stop.kind !== KIND_BASE);
-            for (const stop of day.stops) list.append(...renderStopRow(stop, day, movable));
-            for (const stop of day.excluded) list.append(...renderExcludedRow(stop));
+            const movable = needle ? [] : day.stops.filter((stop) => stop.kind !== KIND_BASE);
+            for (const stop of stops) list.append(...renderStopRow(stop, day, movable));
+            for (const stop of excluded) list.append(...renderExcludedRow(stop));
             body.append(list);
         }
         return section;
@@ -884,6 +937,9 @@ export function createStopsPanel(deps) {
         playingKey = null;
         collapsedDays.clear();
         cancelDrag();
+        filterText = '';
+        const input = el('parcoursStopsSearch');
+        if (input) input.value = '';
     }
 
     // « Tout plier / Tout déplier » : bascule puis reconstruction de la liste.
