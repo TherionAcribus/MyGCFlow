@@ -422,7 +422,8 @@ class ParcoursTrack(db.Model):
 class RouteLegCache(db.Model):
     """Itinéraire d'un trajet calculé par un fournisseur (lot 6,
     parcours_routing.py), partagé par tous les parcours. `geometry` null :
-    pas de route possible (ligne droite), à ne plus redemander."""
+    pas de route possible (ligne droite), re-vérifié après quelques
+    semaines."""
     __tablename__ = 'route_leg_cache'
 
     id = db.Column(db.Integer, primary_key=True)

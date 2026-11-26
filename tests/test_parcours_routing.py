@@ -6,6 +6,7 @@ réponses simulées au format OSRM (FOSSGIS) et openrouteservice."""
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest import mock
 
@@ -67,6 +68,9 @@ class _Db(unittest.TestCase):
         self.ctx.push()
         self.addCleanup(self._dispose)
         patcher = mock.patch.dict(pr.MIN_INTERVAL_S, {'fossgis': 0, 'ors': 0})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        patcher = mock.patch.dict(pr.RETRY_DELAY_S, {'fossgis': 0, 'ors': 0})
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -212,10 +216,87 @@ class CacheTests(_Db):
                              [False, False, True])
 
     def test_provider_failure_leaves_legs_uncomputed(self):
-        with mock.patch('requests.get', side_effect=requests.Timeout('lent')):
+        with mock.patch('requests.get', side_effect=requests.Timeout('lent')) as get:
             result = pr.route_legs(db.session, self.CONFIG, 'foot', [A, B])
         self.assertEqual((result['legs'], result['error']), ([None], 'unavailable'))
+        self.assertEqual(get.call_count, 2)   # retentative unique sur « unavailable »
         self.assertEqual(RouteLegCache.query.count(), 0)
+
+    def test_unavailable_is_retried_once(self):
+        """Erreur réseau passagère : la retentative espacée suffit."""
+        responses = [requests.ConnectionError('coupure'), FakeResponse(200, osrm_ok([A, B]))]
+        with mock.patch('requests.get', side_effect=responses) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'foot', [A, B])
+        self.assertIsNone(result['error'])
+        self.assertEqual(get.call_count, 2)
+        self.assertEqual(len(result['legs'][0]['path']), 3)
+
+    def test_persistent_unavailable_fails_after_one_retry(self):
+        """Panne durable : échec « unavailable » après deux tentatives,
+        sans boucle."""
+        with mock.patch('requests.get', side_effect=requests.ConnectionError('hors ligne')) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'foot', [A, B])
+        self.assertEqual((result['legs'], result['error']), ([None], 'unavailable'))
+        self.assertEqual(get.call_count, 2)
+        self.assertEqual(RouteLegCache.query.count(), 0)
+
+    def test_quota_is_never_retried(self):
+        """Quota : insister ne changerait rien — un seul appel."""
+        with mock.patch('requests.get', return_value=FakeResponse(429, {})) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'foot', [A, B])
+        self.assertEqual((result['legs'], result['error']), ([None], 'quota'))
+        self.assertEqual(get.call_count, 1)
+
+    def test_recent_noroute_verdict_is_kept(self):
+        """Un verdict « pas de route » récent n'est pas redemandé."""
+        db.session.add(RouteLegCache(
+            provider='fossgis', profile='car', leg_key=pr.leg_key(A, B),
+            geometry=None, fetched_at=datetime.now() - timedelta(days=5)))
+        db.session.commit()
+        with mock.patch('requests.get') as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'car', [A, B])
+        get.assert_not_called()
+        self.assertEqual(result['legs'], [{'path': None, 'cached': True}])
+
+    def test_stale_noroute_verdict_is_rechecked(self):
+        """Un verdict « pas de route » plus vieux que NO_ROUTE_TTL_DAYS (ou
+        sans fetched_at) est redemandé : la ligne est alors réécrite —
+        itinéraire trouvé, ou fetched_at simplement rafraîchi."""
+        stale_date = datetime.now() - timedelta(days=pr.NO_ROUTE_TTL_DAYS + 1)
+        db.session.add(RouteLegCache(
+            provider='fossgis', profile='car', leg_key=pr.leg_key(A, B),
+            geometry=None, fetched_at=stale_date))
+        db.session.commit()
+        # Le fournisseur a maintenant une route : la ligne est mise à jour.
+        with mock.patch('requests.get', side_effect=self.fake_get) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'car', [A, B])
+        self.assertEqual(get.call_count, 1)
+        self.assertEqual(result['legs'][0]['cached'], False)
+        row = RouteLegCache.query.filter_by(leg_key=pr.leg_key(A, B)).one()
+        self.assertIsNotNone(row.geometry)
+        self.assertGreater(row.fetched_at, stale_date)
+        # Encore « pas de route » : géométrie toujours nulle, mais le
+        # verdict est repoussé d'autant.
+        db.session.add(RouteLegCache(
+            provider='fossgis', profile='car', leg_key=pr.leg_key(B, C),
+            geometry=None, fetched_at=stale_date))
+        db.session.commit()
+        with mock.patch('requests.get', return_value=FakeResponse(200, {'code': 'NoRoute'})) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'car', [B, C])
+        self.assertEqual(get.call_count, 1)
+        self.assertEqual(result['legs'], [{'path': None, 'cached': False}])
+        row = RouteLegCache.query.filter_by(leg_key=pr.leg_key(B, C)).one()
+        self.assertIsNone(row.geometry)
+        self.assertGreater(row.fetched_at, stale_date)
+        # fetched_at NULL (vieille ligne) : vaut périmé, donc redemandé.
+        d = [6.16, 45.92]
+        db.session.add(RouteLegCache(
+            provider='fossgis', profile='car', leg_key=pr.leg_key(C, d),
+            geometry=None, fetched_at=None))
+        db.session.commit()
+        with mock.patch('requests.get', side_effect=self.fake_get) as get:
+            result = pr.route_legs(db.session, self.CONFIG, 'car', [C, d])
+        self.assertEqual(get.call_count, 1)
 
     def test_invalid_requests(self):
         for profile, waypoints in [('plane', [A, B]), ('foot', [A]), ('foot', [[200, 0], B]), ('foot', 'x')]:

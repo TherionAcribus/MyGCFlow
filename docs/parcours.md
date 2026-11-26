@@ -1295,8 +1295,11 @@ Option globale `parcours_routing`, **désactivée par défaut** (carte
   étapes d'OSRM, les `way_points` d'openrouteservice ;
 - chaque trajet est gardé dans **`route_leg_cache`** (fournisseur, profil,
   extrémités arrondies au 1e-5°), partagé par tous les parcours. Un trajet
-  sans route possible y est gardé sans géométrie : il n'est plus redemandé.
-  « Pas de route » portant sur toute une requête de plusieurs trajets, elle
+  sans route possible y est gardé sans géométrie : le verdict est
+  re-vérifié après 30 jours (`NO_ROUTE_TTL_DAYS`) — une route nouvelle ou
+  un fournisseur réparé peut alors répondre ; les itinéraires trouvés, eux,
+  sont gardés (vidéo reproductible). « Pas de route » portant sur toute
+  une requête de plusieurs trajets, elle
   est re-découpée par dichotomie jusqu'à isoler le ou les coupables
   (`_route_chunk`) — les trajets routables voisins gardent leur itinéraire.
   « Recalculer » ignore le cache (`force`) ; « Réessayer », proposé après
@@ -1304,6 +1307,9 @@ Option globale `parcours_routing`, **désactivée par défaut** (carte
   le cache » oublie tous les itinéraires gardés (tous fournisseurs, tous
   parcours — `GET`/`DELETE /api/parcours/routes/cache`), qui seront
   recalculés au prochain besoin ;
+- une erreur « indisponible » (réseau, serveur) est retentée une fois,
+  espacée (`RETRY_DELAY_S` par fournisseur) : une panne passagère ne
+  suspend pas tout le calcul ; quota et clé ne sont jamais retentés ;
 - en cas d'échec (réseau, quota, clé), les trajets restent non calculés,
   avec un message, et l'API répond quand même 200 ;
 - la clé openrouteservice est stockée dans settings.json mais **jamais

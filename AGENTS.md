@@ -784,6 +784,15 @@ qui importe doit détourner ce chemin (`mock.patch('paths.country_state_path',
 ne liste plus que les pays de la fixture, et l'app ne le reconstruit que
 s'il manque (cas constaté le 2026-11-07 : filtres réduits à la France).
 
+## Parcours : itinéraires (parcours_routing.py)
+
+- Une erreur « indisponible » (réseau, 5xx) est retentée une fois, espacée
+  (`RETRY_DELAY_S`, dict patchable par `mock.patch.dict` comme
+  `MIN_INTERVAL_S`) ; `quota` et `key` ne sont jamais retentés.
+- Un verdict « sans route » (`route_leg_cache.geometry` NULL) est
+  re-vérifié après `NO_ROUTE_TTL_DAYS` = 30 jours ; un `fetched_at` NULL
+  vaut périmé. Les itinéraires trouvés, eux, sont gardés indéfiniment.
+
 ## Benchmark saut de la barre de chronologie
 
 `MYGCFLOW_BENCH=1 [BENCH_N=20000] npm run test:e2e -- bench-timeline-seek`

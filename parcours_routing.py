@@ -13,11 +13,17 @@ droite. Deux fournisseurs, appelés PAR LE SERVEUR (jamais par la page) :
 Chaque trajet calculé est gardé dans `route_leg_cache` (par fournisseur,
 profil et coordonnées arrondies au 1e-5°) : la vidéo reste reproductible et
 se refait hors ligne. Un trajet sans route possible (île, mer) est gardé
-aussi, sans géométrie : il n'est plus redemandé, le client trace la ligne
-droite. Une réponse « pas de route » portant sur plusieurs trajets ne dit
-pas lequel échoue : la requête est alors re-découpée jusqu'à isoler le ou
-les coupables — les trajets routables voisins gardent leur itinéraire.
-« Recalculer » (`force`) ignore le cache.
+aussi, sans géométrie — le client trace la ligne droite — mais le verdict
+est re-vérifié après NO_ROUTE_TTL_DAYS jours : une route nouvelle ou un
+fournisseur réparé peut alors répondre. Une réponse « pas de route »
+portant sur plusieurs trajets ne dit pas lequel échoue : la requête est
+alors re-découpée jusqu'à isoler le ou les coupables — les trajets
+routables voisins gardent leur itinéraire. « Recalculer » (`force`) ignore
+le cache.
+
+Une erreur « indisponible » (réseau, serveur) est retentée une fois,
+espacée : une panne passagère ne suspend pas tout le calcul. Quota et clé
+ne sont jamais retentés — insister ne changerait rien.
 
 Une requête couvre une suite de trajets de même profil (MAX_WAYPOINTS points
 au plus) : une journée coûte une poignée d'appels, découpés ensuite trajet
@@ -30,7 +36,7 @@ import hashlib
 import json
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from sqlalchemy import func
@@ -52,6 +58,15 @@ REQUEST_TIMEOUT_S = 25
 # Écart minimal entre deux appels d'un même fournisseur (conditions FOSSGIS :
 # une requête par seconde ; openrouteservice : 40 par minute).
 MIN_INTERVAL_S = {PROVIDER_FOSSGIS: 1.05, PROVIDER_ORS: 1.6}
+# Délai avant une retentative sur erreur « indisponible » (réseau, 5xx) :
+# une panne passagère ne doit pas suspendre tout le calcul. Quota et clé
+# ne sont jamais retentés.
+RETRY_DELAY_S = {PROVIDER_FOSSGIS: 2.0, PROVIDER_ORS: 3.0}
+# Durée de conservation d'un verdict « pas de route » (geometry NULL) :
+# passé ce délai, le trajet est redemandé — une route nouvelle ou un
+# fournisseur réparé peut alors répondre. Les itinéraires trouvés, eux,
+# sont gardés : la vidéo reste reproductible.
+NO_ROUTE_TTL_DAYS = 30
 USER_AGENT = f"MyGCFlow/{__version__} (parcours ; +{REPO_URL})"
 
 _OSRM_PROFILES = {'foot': 'foot', 'bike': 'bike', 'car': 'car'}
@@ -227,14 +242,31 @@ def route_legs(session, config: dict, profile: str, waypoints: list, force: bool
         raise RoutingError('invalid')
     keys = [leg_key(points[i], points[i + 1]) for i in range(len(points) - 1)]
 
-    def call(pts):
+    def request_call(pts):
         if provider == PROVIDER_ORS:
             return route_ors(config.get('ors_url') or ORS_DEFAULT_URL,
                              config.get('ors_key') or '', profile, pts)
         return route_osrm(config.get('fossgis_url') or FOSSGIS_DEFAULT_URL, profile, pts)
 
+    def call(pts):
+        try:
+            return request_call(pts)
+        except RoutingError as exc:
+            # Erreur passagère : une seconde chance espacée ; quota et clé
+            # échouent tout de suite — insister ne changerait rien.
+            if exc.code != 'unavailable':
+                raise
+            time.sleep(RETRY_DELAY_S.get(provider, 2.0))
+            return request_call(pts)
+
     rows = {} if force else _cached(session, provider, profile, keys)
-    legs = [_leg_dict(rows[k], True) if k in rows else None for k in keys]
+    # Un verdict « pas de route » plus vieux que NO_ROUTE_TTL_DAYS est
+    # traité comme manquant : redemandé, puis réécrit à fetched_at = now.
+    # Un fetched_at NULL (vieilles lignes) vaut périmé.
+    stale = datetime.now() - timedelta(days=NO_ROUTE_TTL_DAYS)
+    def usable(row):
+        return row.geometry is not None or (row.fetched_at or datetime.min) >= stale
+    legs = [_leg_dict(rows[k], True) if k in rows and usable(rows[k]) else None for k in keys]
     missing = [i for i, leg in enumerate(legs) if leg is None]
     requested = 0
     error = None
