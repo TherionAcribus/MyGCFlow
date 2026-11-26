@@ -1084,6 +1084,12 @@ export function createParcoursPlayDraw(deps) {
     // centaines de photos 2048 px.
     const PHOTO_AHEAD_Q = 40;     // ~4 jours devant la tête
     const PHOTO_BEHIND_Q = 8;     // effacement + petit retour en arrière
+    // Attente des photos avant un enregistrement (photosReady) : plafond
+    // proportionnel à leur nombre, scrutation cadencée.
+    const PHOTO_WAIT_BASE_MS = 3000;
+    const PHOTO_WAIT_PER_MS = 30;
+    const PHOTO_WAIT_MAX_MS = 30000;
+    const PHOTO_WAIT_POLL_MS = 120;
 
     // Pleines tailles des créneaux proches de `currentQ`. Relancée à chaque
     // image de la lecture : le `break` sur les créneaux triés la rend quasi
@@ -1129,24 +1135,54 @@ export function createParcoursPlayDraw(deps) {
 
     const imageReady = (img) => !!img?.complete && img.naturalWidth > 0;
 
-    // Résolue quand toutes les photos chargées sont décodées (ou en échec),
-    // au plus tard après `timeoutMs` — comme `imagesReady` de l'onglet
-    // Images : attendue avant la première frame d'un enregistrement pour
-    // qu'une photo encore en vol ne manque pas dans la vidéo. Hors de la
-    // page, ou sans photo, résout immédiatement.
-    function photosReady(timeoutMs = 3000) {
+    // Résout `true` dès que toutes les photos de la chronologie sont prêtes
+    // (pleine taille décodée ou en échec irrémédiable — la vignette seule ne
+    // suffit pas, les cartes postales de la vidéo n'y retombent pas),
+    // `false` au plafond ou dès que shouldAbort() devient vrai — choix
+    // « filmer sans les photos » ou session d'enregistrement abandonnée.
+    // Sans `timeoutMs` explicite, le plafond est proportionnel au nombre de
+    // photos (3 s + 30 ms/photo, 30 s au plus) : le décodage de centaines
+    // d'images 2048 px dépassait le plafond fixe de 3 s. Un nombre passé
+    // seul vaut `{ timeoutMs }` — comme `imagesReady` de l'onglet Images :
+    // attendue avant la première frame d'un enregistrement pour qu'une
+    // photo encore en vol ne manque pas dans la vidéo. Hors de la page, ou
+    // sans photo, résout immédiatement.
+    function photosReady(options = {}) {
+        const opts = (typeof options === 'number') ? { timeoutMs: options } : (options || {});
+        const { timeoutMs, onProgress, shouldAbort } = opts;
         preloadPhotos(true);
-        const pending = [];
-        for (const cache of [photoImages, photoThumbs]) {
-            for (const img of cache.values()) {
-                if (!imageReady(img)) pending.push(img.decode().catch(() => {}));
-            }
-        }
-        if (!pending.length) return Promise.resolve(true);
-        return Promise.race([
-            Promise.all(pending).then(() => true),
-            new Promise((resolve) => setTimeout(() => resolve(false), timeoutMs)),
-        ]);
+        const { timeline } = S();
+        const ids = new Set(
+            [...photoSlots(timeline).map((slot) => slot.photoId), ...cardPhotoIds()]
+                .filter((id) => photoById(id)));
+        if (!ids.size) return Promise.resolve(true);
+        const cap = Number.isFinite(timeoutMs) ? timeoutMs
+            : Math.min(PHOTO_WAIT_MAX_MS, PHOTO_WAIT_BASE_MS + PHOTO_WAIT_PER_MS * ids.size);
+        const deadline = Date.now() + cap;
+        // Soldée : image complète — décodée (naturalWidth > 0) ou en échec
+        // (0, elle n'arrivera pas mieux en attendant).
+        const photoDone = (id) => !!photoImages.get(id)?.complete;
+        // decode() n'est demandé qu'une fois par image : le relancer à
+        // chaque scrutation remettrait sa file de décodage.
+        const decodeAsked = new Set();
+        return new Promise((resolve) => {
+            const tick = () => {
+                let ready = 0;
+                for (const id of ids) if (photoDone(id)) ready++;
+                try { onProgress?.(ready, ids.size); } catch(_) {}
+                if (ready === ids.size) { resolve(true); return; }
+                if (shouldAbort?.() || Date.now() >= deadline) { resolve(false); return; }
+                for (const cache of [photoImages, photoThumbs]) {
+                    for (const [id, img] of cache) {
+                        if (!ids.has(id) || imageReady(img) || decodeAsked.has(img)) continue;
+                        decodeAsked.add(img);
+                        img.decode().catch(() => {});
+                    }
+                }
+                setTimeout(tick, PHOTO_WAIT_POLL_MS);
+            };
+            tick();
+        });
     }
 
     // Photos de la chronologie qui ne figureront pas dans la vidéo : aucune

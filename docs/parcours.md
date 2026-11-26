@@ -915,11 +915,17 @@ marque ni modèle partagent la clé `UNKNOWN_CAMERA` (« ? », ligne
   long parcours très illustré ne télécharge plus des centaines d'images
   2048 px. En lecture, une photo encore en chargement n'est simplement pas
   dessinée. Avant un enregistrement, elles sont toutes chargées et
-  attendues (`parcoursPhotosReady`, plafond 3 s, branché sur le
-  `whenImagesReady` de l'image par image et, en capture rapide, avant le
-  départ de l'animation) : une photo encore en vol ne manque pas dans la
-  vidéo. Celles qui manqueraient quand même — échec de chargement ou
-  attente dépassée — sont comptées (`parcoursPhotosMissing`) et signalées
+  attendues (`parcoursPhotosReady`, branché sur le `whenImagesReady` de
+  l'image par image et, en capture rapide, avant le départ de
+  l'animation) : une photo encore en vol ne manque pas dans la vidéo.
+  L'attente est proportionnelle au nombre de photos (3 s + 30 ms par
+  photo, 30 s au plus — un plafond fixe de 3 s laissait partir la vidéo
+  sans photos sur un parcours très illustré) et résout dès que tout est
+  prêt ; au-delà de ~800 ms, un toast « Préparation des photos n / N »
+  suit la progression et propose « Filmer sans les photos restantes »
+  (`parcoursPhotosPrep`, mapgl.js), qui interrompt l'attente. Celles qui
+  manqueraient quand même — échec de chargement, attente dépassée ou
+  départ anticipé — sont comptées (`parcoursPhotosMissing`) et signalées
   par un toast au départ de la capture.
 
 La mise en page et le cadre décrits ci-dessus sont ceux par défaut ; ils se

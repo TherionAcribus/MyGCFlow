@@ -407,7 +407,15 @@ Autres repères :
   `photosMissing` du même relevé (et `parcoursPhotosMissing()`) compte les
   photos de la chronologie sans image prête dans les deux caches : le
   départ d'une capture les signale par un toast (« peut/peuvent manquer
-  dans la vidéo »), échec de chargement comme dépassement de l'attente 3 s.
+  dans la vidéo »), échec de chargement comme dépassement de l'attente.
+  `parcoursPhotosReady(options)` prend `{timeoutMs?, onProgress?, shouldAbort?}`
+  (un nombre = `timeoutMs` ; sans option, plafond adaptatif 3 s + 30 ms/photo
+  plafonné à 30 s) et résout `false` au plafond ou si `shouldAbort()` ; « prête »
+  = la PLEINE taille soldée (`img.complete`), la vignette ne suffit pas — mais
+  une vignette prête sort la photo du compte `photosMissing` : un spec qui veut
+  le toast « manquer » doit retarder `…/file` ET `…/thumb`. Le toast d'action
+  « Filmer sans les photos restantes » vit dans `parcoursPhotosPrep` (mapgl.js)
+  et apparaît après ~800 ms d'attente.
   En spec, faire échouer les images via `page.route('**/api/parcours/*/photos/**')`
   — le `**` final requis : `photos/*` n'atteint que l'identifiant, pas
   `…/file` ni `…/thumb` — exemple « image échoue » de

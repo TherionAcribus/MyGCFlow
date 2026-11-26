@@ -1369,10 +1369,13 @@ function previewPhoto(photoId) {
     return playDraw.previewPhoto(photoId);
 }
 
-// Attendue avant la première frame d'un enregistrement : toutes les photos
-// chargées décodées (ou timeout). Exportée pour record.js.
-export function parcoursPhotosReady(timeoutMs = 3000) {
-    return playDraw.photosReady(timeoutMs);
+// Attendue avant la première frame d'un enregistrement : résout `true` quand
+// toutes les photos de la chronologie sont prêtes, `false` au plafond —
+// proportionnel à leur nombre par défaut, ou `timeoutMs` explicite — ou si
+// `shouldAbort` le demande ; `onProgress` (prêtes, total) optionnel.
+// Exportée pour record.js.
+export function parcoursPhotosReady(options) {
+    return playDraw.photosReady(options);
 }
 
 // Photos de la chronologie sans image prête : elles manqueront dans la

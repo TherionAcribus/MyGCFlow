@@ -4140,16 +4140,45 @@ export function recordAnimation(){
     return;
 }
 
+// Préparation des photos du parcours avant la première frame filmée :
+// indécelable en général ; si l'attente dépasse ~800 ms, un toast montre
+// « n / N » et offre de filmer sans les photos restantes (shouldAbort).
+function parcoursPhotosPrep(session) {
+    if (typeof pkg.parcoursPhotosReady !== 'function') return Promise.resolve();
+    let toast = null;
+    let skipped = false;
+    const toastTimer = setTimeout(() => {
+        try {
+            toast = pkg.showActionToast?.(
+                pkg.t('Préparation des photos…'),
+                { label: pkg.t('Filmer sans les photos restantes'), onClick: () => { skipped = true; } },
+                { type: 'info', title: pkg.t('Enregistrement'), duration: 0 });
+        } catch(_) {}
+    }, 800);
+    return Promise.resolve(pkg.parcoursPhotosReady({
+        onProgress: (done, total) => {
+            if (!toast) return;
+            try { pkg.updateToastMessage?.(toast, pkg.t('Préparation des photos : ${done} / ${total}', { done, total })); } catch(_) {}
+        },
+        shouldAbort: () => skipped || session !== recordingSession,
+    })).catch(() => false).finally(() => {
+        clearTimeout(toastTimer);
+        if (toast) { try { pkg.hideToast?.(toast); } catch(_) {} }
+    });
+}
+
 // Images de l'onglet Images : décodées avant la première frame du mode image
 // par image, sinon les premières images de la vidéo sortiraient sans elles.
 // Plafond de 3 s (cf. imagesReady) : une image injoignable ne bloque pas
 // l'enregistrement. Le mode MediaRecorder n'attend pas (temps réel, cf.
-// startMediaRecorderPipeline). Photos du parcours : même attente, sinon
-// elles manqueraient dans les frames capturées.
-function whenImagesReady() {
+// startMediaRecorderPipeline). Photos du parcours : même attente, mais un
+// plafond proportionnel à leur nombre avec progression affichée et choix de
+// filmer sans les photos restantes (cf. parcoursPhotosPrep), sinon elles
+// manqueraient dans les frames capturées.
+function whenImagesReady(session) {
     return Promise.allSettled([
         Promise.resolve(pkg.imagesReady?.(3000)).catch(() => false),
-        Promise.resolve(pkg.parcoursPhotosReady?.(3000)).catch(() => false),
+        parcoursPhotosPrep(session),
     ]);
 }
 
@@ -4168,7 +4197,7 @@ function warnMissingParcoursPhotos() {
 }
 
 function startRecordingWhenImagesReady(session) {
-    whenImagesReady().then(() => {
+    whenImagesReady(session).then(() => {
         // Arrêté pendant l'attente : ne pas démarrer après coup.
         if (session !== recordingSession) return;
         warnMissingParcoursPhotos();
@@ -5198,10 +5227,11 @@ function recordAnimationMediaRecorder(){
     prepareCameraPacing({ timelineScale: appliedSlowdown, forRecording: true });
 
     // Photos du parcours : décodées avant le départ de l'animation (plafond
-    // 3 s, cf. parcoursPhotosReady). L'attente se tient ici, capture pas
-    // encore lancée : après le départ, une photo encore en vol arriverait
-    // trop tard pour figurer dans la vidéo.
-    Promise.resolve(pkg.parcoursPhotosReady?.(3000)).catch(() => false).then(() => {
+    // proportionnel, progression et « filmer sans les photos » dans
+    // parcoursPhotosPrep). L'attente se tient ici, capture pas encore
+    // lancée : après le départ, une photo encore en vol arriverait trop
+    // tard pour figurer dans la vidéo.
+    parcoursPhotosPrep(session).then(() => {
         // Arrêté pendant l'attente : ne pas démarrer après coup.
         if (session !== recordingSession) return;
         warnMissingParcoursPhotos();

@@ -725,3 +725,69 @@ test('enregistrement : une photo dont l’image échoue est signalée avant la c
   }
   expect(errors).toEqual([]);
 });
+
+test('enregistrement : le plafond d’attente est proportionnel au nombre de photos', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles([files[0]]);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+
+  // Rechargée, la pleine taille est re-demandée : sa réponse est retardée,
+  // comme sur une connexion lente (la vignette, elle, arrive vite).
+  await page.route('**/api/parcours/*/photos/*/file', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await route.continue();
+  });
+  await page.reload();
+  await expect.poll(async () => (await snapshot(page)).status, { timeout: 30_000 }).toBe('ready');
+
+  // Un plafond explicite trop court expire avant l'arrivée de la photo.
+  const started = Date.now();
+  const ready = await page.evaluate(() => window.parcoursPhotosReady({ timeoutMs: 400 }));
+  const elapsed = Date.now() - started;
+  expect(ready).toBe(false);
+  expect(elapsed).toBeGreaterThanOrEqual(300);
+  expect(elapsed).toBeLessThan(1200);
+
+  // Sans plafond explicite, l'attente tient jusqu'à l'arrivée de la photo.
+  const ready2 = await page.evaluate(() => window.parcoursPhotosReady());
+  expect(ready2).toBe(true);
+  expect((await snapshot(page)).photosLoaded).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('enregistrement : filmer sans les photos en attente', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await openPhotosTab(page);
+  await page.locator('#parcoursPhotoInput').setInputFiles([files[0]]);
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+
+  // Vignette ET pleine taille longues à venir : aucune image prête — la
+  // photo comptera comme manquante — et l'attente dure assez pour que le
+  // toast de préparation apparaisse (> ~800 ms).
+  await page.route('**/api/parcours/*/photos/**', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await route.continue();
+  });
+  await page.reload();
+  await expect.poll(async () => (await snapshot(page)).status, { timeout: 30_000 }).toBe('ready');
+
+  // L'attente propose de partir sans les photos restantes ; la capture
+  // démarre alors, avec l'avertissement des photos manquantes.
+  const existing = new Set(mp4Names());
+  await page.locator('#btnQuickExport').click({ force: true });
+  const prep = page.locator('.gcm-toast.show').filter({ hasText: 'Préparation des photos' });
+  await expect(prep).toBeVisible({ timeout: 15_000 });
+  await prep.getByRole('button', { name: 'Filmer sans les photos restantes' }).click();
+  await expect(page.locator('.gcm-toast').filter({ hasText: 'peut manquer dans la vidéo' }).first())
+    .toBeVisible({ timeout: 15_000 });
+  await page.evaluate(async () => (await import('/static/js/index.js')).stopAnimation());
+  for (const name of mp4Names().filter((n) => !existing.has(n))) {
+    rmSync(path.join(RUNTIME, 'video', name), { force: true });
+  }
+  expect(errors).toEqual([]);
+});
