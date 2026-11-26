@@ -45,8 +45,8 @@ relever de version — plus les fichiers, photos normalisées sous `photos/`
 et traces reconstruites en GPX sous `tracks/` (géométrie et heures de la
 trace simplifiée ; le fichier d'origine n'est pas conservé). But :
 sauvegarde et transfert entre machines ; la réimportation de l'archive
-reste à faire. Sur un parcours ouvert, le bouton GPX de la barre des étapes
-(`#btnParcoursExportGpx`, `parcours_gpx.mjs` côté client — l'itinéraire
+reste à faire. Sur un parcours ouvert, « Exporter GPX » du menu « ⋯ » de la
+barre des étapes (`#btnParcoursExportGpx`, `parcours_gpx.mjs` côté client — l'itinéraire
 reconstruit suffit, rien ne repasse par le serveur) télécharge un fichier
 lisible par un GPS : une `<rte>` par journée, les étapes dans l'ordre,
 `<time>` = heure d'arrivée prévue convertie en UTC via le décalage du
@@ -148,8 +148,8 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_style.mjs` | Pur : apparence des étapes et du trait (normalisation, numéros, contraste). Copie de `parcours_style.py`. Tests : `tests/js/parcours_style.test.mjs`, `tests/test_parcours_style.py` |
 | `static/js/parcours_stack.mjs` | Pur : étapes empilées (piles, libellé, éventail). Tests : `tests/js/parcours_stack.test.mjs` |
 | `static/js/parcours_labels.mjs` | Libellés et formatage de la page (dates, distances, icônes, diagnostics) — pur, `parcours_data.js` lui passe l'état courant. `parcours_gpx.mjs` : export GPX (ci-dessus) |
-| `static/js/parcours_tbar.mjs` | Barre de chronologie : série, repères (nuits, jours, DNF, photos), textes et sauts de journée pour `timeline_bar.js`. Fabrique `createParcoursTimelineBar` — l'état du parcours ouvert arrive par `getState()` |
-| `static/js/parcours_stops_panel.mjs` | Liste des étapes par journée : pliage, recherche (nom, code GC, accents ignorés ; journées dépliées et réordonnancement masqués en vue filtrée), réordonnancement (flèches, glisser-déposer), panneau d'ajustement, parkings suggérés. Fabrique `createStopsPanel` — `editKey`/`collapsedDays`/`dragged`/`filterText` y sont internes. Les journées portent `content-visibility: auto` : seules celles à l'écran sont rendues |
+| `static/js/parcours_tbar.mjs` | Barre de chronologie : série, repères (nuits, jours, DNF, photos), textes et sauts de journée pour `timeline_bar.js`, survol (`hoverAt` : halo de l'étape visée sur le plan). Fabrique `createParcoursTimelineBar` — l'état du parcours ouvert arrive par `getState()` |
+| `static/js/parcours_stops_panel.mjs` | Liste des étapes par journée : pliage, recherche (nom, code GC, accents ignorés ; journées dépliées et réordonnancement masqués en vue filtrée), filtre « à vérifier » (`CONFIDENCE_GEO`, combiné à la recherche), réordonnancement (flèches, glisser-déposer), panneau d'ajustement, parkings suggérés. Fabrique `createStopsPanel` — `editKey`/`collapsedDays`/`dragged`/`filterText`/`filterReview` y sont internes. Les journées portent `content-visibility: auto` : seules celles à l'écran sont rendues |
 | `static/js/parcours_place_form.mjs` | Pose et déplacement d'un lieu au clic carte + formulaire (journée, type, rôle, catégorie, icône). Fabrique `createPlaceForm` — `picking`/`placeDraft`/écouteur de clic y sont internes |
 | `static/js/parcours_adjust.mjs` | Moteur des ajustements : file d'écritures PATCH (fusion locale, ordre des gestes), historique Annuler/Rétablir (y compris lieux recréés : `remapPlaceId`), gestes rang/journée, CRUD des lieux. Écritures en `keepalive` et renvoi de secours de celles encore en file à la fermeture de la page (`closingWrites` sur `pagehide`, dans `parcours_data.js` — une écriture déjà reçue s'applique sans effet). Fabrique `createParcoursAdjust` — `undoStack`/`redoStack`/`overridesQueued`/`pendingWrites` y sont internes |
 | `static/js/parcours_style_ui.mjs` | Panneau « Style du parcours » : contrôles ↔ objet `parcours_style` normalisé (rendu, numéros, palette des journées, lecture, trait). Fabrique `createParcoursStyleUI` — écriture dans le thème injectée |
@@ -162,7 +162,7 @@ un voyage), chacun avec ses étapes :
 | `static/js/parcours_routing_ui.mjs` | Carte « Itinéraires » : réglages (activation, fournisseur, clé ORS), calcul des routes en chaîne, cache de page, progression et « Réessayer »/« Arrêter »/« Recalculer ». Fabrique `createParcoursRouting` — `routeCache`/`routeSeq`/`routeState`/`routeRunsNow`/`routeEffectsNow` y sont internes, `computeRuns` sert la reconstruction |
 | `static/js/parcours_camera_ui.mjs` | Caméra de la lecture : suivi du géocacheur (pose pré-rendu de `parcours_camera.mjs`), vue sauvegardée/restituée, suspension quand l'utilisateur reprend la main, tuiles préchargées. Fabrique `createParcoursCamera` |
 | `static/js/parcours_playback_ui.mjs` | Section « Lecture » (onglet Animation & vidéo) et sous-onglet « Caméra » : rythme, heures, caméra, tête, cartons, nuit — persiste `parcours_playback` et redessine ou reporte la chronologie. Fabrique `createParcoursPlaybackUI` |
-| `static/js/parcours_plan.mjs` | Plan du parcours au repos : couche `parcours` (z 1060, étapes reliées par journée, traces GPS, point provisoire de la pose), piles et éventail, lien liste ↔ carte (halo, lignes surlignées), glisser des repères (lieu, base, étape → ajustement), bulle d'actions au clic, menu « Poser un lieu / une base » au clic droit, cadrage sur l'emprise. Fabrique `createParcoursPlan` — couche, piles, éventail, survol et glisser y sont internes |
+| `static/js/parcours_plan.mjs` | Plan du parcours au repos : couche `parcours` (z 1060, étapes reliées par journée, traces GPS, point provisoire de la pose), piles et éventail, lien liste/barre ↔ carte (halo, lignes surlignées — le survol de la piste de chronologie entoure aussi l'étape visée), glisser des repères (lieu, base, étape → ajustement), bulle d'actions au clic, menu « Poser un lieu / une base » au clic droit, cadrage sur l'emprise. Fabrique `createParcoursPlan` — couche, piles, éventail, survol et glisser y sont internes |
 | `static/js/parcours_data.js` | Module de page : liste, création, suppression, étapes, plan, actions depuis la carte, moteur de lecture |
 | `templates/menu_data_parcours.html` | Onglet Données |
 
@@ -474,6 +474,12 @@ supposait de vraies dates :
 | Pg.Préc / Pg.Suiv | un mois | journée suivante / précédente (arrivée à sa première étape) |
 | Molette | un jour par cran | 5 quanta (½ s) par cran |
 
+Le survol de la piste (hors geste et enregistrement) entoure d'un halo le
+point de l'étape visée sur le plan — destination du trajet sous le
+pointeur, étape atteinte sinon — via le crochet `hoverAt` de l'adaptateur
+(optionnel : les autres pages ne l'ont pas). Le sens inverse, survol d'une
+ligne de la liste → halo sur le plan, existait déjà.
+
 Ctrl+← / → saute d'une arrivée à l'autre ; le saut lui-même est celui de
 toutes les pages (`seekAnimationToDate`, aperçu ouvert en pause). L'étiquette
 au curseur (date, heure, étapes, instant de la vidéo) a une largeur fixe sur
@@ -706,7 +712,22 @@ Dans l'onglet Données :
   nom, le code GC, la clé ou l'adventure d'une Lab — casse et accents
   ignorés, frappe temporisée. Une journée sans résultat disparaît ; les
   autres sont dépliées et le réordonnancement y est masqué (inopérant dans
-  une liste tronquée). Le compteur d'en-tête devient « k étapes sur n ».
+  une liste tronquée). Le compteur d'en-tête devient « k étapes sur n » ;
+- **le filtre « à vérifier »** (bouton du champ de recherche,
+  `filterReview`) ne garde que les étapes dont l'heure est déduite de la
+  géographie seule (`stop.confidence === CONFIDENCE_GEO`). Combinable avec
+  la recherche, mêmes règles de vue filtrée ;
+- **le menu « ⋯ »** de la barre d'outils regroupe les actions secondaires :
+  « Tout plier / Tout déplier », « Exporter GPX » et « Réinitialiser les
+  ajustements » — ce dernier masqué (son `<li>`) tant qu'il n'y a pas
+  d'ajustement. Annuler / Rétablir et « Poser un lieu » restent dans la
+  barre.
+
+Le résumé d'en-tête rappelle aussi l'état d'enrichissement du parcours
+ouvert, suffixé par « · » : photos et traces posées, itinéraires calculés
+(`itinéraires done/total`, quand l'option « Suivre les routes » est active)
+et caches jamais relues — ce dernier relevé à la cadence de la collecte
+(~4 s), le résumé au prochain rendu de la liste.
 
 **Agir depuis la carte** (au repos, depuis le 2026-11-20 ; rien pendant une
 lecture, même en pause) :

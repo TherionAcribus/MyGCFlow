@@ -13,6 +13,7 @@ import {
   deleteAllParcours,
   importFixture,
   openParcoursPage,
+  openStopsMenu,
   snapshot,
 } from './parcours-helpers.mjs';
 
@@ -149,10 +150,12 @@ test('journées repliables : chevron, tout plier, dépôt qui déplie', async ({
   await sat.locator('.parcours-day-toggle').click();
   await expect(sat.locator('.parcours-day-body')).toBeVisible();
 
-  // Tout plier / tout déplier.
+  // Tout plier / tout déplier (dans le menu « ⋯ » de la barre d'outils).
+  await openStopsMenu(page);
   await page.locator('#btnParcoursCollapseDays').click();
   await expect(sat.locator('.parcours-day-body')).toBeHidden();
   await expect(sun.locator('.parcours-day-body')).toBeHidden();
+  await openStopsMenu(page);
   await expect(page.locator('#btnParcoursCollapseDays')).toContainText('Tout déplier');
   await page.locator('#btnParcoursCollapseDays').click();
   await expect(sun.locator('.parcours-day-body')).toBeVisible();
@@ -199,7 +202,8 @@ test('annuler / rétablir : boutons, Ctrl+Z, et remise à zéro annulable', asyn
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
 
-  // « Réinitialiser les ajustements » est lui-même annulable.
+  // « Réinitialiser les ajustements » (menu « ⋯ ») est lui-même annulable.
+  await openStopsMenu(page);
   await expect(page.locator('#btnParcoursResetAdjustments')).toContainText('Réinitialiser');
   await page.locator('#btnParcoursResetAdjustments').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
@@ -252,11 +256,14 @@ test('épingler une heure, changer de journée, exclure puis réintégrer', asyn
   expect(state.days[1].keys).toEqual(['GCPAR05']);
 
   // Tout annuler (confirmation) : l'ordre et les heures automatiques reviennent.
+  await openStopsMenu(page);
   await page.locator('#btnParcoursResetAdjustments').click();
   await page.locator('.gcm-confirm-modal.show [data-gcm-role="confirm"]').click();
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.overrides).toEqual([]);
   expect(state.days.map((d) => d.keys)).toEqual([['GCPAR03', 'GCPAR01', 'GCPAR02'], ['GCPAR04', 'GCPAR05']]);
+  // Plus d'ajustement : l'item du menu « ⋯ » est masqué.
+  await openStopsMenu(page);
   await expect(page.locator('#btnParcoursResetAdjustments')).toBeHidden();
   expect(errors).toEqual([]);
 });
@@ -704,6 +711,7 @@ test('annuler / rétablir : création et suppression de lieu', async ({ page, re
 
 test('export GPX : une route par journée, étapes dans l’ordre', async ({ page }) => {
   await openReady(page);
+  await openStopsMenu(page);
   await expect(page.locator('#btnParcoursExportGpx')).toContainText('GPX');
   const [download] = await Promise.all([
     page.waitForEvent('download'),

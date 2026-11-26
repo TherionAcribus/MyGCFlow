@@ -151,6 +151,29 @@ test('bulle : étape, trajet et nuit au survol, sans toucher la carte', async ({
   expect(errors).toEqual([]);
 });
 
+test('survol de la piste : halo de l’étape visée sur la carte', async ({ page }) => {
+  const errors = collectErrors(page);
+  const rest = await openWithBar(page);
+  const { stopQ } = rest.timeline;
+  const keys = rest.days.flatMap((day) => day.keys);
+
+  // Survol de l'arrivée à une étape : son point s'entoure d'un halo, comme
+  // le survol de sa ligne dans la liste (crochet hoverAt de l'adaptateur).
+  await page.mouse.move(await axisX(page, stopQ[1]), await trackMidY(page));
+  await expect.poll(async () => (await snapshot(page)).hovered).not.toBeNull();
+  expect(keys).toContain((await snapshot(page)).hovered);
+
+  // Milieu d'un trajet : le halo suit la destination du trajet.
+  await page.mouse.move(await axisX(page, Math.round((stopQ[0] + 12 + stopQ[1]) / 2)), await trackMidY(page));
+  await expect.poll(async () => (await snapshot(page)).hovered).not.toBeNull();
+  expect(keys).toContain((await snapshot(page)).hovered);
+
+  // Pointeur hors de la barre : le halo se retire.
+  await page.mouse.move(0, 0);
+  await expect.poll(async () => (await snapshot(page)).hovered).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 test('carton final : synthèse du parcours en queue de lecture', async ({ page }) => {
   const errors = collectErrors(page);
   const rest = await openWithBar(page);

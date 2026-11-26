@@ -554,6 +554,45 @@ test('recherche dans les étapes : nom, code GC, aucun résultat', async ({ page
   expect(errors).toEqual([]);
 });
 
+test('filtre « à vérifier » : étapes à heure déduite de la géographie', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await importFixture(page, request);
+  await createWeekend(request);
+  await openParcoursPage(page);
+  await expect.poll(async () => (await snapshot(page)).status).toBe('ready');
+  const stops = page.locator('.parcours-stop');
+  await expect(stops).toHaveCount(5);
+  const review = page.locator('#parcoursStopsReview');
+
+  // Journée 1 : ordre des logs retenu (confiance « logged ») ; journée 2 :
+  // une seule cache à log et une earthcache loguée après coup — heures
+  // déduites de la géographie seule (confiance « geo »).
+  await review.click();
+  await expect(review).toHaveAttribute('aria-pressed', 'true');
+  await expect(stops).toHaveCount(2);
+  for (const stop of await stops.all()) {
+    await expect(stop).toHaveAttribute('data-confidence', 'geo');
+  }
+  // La journée sans étape à vérifier disparaît, le résumé compte le filtre.
+  await expect(page.locator('.parcours-day')).toHaveCount(1);
+  await expect(page.locator('#parcoursSummary')).toContainText('2 étapes sur 5');
+  // Vue filtrée : poignées et repli masqués, comme pour la recherche.
+  await expect(page.locator('.parcours-stop-grip')).toHaveCount(0);
+  await expect(page.locator('.parcours-day-toggle')).toBeHidden();
+
+  // Combiné avec la recherche : « gcpar04 » dans les étapes à vérifier.
+  await page.locator('#parcoursStopsSearch').fill('gcpar04');
+  await expect(stops).toHaveCount(1);
+  await expect(stops.first()).toContainText('GCPAR04');
+  await page.locator('#parcoursStopsSearch').fill('');
+
+  // Re-clic : la liste complète revient.
+  await review.click();
+  await expect(review).toHaveAttribute('aria-pressed', 'false');
+  await expect(stops).toHaveCount(5);
+  expect(errors).toEqual([]);
+});
+
 test('liste indisponible : « Réessayer » recharge la liste', async ({ page, request }) => {
   await importFixture(page, request);
   const created = await request.post('/api/parcours',

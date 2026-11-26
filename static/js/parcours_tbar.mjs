@@ -34,8 +34,9 @@ export function slotLabels() {
     return { morning: t('matin'), noon: t('midi'), afternoon: t('après-midi'), evening: t('soir') };
 }
 
-// `getState()` → { timeline, playback, timelineRevision } du parcours ouvert.
-export function createParcoursTimelineBar({ quantumBase, getState }) {
+// `getState()` → { timeline, playback, timelineRevision } du parcours ouvert ;
+// `onHoverStop` reçoit l'étape visée par le survol de la piste (halo carte).
+export function createParcoursTimelineBar({ quantumBase, getState, onHoverStop }) {
     const current = () => getState() || {};
     const timeline = () => current().timeline;
     const hours = () => (current().playback || {}).hours;
@@ -166,6 +167,20 @@ export function createParcoursTimelineBar({ quantumBase, getState }) {
         return marks;
     }
 
+    // Survol (hors enregistrement, timeline_bar coupe déjà) : le halo suit
+    // l'étape visée — destination d'un trajet, étape atteinte sinon.
+    function barHoverAt(axisStart, offset) {
+        if (offset == null || axisStart == null) { onHoverStop?.(null); return; }
+        const tl = timeline();
+        if (!tl) { onHoverStop?.(null); return; }
+        const q = barFirstQ(axisStart) + offset;
+        const state = stateAt(tl, q);
+        const legIndex = legIndexAt(tl, q);
+        const stop = legIndex >= 0 ? tl.stops[tl.legs[legIndex].to]
+            : state && state.reached >= 0 ? tl.stops[state.reached] : null;
+        onHoverStop?.(stop || null);
+    }
+
     // Pg.Préc/Pg.Suiv : arrivée à la première étape de la journée suivante
     // (direction 1) ou de la journée en cours / précédente (-1).
     function barDayOffset(rangeStart, offset, direction) {
@@ -191,5 +206,6 @@ export function createParcoursTimelineBar({ quantumBase, getState }) {
         positionText: barPositionText,
         tipLines: barTipLines,
         dayOffset: barDayOffset,
+        hoverAt: barHoverAt,
     });
 }

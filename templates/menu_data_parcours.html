@@ -256,21 +256,38 @@
                                 title="{{ _('Astuce : un clic droit sur la carte pose un lieu ou une base à cet endroit.') }}">
                             <i class="ti ti-map-pin-plus me-1" aria-hidden="true"></i>{{ _("Poser un lieu ou une base sur la carte") }}
                         </button>
-                        <button type="button" id="btnParcoursCollapseDays" class="btn btn-sm btn-outline-secondary">
-                            <i class="ti ti-arrows-minimize me-1" aria-hidden="true"></i><span>{{ _("Tout plier") }}</span>
-                        </button>
-                        <button type="button" id="btnParcoursExportGpx" class="btn btn-sm btn-outline-secondary"
-                                title="{{ _('Exporter l’itinéraire en GPX (une route par journée)') }}">
-                            <i class="ti ti-route me-1" aria-hidden="true"></i><span>{{ _("Exporter GPX") }}</span>
-                        </button>
-                        <button type="button" id="btnParcoursResetAdjustments" class="btn btn-sm btn-outline-secondary" hidden>
-                            <i class="ti ti-eraser me-1" aria-hidden="true"></i>{{ _("Réinitialiser les ajustements") }}
-                        </button>
+                        <!-- Actions secondaires dans un menu « ⋯ » : la barre
+                             reste lisible. « Réinitialiser les ajustements »
+                             n'apparaît que quand il y en a (son <li> est
+                             masqué, parcours_stops_panel.mjs). -->
+                        <div class="dropdown">
+                            <button type="button" id="btnParcoursMore" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="dropdown" aria-expanded="false" title="{{ _('Autres actions') }}">
+                                <i class="ti ti-dots" aria-hidden="true"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><button type="button" id="btnParcoursCollapseDays" class="dropdown-item">
+                                    <i class="ti ti-arrows-minimize me-1" aria-hidden="true"></i><span>{{ _("Tout plier") }}</span>
+                                </button></li>
+                                <li><button type="button" id="btnParcoursExportGpx" class="dropdown-item"
+                                            title="{{ _('Exporter l’itinéraire en GPX (une route par journée)') }}">
+                                    <i class="ti ti-route me-1" aria-hidden="true"></i><span>{{ _("Exporter GPX") }}</span>
+                                </button></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li id="parcoursResetAdjustmentsItem" hidden><button type="button" id="btnParcoursResetAdjustments" class="dropdown-item">
+                                    <i class="ti ti-eraser me-1" aria-hidden="true"></i>{{ _("Réinitialiser les ajustements") }}
+                                </button></li>
+                            </ul>
+                        </div>
                         <div class="input-group input-group-sm ms-auto parcours-stops-search" style="width: 15rem;">
                             <span class="input-group-text"><i class="ti ti-search" aria-hidden="true"></i></span>
                             <input type="search" id="parcoursStopsSearch" class="form-control"
                                    placeholder="{{ _('Nom ou code GC…') }}"
                                    aria-label="{{ _('Rechercher une étape') }}">
+                            <button type="button" id="parcoursStopsReview" class="btn btn-outline-secondary"
+                                    aria-pressed="false" title="{{ _('Étapes à vérifier : heure déduite de la géographie seule') }}">
+                                <i class="ti ti-alert-circle" aria-hidden="true"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="parcoursPlaceHint" class="alert alert-info py-2 px-3 small" role="status" hidden>

@@ -21,6 +21,7 @@ import {
 } from './parcours_labels.mjs';
 import {
     CONFIDENCE_ANCHORED,
+    CONFIDENCE_GEO,
     KIND_BASE,
     KIND_PLACE,
     isCountedStop,
@@ -52,7 +53,8 @@ const FOCUSABLE_CLASSES = [
 //          pinStopTime, excludeStop, startPlaceMove, buildIconPicker,
 //          stopStyle, dayIndexes, paintOfStop, currentStopLabels,
 //          placeCategories, customIcons, getMap, showDataTab }
-// getState() → { status, ordered, inputs, counts, logsAvailable, photoByStop }
+// getState() → { status, ordered, inputs, counts, logsAvailable, photoByStop,
+//                routes, collectUnread }
 export function createStopsPanel(deps) {
     const s = () => deps.getState() || {};
     const button = deps.button;
@@ -61,6 +63,7 @@ export function createStopsPanel(deps) {
     let collapsedDays = new Set(); // journées repliées dans la liste (dates ISO)
     let playingKey = null;         // étape en cours pendant la lecture
     let filterText = '';           // recherche dans la liste (nom, code GC)
+    let filterReview = false;      // « à vérifier » : heure déduite de la géo
     let searchBound = false;
     let searchTimer = null;
 
@@ -99,7 +102,8 @@ export function createStopsPanel(deps) {
     }
 
     // Champ lié une fois : la frappe est débouncée, reconstruire toute la
-    // liste à chaque touche serait lourd sur un long séjour.
+    // liste à chaque touche serait lourd sur un long séjour. Le bouton « à
+    // vérifier » vit dans le même input-group et n'est lié qu'ici aussi.
     function bindSearch() {
         if (searchBound) return;
         const input = el('parcoursStopsSearch');
@@ -111,6 +115,16 @@ export function createStopsPanel(deps) {
                 filterText = input.value.trim();
                 render();
             }, 150);
+        });
+        // « Étapes à vérifier » : ne garde que celles dont l'heure est
+        // purement déduite de la géographie (CONFIDENCE_GEO). Se combine
+        // avec la recherche.
+        const review = el('parcoursStopsReview');
+        review?.addEventListener('click', () => {
+            filterReview = !filterReview;
+            review.setAttribute('aria-pressed', String(filterReview));
+            review.classList.toggle('active', filterReview);
+            render();
         });
     }
 
@@ -138,19 +152,39 @@ export function createStopsPanel(deps) {
             return;
         }
         const needle = normalized(filterText);
+        // Vue filtrée : recherche texte ET/OU « à vérifier » (heure déduite
+        // de la géographie seule). Le prédicat combiné sert au comptage
+        // comme au filtrage des journées.
+        const filtered = !!needle || filterReview;
+        const predicate = filtered
+            ? (stop) => (!filterReview || stop.confidence === CONFIDENCE_GEO)
+                && (!needle || stopMatches(stop, needle))
+            : null;
         if (summary) {
-            if (needle) {
+            if (filtered) {
                 const matched = ordered.days.reduce(
-                    (n, day) => n + day.stops.filter((stop) => stopMatches(stop, needle)).length, 0);
+                    (n, day) => n + day.stops.filter(predicate).length, 0);
                 summary.textContent = t('${k} étapes sur ${n}', { k: matched, n: ordered.stopCount });
             } else {
                 const parts = [t('${n} étapes', { n: ordered.stopCount }), t('${n} jours', { n: ordered.days.length })];
                 if (counts?.missing_position) parts.push(t('${n} sans position', { n: counts.missing_position }));
+                // État d'enrichissement du parcours ouvert, suffixé au
+                // résumé : photos et traces posées, itinéraires calculés,
+                // caches jamais relues (collecte geocaching.com).
+                const inputs = s().inputs || {};
+                if (inputs.photos?.length > 0) parts.push(t('${n} photos', { n: inputs.photos.length }));
+                if (inputs.tracks?.length > 0) parts.push(t('${n} traces', { n: inputs.tracks.length }));
+                const routes = s().routes;
+                if (routes && routes.total > 0) {
+                    parts.push(t('itinéraires ${done}/${total}', { done: routes.done, total: routes.total }));
+                }
+                if (s().collectUnread > 0) parts.push(t('${n} jamais relues', { n: s().collectUnread }));
                 summary.textContent = parts.join(' · ');
             }
         }
-        const reset = el('btnParcoursResetAdjustments');
-        if (reset) reset.hidden = !hasAdjustments();
+        // Le bouton vit dans le menu « ⋯ » : c'est son <li> qu'on masque.
+        const resetItem = el('parcoursResetAdjustmentsItem');
+        if (resetItem) resetItem.hidden = !hasAdjustments();
         const note = el('parcoursOrderNote');
         if (note) {
             note.textContent = logsAvailable
@@ -158,11 +192,13 @@ export function createStopsPanel(deps) {
                 : t('Sans identifiants de logs, l’ordre vient de vos Labs et de la géographie : réimportez votre fichier My Finds pour en profiter. « ≈ » : heure estimée.');
         }
         const focus = box.contains(document.activeElement) ? focusMarkerOf(document.activeElement) : null;
-        box.replaceChildren(...ordered.days.map((day) => renderDay(day, needle)).filter(Boolean));
-        if (needle && box.children.length === 0) {
+        box.replaceChildren(...ordered.days.map((day) => renderDay(day, predicate)).filter(Boolean));
+        if (filtered && box.children.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'small text-muted';
-            empty.textContent = t('Aucune étape ne correspond à « ${q} ».', { q: filterText });
+            empty.textContent = (filterReview && !needle)
+                ? t('Aucune étape à vérifier.')
+                : t('Aucune étape ne correspond à « ${q} ».', { q: filterText });
             box.append(empty);
         }
         deps.pruneHoverRows();
@@ -192,16 +228,17 @@ export function createStopsPanel(deps) {
         if (day) collapsedDays.delete(day.date);
     }
 
-    function renderDay(day, needle = '') {
-        const stops = needle ? day.stops.filter((stop) => stopMatches(stop, needle)) : day.stops;
-        const excluded = needle ? day.excluded.filter((stop) => stopMatches(stop, needle)) : day.excluded;
+    function renderDay(day, predicate = null) {
+        const filtered = !!predicate;
+        const stops = predicate ? day.stops.filter(predicate) : day.stops;
+        const excluded = predicate ? day.excluded.filter(predicate) : day.excluded;
         // Vue filtrée : une journée sans résultat disparaît ; les autres sont
         // dépliées (le repli est un état de la lecture sans filtre) et le
         // réordonnancement est masqué — monter, descendre ou glisser une
         // étape n'aurait pas de sens dans une liste tronquée.
-        if (needle && stops.length === 0 && excluded.length === 0) return null;
+        if (filtered && stops.length === 0 && excluded.length === 0) return null;
         const section = document.createElement('section');
-        const collapsed = collapsedDays.has(day.date) && !needle;
+        const collapsed = collapsedDays.has(day.date) && !filtered;
         section.className = 'parcours-day mb-3';
         if (collapsed) section.classList.add('is-collapsed');
         section.dataset.date = day.date;
@@ -215,7 +252,7 @@ export function createStopsPanel(deps) {
             collapsed ? t('Déplier la journée') : t('Replier la journée'));
         toggle.setAttribute('aria-expanded', String(!collapsed));
         toggle.setAttribute('aria-controls', body.id);
-        toggle.hidden = !!needle;
+        toggle.hidden = filtered;
         toggle.addEventListener('click', () => {
             // Bascule en place, sans reconstruire la liste : le focus et les
             // poignées de glisser-déposer restent tels quels.
@@ -246,7 +283,7 @@ export function createStopsPanel(deps) {
         // Le nombre d'étapes reste lisible quand la journée est repliée.
         const count = document.createElement('span');
         count.className = 'small text-muted parcours-day-count';
-        count.textContent = stopsCountText(needle ? stops.length : day.stops.length);
+        count.textContent = stopsCountText(filtered ? stops.length : day.stops.length);
         header.append(toggle, title, count);
         if (deps.playFromDay && day.stops.length > 0) {
             const play = button('btn btn-link btn-sm p-0 parcours-day-play', 'ti-player-play',
@@ -264,14 +301,14 @@ export function createStopsPanel(deps) {
             header.append(badge, auto);
         }
         section.append(header, body);
-        if (!needle && day.stops.length > 0) {
+        if (!filtered && day.stops.length > 0) {
             const diagnostic = document.createElement('div');
             diagnostic.className = 'small text-muted mb-1 parcours-day-diagnostic';
             diagnostic.textContent = dayDiagnostic(day);
             body.append(diagnostic);
             const parkings = dayParkings().get(day.date);
             if (parkings) body.append(renderDayParkings(day, parkings));
-        } else if (!needle) {
+        } else if (!filtered) {
             const empty = document.createElement('div');
             empty.className = 'small text-muted';
             empty.textContent = t('Aucune étape ce jour-là');
@@ -280,7 +317,7 @@ export function createStopsPanel(deps) {
         if (stops.length > 0 || excluded.length > 0) {
             const list = document.createElement('ol');
             list.className = 'list-unstyled mb-0 parcours-stop-list';
-            const movable = needle ? [] : day.stops.filter((stop) => stop.kind !== KIND_BASE);
+            const movable = filtered ? [] : day.stops.filter((stop) => stop.kind !== KIND_BASE);
             for (const stop of stops) list.append(...renderStopRow(stop, day, movable));
             for (const stop of excluded) list.append(...renderExcludedRow(stop));
             body.append(list);

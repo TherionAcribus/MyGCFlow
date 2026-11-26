@@ -1168,6 +1168,9 @@ function onPointerMove(event) {
         const offset = axisOffsetFromPointer(event);
         if (offset !== hoverOffset) {
             hoverOffset = offset;
+            // Crochet optionnel de l'adaptateur de page (Parcours : halo de
+            // l'étape visée sur la carte ; absent ailleurs).
+            pageAdapter()?.hoverAt?.(currentAxis()?.start ?? null, offset);
             refreshTimelineBar();
         }
         return;
@@ -1669,6 +1672,7 @@ function initTimelineBar() {
     // fantôme ni de bulle — le dessin suivant ne les cherche que hors geste.
     track.addEventListener('pointerleave', () => {
         hoverOffset = null;
+        pageAdapter()?.hoverAt?.(null, null);
         setHoverHandle(null);
         refreshTimelineBar();
     });

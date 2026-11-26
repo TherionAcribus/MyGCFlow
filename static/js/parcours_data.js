@@ -706,6 +706,9 @@ function renderParcoursPopup(feature, container) {
 const PARCOURS_TIMELINE_BAR = createParcoursTimelineBar({
     quantumBase,
     getState: () => ({ timeline, playback, timelineRevision }),
+    // Survol de la piste : le point de l'étape visée s'entoure d'un halo,
+    // comme le fait déjà le survol de sa ligne dans la liste.
+    onHoverStop: (stop) => setHoveredStop(stop),
 });
 
 // Synthèse du minutage (onglet Animation) : étapes et journées comme dans la
@@ -1396,7 +1399,21 @@ const placeForm = createPlaceForm({
 });
 
 const stopsPanel = createStopsPanel({
-    getState: () => ({ status, ordered, inputs, counts, logsAvailable, photoByStop }),
+    getState: () => ({
+        status, ordered, inputs, counts, logsAvailable, photoByStop,
+        // Itinéraires calculés, pour la ligne d'état du résumé : trajets
+        // pourvus / trajets au total, seulement quand l'option « Suivre les
+        // routes » est active et qu'il y a des trajets.
+        routes: (() => {
+            if (!routingConfig().enabled) return null;
+            const eff = routing.effects();
+            const total = eff.paths.size + eff.missing;
+            return total > 0 ? { done: eff.paths.size, total } : null;
+        })(),
+        // Approximation : le compteur « jamais relues » se met à jour à la
+        // cadence de la collecte (4 s) et le résumé au prochain render().
+        collectUnread: parcoursCollectSnapshot()?.collect?.unread || 0,
+    }),
     button,
     pruneHoverRows: () => planMap.pruneHoverRows(),
     updateUndoButtons,

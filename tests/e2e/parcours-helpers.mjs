@@ -76,6 +76,14 @@ export async function openEnrichSection(page, key) {
   await expect(section).toHaveAttribute('open', '');
 }
 
+// Menu « ⋯ » de la barre d'outils des étapes : « Tout plier », « Exporter
+// GPX » et « Réinitialiser les ajustements » y vivent — l'ouvrir avant de
+// cliquer un de ces boutons (menu Bootstrap, refermé au clic).
+export async function openStopsMenu(page) {
+  await page.locator('#btnParcoursMore').click();
+  await expect(page.locator('#parcoursStopsTools .dropdown-menu')).toBeVisible();
+}
+
 export function snapshot(page) {
   return page.evaluate(() => window.getParcoursSnapshot());
 }

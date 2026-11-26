@@ -500,7 +500,17 @@ Autres repères :
   `getTimelineBarSnapshot()` donne `ticks` (`bands` = nuits, `labels`
   « Jour n ») et `rangeEditable: false` ; une position de la piste est un
   quantum (`stopQ` du relevé Parcours), exemple dans
-  `parcours-timeline-bar.spec.mjs`.
+  `parcours-timeline-bar.spec.mjs`. `hoverAt` est un crochet OPTIONNEL de
+  cet adaptateur : sur /parcours il entoure d'un halo l'étape visée par le
+  survol de la piste (destination d'un trajet, étape atteinte sinon),
+  appelé aussi avec `(null, null)` au départ du pointeur.
+  Barre d'outils des étapes : « Tout plier », « Exporter GPX » et
+  « Réinitialiser les ajustements » (masqué par son `<li>` sans
+  ajustement) vivent dans le menu « ⋯ » (`#btnParcoursMore`) — un spec les
+  clique via `openStopsMenu(page)` de parcours-helpers.mjs. Filtre
+  « à vérifier » (`#parcoursStopsReview`, combinable avec la recherche) :
+  `stop.confidence === CONFIDENCE_GEO` (heure déduite de la géographie
+  seule ; la fixture n'en a que sur la journée 2).
   Apparence des étapes et du trait (`points.parcours_style`, thème) : un
   spec la règle par l'onglet Style ou en mémoire — rien à remettre ; relevés
   `style`, `stopStyles` (numéro, couleur, rayon de chaque pastille ;
