@@ -139,6 +139,23 @@ class SuggestApiTests(_Base):
         self.assertEqual(len(payload['suggestions']), 7)
         self.assertEqual(payload['total'], 7)
 
+    def test_find_days_is_memoized_until_a_write(self):
+        """Le relevé des journées est mémoïsé sur l'empreinte du fichier :
+        un second appel ne relit rien, un commit le rebâtit."""
+        self.add('GC1', '2025-07-12', ANNECY)
+        db.session.commit()
+        with mock.patch.object(suggest, '_compute_days', wraps=suggest._compute_days) as spy:
+            days_one = suggest.find_days(db.session)
+            days_two = suggest.find_days(db.session)
+            self.assertIs(days_two, days_one)
+            self.assertEqual(spy.call_count, 1)
+            self.add('GC2', '2025-07-13', ANNECY)
+            db.session.commit()
+            days_three = suggest.find_days(db.session)
+            self.assertEqual(spy.call_count, 2)
+            self.assertEqual({d['date'] for d in days_three},
+                             {d['date'] for d in days_one} | {date(2025, 7, 13)})
+
     def test_list_carries_suggestions_from_a_single_find_days(self):
         # Le centre habituel et les suggestions partagent le même relevé des
         # journées : une seule passe sur les trouvailles par GET /api/parcours.

@@ -4265,6 +4265,13 @@ body[data-mode="parcours"] .rhythm-rate-field {
     box-shadow: 0 2px 0 var(--tblr-primary, #206bc4);
 }
 
+/* Journées hors écran non rendues : sur un power trail, la liste ne paie
+   que ce qui est visible (« auto » garde la taille mesurée d'un passage). */
+.parcours-day {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 480px;
+}
+
 /* Chevron de repli d'une journée : couché quand elle est repliée. */
 .parcours-day-toggle {
     color: var(--tblr-secondary, #6c7a91);

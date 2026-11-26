@@ -21,6 +21,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from datetime import date, datetime
+from pathlib import Path
 from statistics import median
 
 from models import Geocache
@@ -43,9 +44,52 @@ def _haversine_km(a, b) -> float:
     return 2 * 6371.0088 * math.asin(min(1.0, math.sqrt(h)))
 
 
+# Le relevé des journées relit toutes les trouvailles : mémoire clée sur
+# l'empreinte du fichier de données — tout commit le modifie (import GPX,
+# vidage, écriture directe en tests : le chemin fait partie de la clé),
+# quel que soit l'écrivain ou le fil d'exécution.
+_days_memo: tuple | None = None    # (signature, days)
+
+
+def _days_signature(session) -> tuple | None:
+    """Empreinte bon marché : chemin du fichier SQLite, dernière écriture
+    (fichier ou journal -wal) et taille. `None` sans fichier : pas de
+    cache (base en mémoire)."""
+    bind = session.get_bind()       # Engine ou Connection, jamais de .bind nul
+    url = getattr(bind, 'url', None)
+    if url is None or not url.database or url.database == ':memory:':
+        return None
+    path = Path(url.database)
+    mtime_ns = 0
+    for candidate in (path, path.with_name(path.name + '-wal')):
+        try:
+            mtime_ns = max(mtime_ns, candidate.stat().st_mtime_ns)
+        except OSError:
+            pass
+    if not mtime_ns:
+        return None
+    try:
+        size = path.stat().st_size
+    except OSError:
+        size = 0
+    return (str(path), mtime_ns, size)
+
+
 def find_days(session) -> list[dict]:
     """Une entrée par date de trouvaille : centre (médiane), nombre, pays et
-    régions."""
+    régions. Mémoïsé par empreinte de fichier : les jours retournés sont
+    partagés entre appels, ne jamais les modifier."""
+    global _days_memo
+    signature = _days_signature(session)
+    if _days_memo and signature and _days_memo[0] == signature:
+        return _days_memo[1]
+    days = _compute_days(session)
+    if signature:
+        _days_memo = (signature, days)
+    return days
+
+
+def _compute_days(session) -> list[dict]:
     rows = session.query(
         Geocache.date_find, Geocache.latitude, Geocache.longitude, Geocache.country, Geocache.state,
     ).filter(

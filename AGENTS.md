@@ -556,6 +556,12 @@ Autres repères :
   Toute erreur de l'API Parcours annule la transaction : `db.session.rollback()`
   vit dans `_store_error` et dans les chemins « refusé »
   (`InvalidImage`/`InvalidTrack`/`RoutingError`), pas dans les routes.
+  `parcours_suggest.find_days` est mémoïsé sur l'empreinte du fichier
+  SQLite (chemin + mtime + taille : tout commit l'invalide, quel que soit
+  l'écrivain ; `session.get_bind()` car `session.bind` peut être `None`) —
+  les jours retournés sont partagés, ne pas les modifier. La liste des
+  étapes pose `content-visibility: auto` sur `.parcours-day` : les journées
+  hors écran ne sont pas rendues.
 - Page Statistiques (`/stats`, docs/page-statistiques.md) : sans carte ni
   `index.js` — signal `window.mygcflowStatsReady` (pas `mygcflowReady`),
   relevé `getStatsPageSnapshot()` (`cards[].keys/series`), pas de modale de
