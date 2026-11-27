@@ -61,6 +61,8 @@ test('défauts : fiche coupée, sous-onglet Fiches avec ses quatre designs', asy
   await expect(page.locator('#parcoursInfo [data-info-design="card"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#parcoursInfoOffHint')).toBeVisible();
   await expect(page.locator('#parcoursInfoEmptyHint')).toBeHidden();
+  // Coupée par défaut : l'interrupteur est levé.
+  await expect(page.locator('#parcoursInfoOn')).not.toBeChecked();
   // Les vignettes sont dessinées (canevas non vide).
   await expect.poll(() => page.locator('#parcoursInfo [data-info-design="tag"] canvas').evaluate((canvas) => {
     const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
@@ -72,6 +74,35 @@ test('défauts : fiche coupée, sous-onglet Fiches avec ses quatre designs', asy
   await expect.poll(async () => (await info(page)).settings.design).toBe('banner');
   await expect(page.locator('#parcoursInfo [data-info-design="banner"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#parcoursInfo [data-info-design="card"]')).toHaveAttribute('aria-pressed', 'false');
+  // Bandeau : le fond prend la couleur d'accent et le texte s'y adapte —
+  // les couleurs de texte et de fond sont grisées, pas les autres designs.
+  await expect(page.locator('#parcoursInfoTextColor')).toBeDisabled();
+  await expect(page.locator('#parcoursInfoBackgroundColor')).toBeDisabled();
+  await page.locator('#parcoursInfo [data-info-design="card"]').click();
+  await expect(page.locator('#parcoursInfoTextColor')).toBeEnabled();
+  await expect(page.locator('#parcoursInfoBackgroundColor')).toBeEnabled();
+  expect(errors).toEqual([]);
+});
+
+test('interrupteur : active en temporaire, restaure la dernière configuration', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  await openInfoTab(page);
+
+  // Enclencher sans configuration passée : temporaire à côté de la cache.
+  await page.locator('#parcoursInfoOn').check();
+  await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'current', fixed: 'none' });
+  await expect(page.locator('#parcoursInfoOffHint')).toBeHidden();
+
+  // Une configuration particulière, puis coupée : elle est restaurée.
+  await page.locator('#parcoursInfoNear').selectOption('all');
+  await page.locator('#parcoursInfoFixed').selectOption('bottom');
+  await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'all', fixed: 'bottom' });
+  await page.locator('#parcoursInfoOn').uncheck();
+  await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'none', fixed: 'none' });
+  await expect(page.locator('#parcoursInfoOffHint')).toBeVisible();
+  await page.locator('#parcoursInfoOn').check();
+  await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'all', fixed: 'bottom' });
   expect(errors).toEqual([]);
 });
 

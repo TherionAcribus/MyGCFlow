@@ -122,6 +122,10 @@ export function createParcoursInfoUI(deps) {
         }
     }
 
+    // Dernière configuration active (near/fixed), pour la restaurer quand
+    // l'interrupteur est réenclenché. Renseignée par sync().
+    let lastActive = null;
+
     // Reflète le thème dans les contrôles. N'écrit que le DOM.
     function sync() {
         if (!el('parcoursInfo')) return;
@@ -136,10 +140,23 @@ export function createParcoursInfoUI(deps) {
         }
         const opacity = el('parcoursInfoBackgroundOpacityValue');
         if (opacity) opacity.textContent = `${info.background_opacity}%`;
+        // Interrupteur : reflète l'état et retient la dernière configuration
+        // active — le réenclencher la restaure plutôt qu'une valeur arbitraire.
+        const off = info.near === 'none' && info.fixed === 'none';
+        if (!off) lastActive = { near: info.near, fixed: info.fixed };
+        const on = el('parcoursInfoOn');
+        if (on) on.checked = !off;
         const accentColor = el('parcoursInfoAccentColor');
         if (accentColor) accentColor.disabled = info.accent !== 'fixed';
         const duration = el('parcoursInfoDuration');
         if (duration) duration.disabled = info.near !== 'current' && info.fixed === 'none';
+        // Bandeau : le fond est la couleur d'accent et le texte s'y adapte —
+        // les deux couleurs sont sans effet, le montrer.
+        const banner = info.design === 'banner';
+        const textColor = el('parcoursInfoTextColor');
+        if (textColor) textColor.disabled = banner;
+        const backgroundColor = el('parcoursInfoBackgroundColor');
+        if (backgroundColor) backgroundColor.disabled = banner;
         // Rien de coché : la fiche ne s'affichera nulle part, le dire.
         const empty = !Object.keys(FIELD_IDS).some((key) => info[key]);
         const emptyHint = el('parcoursInfoEmptyHint');
@@ -156,8 +173,19 @@ export function createParcoursInfoUI(deps) {
         }
         // Valeur bornée réaffichée à la sortie du champ (40 → 28).
         for (const id of ['parcoursInfoSize', 'parcoursInfoDuration']) el(id)?.addEventListener('blur', sync);
-        // Opacité : suivie pendant le glisser.
+        // Opacité et couleurs : suivies pendant le glisser et le nuancier,
+        // sans attendre la fermeture du contrôle.
         el('parcoursInfoBackgroundOpacity')?.addEventListener('input', () => commit());
+        for (const id of ['parcoursInfoTextColor', 'parcoursInfoBackgroundColor', 'parcoursInfoAccentColor']) {
+            el(id)?.addEventListener('input', () => commit());
+        }
+        // Interrupteur : couper vide les deux emplacements ; enclencher
+        // restaure la dernière configuration active (temporaire à côté de
+        // la cache si jamais il n'y en a pas eu).
+        el('parcoursInfoOn')?.addEventListener('change', () => {
+            if (el('parcoursInfoOn').checked) commit({ near: lastActive?.near || 'current', fixed: lastActive?.fixed || 'none' });
+            else commit({ near: 'none', fixed: 'none' });
+        });
         for (const button of document.querySelectorAll('#parcoursInfo [data-info-design]')) {
             button.addEventListener('click', () => commit({ design: button.dataset.infoDesign }));
         }

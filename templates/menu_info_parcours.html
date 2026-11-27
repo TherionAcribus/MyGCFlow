@@ -9,36 +9,12 @@
     </h5>
 
     <div class="card mb-3">
-        <div class="card-header">
-            <h6 class="card-title m-0">{{ _("Contenu") }}</h6>
-        </div>
-        <div class="card-body">
-            <div class="d-flex flex-wrap gap-3">
-                <label class="form-check mb-0">
-                    <input id="parcoursInfoName" class="form-check-input" type="checkbox">
-                    <span class="form-check-label">{{ _("Nom de la cache") }}</span>
-                </label>
-                <label class="form-check mb-0">
-                    <input id="parcoursInfoDt" class="form-check-input" type="checkbox">
-                    <span class="form-check-label">{{ _("Difficulté / terrain") }}</span>
-                </label>
-                <label class="form-check mb-0">
-                    <input id="parcoursInfoOwner" class="form-check-input" type="checkbox">
-                    <span class="form-check-label">{{ _("Propriétaire") }}</span>
-                </label>
-                <label class="form-check mb-0">
-                    <input id="parcoursInfoFavorites" class="form-check-input" type="checkbox">
-                    <span class="form-check-label">{{ _("Points favoris") }}</span>
-                </label>
-            </div>
-            <small class="form-hint text-muted">{{ _("Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni propriétaire, et les points favoris ne sont connus qu'après « Compléter depuis geocaching.com » (onglet Données). Les lieux et les bases n'ont pas de fiche.") }}</small>
-            <small id="parcoursInfoEmptyHint" class="form-hint text-warning" hidden>{{ _("Aucun élément coché : la fiche ne s'affiche nulle part.") }}</small>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header">
+        <div class="card-header d-flex align-items-center justify-content-between gap-2">
             <h6 class="card-title m-0">{{ _("Où et quand") }}</h6>
+            <label class="form-check form-switch m-0">
+                <input id="parcoursInfoOn" class="form-check-input" type="checkbox" role="switch">
+                <span class="form-check-label">{{ _("Afficher la fiche") }}</span>
+            </label>
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -72,6 +48,34 @@
             </div>
             <small id="helpParcoursInfoWhere" class="form-hint text-muted">{{ _("Temporaire : la fiche de l'étape apparaît à l'arrivée du géocacheur et reste le temps de la visite, au moins la durée minimale, jusqu'à l'étape suivante. Permanent : chaque étape atteinte garde la sienne ; celles qui n'ont pas la place sont masquées, l'étape en cours passe toujours. Ailleurs : un cartouche reprend la fiche de l'étape en cours, en haut, en bas ou dans un coin — à éviter là où se trouve le titre. Au repos, le permanent montre toutes les fiches et le temporaire celle de l'étape survolée. Sur la carte et dans la vidéo.") }}</small>
             <small id="parcoursInfoOffHint" class="form-hint text-info" hidden>{{ _("La fiche est coupée : choisissez « À côté de la cache » ou « Ailleurs sur l'image » pour l'afficher.") }}</small>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="card-title m-0">{{ _("Contenu") }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-3">
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoName" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Nom de la cache") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoDt" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Difficulté / terrain") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoOwner" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Propriétaire") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoFavorites" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Points favoris") }}</span>
+                </label>
+            </div>
+            <small class="form-hint text-muted">{{ _("Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni propriétaire, et les points favoris ne sont connus qu'après « Compléter depuis geocaching.com » (onglet Données). Les lieux et les bases n'ont pas de fiche.") }}</small>
+            <small id="parcoursInfoEmptyHint" class="form-hint text-warning" hidden>{{ _("Aucun élément coché : la fiche ne s'affiche nulle part.") }}</small>
         </div>
     </div>
 
