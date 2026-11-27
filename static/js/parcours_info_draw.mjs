@@ -229,7 +229,7 @@ export function infoColors(design, { textColor, backgroundColor, backgroundOpaci
 }
 
 // Trait de rappel du point de l'étape au bord le plus proche de la fiche.
-function drawLeader(ctx, layout, x, y, leader, color, ratio) {
+export function drawInfoLeader(ctx, layout, x, y, leader, color, ratio) {
     const { fromX, fromY, radius = 0 } = leader;
     const tx = Math.max(x, Math.min(fromX, x + layout.w));
     const ty = Math.max(y, Math.min(fromY, y + layout.h));
@@ -265,7 +265,7 @@ export function drawInfo(ctx, layout, x, y, opts = {}) {
     const { w, h, radius, design } = layout;
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, opts.alpha ?? 1));
-    if (opts.leader) drawLeader(ctx, layout, x, y, opts.leader, design === 'banner' ? accent : colors.accent, ratio);
+    if (opts.leader) drawInfoLeader(ctx, layout, x, y, opts.leader, design === 'banner' ? accent : colors.accent, ratio);
     if (colors.fill) {
         ctx.save();
         if (design === 'card' || design === 'tag') {

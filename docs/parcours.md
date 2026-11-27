@@ -621,6 +621,16 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
   taille réglée s'y juge donc (petite taille, petite fiche) — et le fond
   stylisé porte une bande sombre en partie droite, pour juger contraste
   et opacité comme sur un fond satellite ou un thème sombre.
+- **Bitmap par fiche** (`infoSpriteOf`, parcours_play.mjs) : chaque fiche
+  est dessinée une fois dans un canevas hors écran — ombre portée
+  comprise — puis copiée par `drawImage` à chaque image ; le fondu est
+  rendu par `globalAlpha` à la copie et le trait de rappel est repeint à
+  part. Sans cela, le `shadowBlur` des designs fiche et étiquette serait
+  recalculé jusqu'à 80 fois par image (mesure jetable, 600 dessins d'une
+  fiche complète à densité 2 : 235 ms en direct contre 1 ms en copie,
+  2026-11-27). Mesures et bitmaps partagent le même cycle de vie
+  (`ensureInfoMemo`) : invalidés ensemble au changement de réglages, de
+  densité ou de police.
 
 Relevé : `getParcoursSnapshot().info` — `settings`, `play` (`current`,
 `near`, `hidden`, `fixed`, `alpha`, `size` de la dernière image) et `rest`

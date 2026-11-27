@@ -68,7 +68,7 @@ import {
     createInfoVisibility, currentInfo, fixedInfoPosition, fixedInfoScale, infoContent, infoEnabled, infoFilterPass, placeInfoLabels,
     secondsToQuanta,
 } from './parcours_info.mjs';
-import { drawInfo, infoFontFamily, infoLayout } from './parcours_info_draw.mjs';
+import { drawInfo, drawInfoLeader, infoFontFamily, infoLayout } from './parcours_info_draw.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
 import { formatDay, formatKm, formatRange, stopLabel, stopsCountText } from './parcours_labels.mjs';
 import { slotLabels } from './parcours_tbar.mjs';
@@ -758,7 +758,10 @@ export function createParcoursPlayDraw(deps) {
     const INFO_FIXED_SCALE = 1.3;
     const INFO_MAX_NEAR = 80;
     let infoDrawn = emptyInfoDrawn();
-    let infoLayoutMemo = { info: null, ratio: 0, family: '', glyph: null, layouts: new Map() };
+    let infoLayoutMemo = { info: null, ratio: 0, family: '', glyph: null, layouts: new Map(), sprites: new Map() };
+    // Marge autour de la fiche dans sa bitmap : l'ombre portée des designs
+    // fiche et étiquette (flou 8 + décalage 2, à la densité près) déborde.
+    const INFO_SPRITE_MARGIN = 12;
     // Placement stable et fondus, d'une image à l'autre : côté retenu par
     // étape (infoSideMemory), opacités en transition (infoVisibility) et
     // dernière place dessinée des fiches en train de disparaître.
@@ -786,13 +789,18 @@ export function createParcoursPlayDraw(deps) {
     // Mesure mémorisée par étape et échelle, refaite au changement de
     // réglages (objet remplacé), de densité de pixels, de police ou quand le
     // glyphe de l'icône arrive (police d'icônes chargée).
-    function infoLayoutOf(ctx, stop, info, ratio, scale = 1) {
+    function ensureInfoMemo(info, ratio) {
         const family = infoFontFamily(info.font, pageFontFamily());
         const glyph = deps.tablerGlyph('ti-user');
         const memo = infoLayoutMemo;
         if (memo.info !== info || memo.ratio !== ratio || memo.family !== family || memo.glyph !== glyph) {
-            infoLayoutMemo = { info, ratio, family, glyph, layouts: new Map() };
+            infoLayoutMemo = { info, ratio, family, glyph, layouts: new Map(), sprites: new Map() };
         }
+        return infoLayoutMemo;
+    }
+
+    function infoLayoutOf(ctx, stop, info, ratio, scale = 1) {
+        const { family, glyph } = ensureInfoMemo(info, ratio);
         const key = `${stop.key}|${scale}`;
         const layouts = infoLayoutMemo.layouts;
         if (!layouts.has(key)) {
@@ -836,6 +844,39 @@ export function createParcoursPlayDraw(deps) {
         }
         overlayMemo = { at: now, width: canvasWidth, rects };
         return rects;
+    }
+
+    function infoSpriteOf(ctx, stop, info, layout, ratio, scale = 1) {
+        if (typeof document === 'undefined' || !layout) return null;
+        const sprites = ensureInfoMemo(info, ratio).sprites;
+        const key = `${stop.key}|${scale}`;
+        if (!sprites.has(key)) {
+            const margin = Math.ceil(INFO_SPRITE_MARGIN * ratio);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.ceil(layout.w) + 2 * margin;
+            canvas.height = Math.ceil(layout.h) + 2 * margin;
+            const sctx = canvas.getContext('2d');
+            if (!sctx) return null;
+            drawInfo(sctx, layout, margin, margin, { ...infoDrawOptions(info, stop, ratio), alpha: 1 });
+            sprites.set(key, { canvas, margin });
+        }
+        return sprites.get(key);
+    }
+
+    // Fiche copiée depuis sa bitmap (ou dessinée directement si la bitmap
+    // n'a pu être préparée), trait de rappel dessous comme dans drawInfo.
+    function drawInfoCached(ctx, stop, info, layout, x, y, ratio, opts = {}) {
+        const sprite = infoSpriteOf(ctx, stop, info, layout, ratio, opts.scale || 1);
+        if (!sprite) {
+            drawInfo(ctx, layout, x, y, { ...infoDrawOptions(info, stop, ratio), ...opts });
+            return;
+        }
+        const accent = infoDrawOptions(info, stop, ratio).accent;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, opts.alpha ?? 1));
+        if (opts.leader) drawInfoLeader(ctx, layout, x, y, opts.leader, accent, ratio);
+        ctx.drawImage(sprite.canvas, Math.round(x - sprite.margin), Math.round(y - sprite.margin));
+        ctx.restore();
     }
 
     function ownerText(owner) {
@@ -908,10 +949,7 @@ export function createParcoursPlayDraw(deps) {
             if (!last) continue;
             const alpha = fade * last.alpha;
             if (alpha <= 0) continue;
-            drawInfo(ctx, last.layout, last.rect.x, last.rect.y, {
-                ...infoDrawOptions(info, last.stop, ratio),
-                alpha,
-            });
+            drawInfoCached(ctx, last.stop, info, last.layout, last.rect.x, last.rect.y, ratio, { alpha });
         }
         // Du moins prioritaire au plus prioritaire : l'étape en cours dessus.
         for (let i = kept.length - 1; i >= 0; i--) {
@@ -923,8 +961,7 @@ export function createParcoursPlayDraw(deps) {
             const { entry, layout, x, y, reach } = kept[i];
             const alpha = entry.alpha * (visibility.get(entry.stop.key) ?? 1);
             if (alpha > 0) {
-                drawInfo(ctx, layout, rect.x, rect.y, {
-                    ...infoDrawOptions(info, entry.stop, ratio),
+                drawInfoCached(ctx, entry.stop, info, layout, rect.x, rect.y, ratio, {
                     alpha,
                     leader: { fromX: x, fromY: y, radius: reach },
                 });
@@ -999,7 +1036,7 @@ export function createParcoursPlayDraw(deps) {
             { margin, avoid: overlayRects(ctx.canvas.width) });
         if (!pos) return;
         const slide = reducedMotion() ? 0 : (1 - cur.alpha) * 12 * ratio * (info.fixed.startsWith('top') ? -1 : 1);
-        drawInfo(ctx, layout, pos.x, pos.y + slide, { ...infoDrawOptions(info, stop, ratio), alpha: cur.alpha });
+        drawInfoCached(ctx, stop, info, layout, pos.x, pos.y + slide, ratio, { alpha: cur.alpha, scale });
         infoDrawn.fixed = stop.key;
         infoDrawn.alpha = +cur.alpha.toFixed(3);
         infoDrawn.size = [Math.round(layout.w), Math.round(layout.h)];
