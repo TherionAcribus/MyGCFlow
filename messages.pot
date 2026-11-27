@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-27 13:12+0100\n"
+"POT-Creation-Date: 2026-11-27 13:19+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2222,12 +2222,12 @@ msgstr ""
 msgid "Terrain"
 msgstr ""
 
-#: static/js/chart_labels.mjs:117 templates/menu_info_parcours.html:66
+#: static/js/chart_labels.mjs:117 templates/menu_info_parcours.html:72
 msgid "Difficulté / terrain"
 msgstr ""
 
 #: static/js/chart_labels.mjs:120 templates/menu_filtre.html:184
-#: templates/menu_filtre.html:185 templates/menu_info_parcours.html:70
+#: templates/menu_filtre.html:185 templates/menu_info_parcours.html:76
 msgid "Propriétaire"
 msgstr ""
 
@@ -8394,14 +8394,14 @@ msgid "Comme l'écran"
 msgstr ""
 
 #: static/js/stats_page_dashboard.js:351 templates/_app_header.html:52
-#: templates/menu_info_parcours.html:146 templates/menu_options.html:34
+#: templates/menu_info_parcours.html:152 templates/menu_options.html:34
 #: templates/menu_stats.html:368 templates/menu_style.html:169
 #: templates/stats_page.html:800
 msgid "Clair"
 msgstr ""
 
 #: static/js/stats_page_dashboard.js:352 templates/_app_header.html:53
-#: templates/menu_info_parcours.html:149 templates/menu_options.html:35
+#: templates/menu_info_parcours.html:155 templates/menu_options.html:35
 #: templates/menu_stats.html:367 templates/menu_style.html:172
 #: templates/stats_page.html:801
 msgid "Sombre"
@@ -12717,7 +12717,7 @@ msgstr ""
 msgid "Réglez le"
 msgstr ""
 
-#: templates/guide.html:249 templates/menu_info_parcours.html:130
+#: templates/guide.html:249 templates/menu_info_parcours.html:136
 #: templates/menu_informations.html:144 templates/menu_informations.html:285
 #: templates/menu_stats.html:383
 msgid "Texte"
@@ -16741,13 +16741,13 @@ msgstr ""
 msgid "Retourner en miroir"
 msgstr ""
 
-#: templates/menu_images.html:293 templates/menu_info_parcours.html:134
+#: templates/menu_images.html:293 templates/menu_info_parcours.html:140
 #: templates/menu_informations.html:212 templates/menu_names.html:352
 #: templates/menu_stats.html:379 templates/stats_page.html:797
 msgid "Fond"
 msgstr ""
 
-#: templates/menu_images.html:297 templates/menu_info_parcours.html:138
+#: templates/menu_images.html:297 templates/menu_info_parcours.html:144
 #: templates/menu_names.html:364 templates/menu_stats.html:391
 msgid "Opacité du fond"
 msgstr ""
@@ -16927,37 +16927,55 @@ msgstr ""
 msgid "s"
 msgstr ""
 
-#: templates/menu_info_parcours.html:49
+#: templates/menu_info_parcours.html:50
 msgid ""
-"Temporaire : la fiche de l'étape apparaît à l'arrivée du géocacheur et "
-"reste le temps de la visite, au moins la durée minimale, jusqu'à l'étape "
-"suivante. Permanent : chaque étape atteinte garde la sienne ; celles qui "
-"n'ont pas la place sont masquées, l'étape en cours passe toujours. "
-"Ailleurs : un cartouche reprend la fiche de l'étape en cours, en haut, en"
-" bas ou dans un coin — à éviter là où se trouve le titre. Au repos, le "
-"permanent montre toutes les fiches et le temporaire celle de l'étape "
-"survolée. Sur la carte et dans la vidéo."
+"Temporaire : la fiche de l'étape en cours apparaît à l'arrivée du "
+"géocacheur et reste au moins la durée minimale, jusqu'à l'étape suivante."
+" Au repos, c'est celle de l'étape survolée."
 msgstr ""
 
-#: templates/menu_info_parcours.html:50
+#: templates/menu_info_parcours.html:51
+msgid ""
+"Permanent : chaque étape atteinte garde sa fiche ; celles qui n'ont pas "
+"la place sont masquées, l'étape en cours passe toujours. Au repos, toutes"
+" les fiches."
+msgstr ""
+
+#: templates/menu_info_parcours.html:52
+msgid ""
+"Le cartouche reprend la fiche de l'étape en cours — à éviter là où se "
+"trouve le titre."
+msgstr ""
+
+#: templates/menu_info_parcours.html:53
+msgid "Sur la carte et dans la vidéo."
+msgstr ""
+
+#: templates/menu_info_parcours.html:54
+msgid ""
+"Sans effet ici : la durée minimale ne vaut que pour le temporaire et le "
+"cartouche."
+msgstr ""
+
+#: templates/menu_info_parcours.html:56
 msgid ""
 "La fiche est coupée : choisissez « À côté de la cache » ou « Ailleurs sur"
 " l'image » pour l'afficher."
 msgstr ""
 
-#: templates/menu_info_parcours.html:56 templates/menu_stats.html:90
+#: templates/menu_info_parcours.html:62 templates/menu_stats.html:90
 msgid "Contenu"
 msgstr ""
 
-#: templates/menu_info_parcours.html:62 templates/menu_names.html:134
+#: templates/menu_info_parcours.html:68 templates/menu_names.html:134
 msgid "Nom de la cache"
 msgstr ""
 
-#: templates/menu_info_parcours.html:74
+#: templates/menu_info_parcours.html:80
 msgid "Points favoris"
 msgstr ""
 
-#: templates/menu_info_parcours.html:77
+#: templates/menu_info_parcours.html:83
 msgid ""
 "Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni "
 "propriétaire, et les points favoris ne sont connus qu'après « Compléter "
@@ -16965,70 +16983,70 @@ msgid ""
 "pas de fiche."
 msgstr ""
 
-#: templates/menu_info_parcours.html:78
+#: templates/menu_info_parcours.html:84
 msgid "Aucun élément coché : la fiche ne s'affiche nulle part."
 msgstr ""
 
-#: templates/menu_info_parcours.html:84
+#: templates/menu_info_parcours.html:90
 msgid "Design"
 msgstr ""
 
-#: templates/menu_info_parcours.html:87
+#: templates/menu_info_parcours.html:93
 msgid "Design de la fiche"
 msgstr ""
 
-#: templates/menu_info_parcours.html:89
+#: templates/menu_info_parcours.html:95
 msgid "Étiquette"
 msgstr ""
 
-#: templates/menu_info_parcours.html:90
+#: templates/menu_info_parcours.html:96
 msgid "Fiche"
 msgstr ""
 
-#: templates/menu_info_parcours.html:91
+#: templates/menu_info_parcours.html:97
 msgid "Bandeau"
 msgstr ""
 
-#: templates/menu_info_parcours.html:92
+#: templates/menu_info_parcours.html:98
 msgid "Texte seul"
 msgstr ""
 
-#: templates/menu_info_parcours.html:102 templates/menu_informations.html:164
+#: templates/menu_info_parcours.html:108 templates/menu_informations.html:164
 #: templates/menu_names.html:284
 msgid "Police"
 msgstr ""
 
-#: templates/menu_info_parcours.html:104 templates/menu_names.html:286
+#: templates/menu_info_parcours.html:110 templates/menu_names.html:286
 msgid "Sans empattement"
 msgstr ""
 
-#: templates/menu_info_parcours.html:105 templates/menu_names.html:287
+#: templates/menu_info_parcours.html:111 templates/menu_names.html:287
 msgid "Avec empattement"
 msgstr ""
 
-#: templates/menu_info_parcours.html:106 templates/menu_names.html:289
+#: templates/menu_info_parcours.html:112 templates/menu_names.html:289
 msgid "Arrondie"
 msgstr ""
 
-#: templates/menu_info_parcours.html:107
+#: templates/menu_info_parcours.html:113
 msgid "Condensée"
 msgstr ""
 
-#: templates/menu_info_parcours.html:108 templates/menu_names.html:43
+#: templates/menu_info_parcours.html:114 templates/menu_names.html:43
 #: templates/menu_names.html:288
 msgid "Machine à écrire"
 msgstr ""
 
-#: templates/menu_info_parcours.html:109 templates/menu_names.html:291
+#: templates/menu_info_parcours.html:115 templates/menu_names.html:291
 msgid "Manuscrite"
 msgstr ""
 
-#: templates/menu_info_parcours.html:113 templates/menu_names.html:79
+#: templates/menu_info_parcours.html:119 templates/menu_names.html:79
 #: templates/menu_stats.html:404
 msgid "Taille du texte"
 msgstr ""
 
-#: templates/menu_info_parcours.html:116 templates/menu_names.html:82
+#: templates/menu_info_parcours.html:122 templates/menu_names.html:82
 #: templates/menu_points.html:37 templates/menu_points.html:207
 #: templates/menu_points.html:272 templates/menu_points.html:331
 #: templates/menu_points.html:381 templates/menu_points.html:545
@@ -17036,27 +17054,27 @@ msgstr ""
 msgid "px"
 msgstr ""
 
-#: templates/menu_info_parcours.html:120
+#: templates/menu_info_parcours.html:126
 msgid "Couleur d'accent"
 msgstr ""
 
-#: templates/menu_info_parcours.html:123
+#: templates/menu_info_parcours.html:129
 msgid "Celle de l'étape"
 msgstr ""
 
-#: templates/menu_info_parcours.html:124
+#: templates/menu_info_parcours.html:130
 msgid "Couleur fixe"
 msgstr ""
 
-#: templates/menu_info_parcours.html:126
+#: templates/menu_info_parcours.html:132
 msgid "Couleur d'accent fixe"
 msgstr ""
 
-#: templates/menu_info_parcours.html:152 templates/stats_page.html:414
+#: templates/menu_info_parcours.html:158 templates/stats_page.html:414
 msgid "Par défaut"
 msgstr ""
 
-#: templates/menu_info_parcours.html:156
+#: templates/menu_info_parcours.html:162
 msgid ""
 "Les vignettes montrent une fiche d'exemple avec vos réglages. Bandeau : "
 "le fond prend la couleur d'accent, le texte s'y adapte. Texte seul : le "

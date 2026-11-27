@@ -157,6 +157,16 @@ export function createParcoursInfoUI(deps) {
         if (textColor) textColor.disabled = banner;
         const backgroundColor = el('parcoursInfoBackgroundColor');
         if (backgroundColor) backgroundColor.disabled = banner;
+        // Aides courtes suivant le mode choisi, plutôt qu'un pavé couvrant
+        // les trois modes à la fois. Celle de la durée minimale explique
+        // pourquoi elle est grisée en permanent sans cartouche — le seul
+        // cas actif où elle ne vaut pour rien.
+        const hint = (id, yes) => { const node = el(id); if (node) node.hidden = !yes; };
+        hint('helpInfoCurrent', info.near === 'current');
+        hint('helpInfoAll', info.near === 'all');
+        hint('helpInfoFixed', info.fixed !== 'none');
+        hint('helpInfoEverywhere', !off);
+        hint('helpInfoDuration', info.near === 'all' && info.fixed === 'none');
         // Rien de coché : la fiche ne s'affichera nulle part, le dire.
         const empty = !Object.keys(FIELD_IDS).some((key) => info[key]);
         const emptyHint = el('parcoursInfoEmptyHint');

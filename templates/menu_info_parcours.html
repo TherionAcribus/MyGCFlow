@@ -20,7 +20,7 @@
             <div class="row g-3">
                 <div class="col-12 col-md-5">
                     <label class="form-label" for="parcoursInfoNear">{{ _("À côté de la cache") }}</label>
-                    <select id="parcoursInfoNear" class="form-select" aria-describedby="helpParcoursInfoWhere">
+                    <select id="parcoursInfoNear" class="form-select" aria-describedby="parcoursInfoWhereHints">
                         <option value="none">{{ _("Jamais") }}</option>
                         <option value="current">{{ _("Étape en cours (temporaire)") }}</option>
                         <option value="all">{{ _("Toutes les étapes atteintes (permanent)") }}</option>
@@ -28,7 +28,7 @@
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label" for="parcoursInfoFixed">{{ _("Ailleurs sur l'image") }}</label>
-                    <select id="parcoursInfoFixed" class="form-select" aria-describedby="helpParcoursInfoWhere">
+                    <select id="parcoursInfoFixed" class="form-select" aria-describedby="parcoursInfoWhereHints">
                         <option value="none">{{ _("Nulle part") }}</option>
                         <option value="top">{{ _("En haut") }}</option>
                         <option value="bottom">{{ _("En bas") }}</option>
@@ -46,7 +46,13 @@
                     </div>
                 </div>
             </div>
-            <small id="helpParcoursInfoWhere" class="form-hint text-muted">{{ _("Temporaire : la fiche de l'étape apparaît à l'arrivée du géocacheur et reste le temps de la visite, au moins la durée minimale, jusqu'à l'étape suivante. Permanent : chaque étape atteinte garde la sienne ; celles qui n'ont pas la place sont masquées, l'étape en cours passe toujours. Ailleurs : un cartouche reprend la fiche de l'étape en cours, en haut, en bas ou dans un coin — à éviter là où se trouve le titre. Au repos, le permanent montre toutes les fiches et le temporaire celle de l'étape survolée. Sur la carte et dans la vidéo.") }}</small>
+            <div id="parcoursInfoWhereHints">
+                <small id="helpInfoCurrent" class="form-hint text-muted" hidden>{{ _("Temporaire : la fiche de l'étape en cours apparaît à l'arrivée du géocacheur et reste au moins la durée minimale, jusqu'à l'étape suivante. Au repos, c'est celle de l'étape survolée.") }}</small>
+                <small id="helpInfoAll" class="form-hint text-muted" hidden>{{ _("Permanent : chaque étape atteinte garde sa fiche ; celles qui n'ont pas la place sont masquées, l'étape en cours passe toujours. Au repos, toutes les fiches.") }}</small>
+                <small id="helpInfoFixed" class="form-hint text-muted" hidden>{{ _("Le cartouche reprend la fiche de l'étape en cours — à éviter là où se trouve le titre.") }}</small>
+                <small id="helpInfoEverywhere" class="form-hint text-muted" hidden>{{ _("Sur la carte et dans la vidéo.") }}</small>
+                <small id="helpInfoDuration" class="form-hint text-muted" hidden>{{ _("Sans effet ici : la durée minimale ne vaut que pour le temporaire et le cartouche.") }}</small>
+            </div>
             <small id="parcoursInfoOffHint" class="form-hint text-info" hidden>{{ _("La fiche est coupée : choisissez « À côté de la cache » ou « Ailleurs sur l'image » pour l'afficher.") }}</small>
         </div>
     </div>

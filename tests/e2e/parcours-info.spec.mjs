@@ -93,11 +93,22 @@ test('interrupteur : active en temporaire, restaure la dernière configuration',
   await page.locator('#parcoursInfoOn').check();
   await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'current', fixed: 'none' });
   await expect(page.locator('#parcoursInfoOffHint')).toBeHidden();
+  // L'aide suit le mode choisi : temporaire seule, sans le cartouche.
+  await expect(page.locator('#helpInfoCurrent')).toBeVisible();
+  await expect(page.locator('#helpInfoAll')).toBeHidden();
+  await expect(page.locator('#helpInfoFixed')).toBeHidden();
+  await expect(page.locator('#helpInfoDuration')).toBeHidden();
 
-  // Une configuration particulière, puis coupée : elle est restaurée.
+  // Permanent sans cartouche : son aide, et celle de la durée grisée.
   await page.locator('#parcoursInfoNear').selectOption('all');
+  await expect(page.locator('#helpInfoAll')).toBeVisible();
+  await expect(page.locator('#helpInfoCurrent')).toBeHidden();
+  await expect(page.locator('#helpInfoDuration')).toBeVisible();
+  // Avec un cartouche, la durée vaut pour lui : son aide disparaît.
   await page.locator('#parcoursInfoFixed').selectOption('bottom');
   await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'all', fixed: 'bottom' });
+  await expect(page.locator('#helpInfoFixed')).toBeVisible();
+  await expect(page.locator('#helpInfoDuration')).toBeHidden();
   await page.locator('#parcoursInfoOn').uncheck();
   await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'none', fixed: 'none' });
   await expect(page.locator('#parcoursInfoOffHint')).toBeVisible();
