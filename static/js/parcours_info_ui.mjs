@@ -82,9 +82,7 @@ export function createParcoursInfoUI(deps) {
             if (!ctx) continue;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (empty) continue;
-            // Une taille raisonnable pour la vignette, quelle que soit celle
-            // réglée (jusqu'à 28 px).
-            const size = Math.min(info.size, 14) * ratio;
+            const size = info.size * ratio;
             const layout = infoLayout(ctx, content, {
                 design,
                 family: infoFontFamily(info.font, pageFamily),
@@ -94,11 +92,15 @@ export function createParcoursInfoUI(deps) {
                 strings: { by: (owner) => t('par ${owner}', { owner }) },
             });
             if (!layout) continue;
-            // Point de l'étape à gauche, fiche à droite (réduite si trop large).
+            // Point de l'étape à gauche, fiche à droite. Échelle constante,
+            // calée pour que la taille maximale (28 px) remplisse la
+            // vignette : les tailles moindres dessinent une fiche plus
+            // petite — le réglage « Taille du texte » se juge enfin.
             const dotX = 14 * ratio;
             const dotY = canvas.height / 2;
             const room = canvas.width - dotX - 18 * ratio;
-            const scale = Math.min(1, room / layout.w, (canvas.height - 8 * ratio) / layout.h);
+            const fit = Math.min(room / layout.w, (canvas.height - 8 * ratio) / layout.h);
+            const scale = fit * Math.min(info.size, 28) / 28;
             ctx.save();
             ctx.fillStyle = accent;
             ctx.strokeStyle = '#ffffff';
@@ -183,9 +185,10 @@ export function createParcoursInfoUI(deps) {
         }
         // Valeur bornée réaffichée à la sortie du champ (40 → 28).
         for (const id of ['parcoursInfoSize', 'parcoursInfoDuration']) el(id)?.addEventListener('blur', sync);
-        // Opacité et couleurs : suivies pendant le glisser et le nuancier,
-        // sans attendre la fermeture du contrôle.
+        // Opacité, taille et couleurs : suivies pendant le glisser et le
+        // nuancier, sans attendre la fermeture du contrôle.
         el('parcoursInfoBackgroundOpacity')?.addEventListener('input', () => commit());
+        el('parcoursInfoSize')?.addEventListener('input', () => commit());
         for (const id of ['parcoursInfoTextColor', 'parcoursInfoBackgroundColor', 'parcoursInfoAccentColor']) {
             el(id)?.addEventListener('input', () => commit());
         }

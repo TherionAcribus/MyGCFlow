@@ -85,6 +85,29 @@ test('défauts : fiche coupée, sous-onglet Fiches avec ses quatre designs', asy
   await page.locator('#parcoursInfo [data-info-design="card"]').click();
   await expect(page.locator('#parcoursInfoTextColor')).toBeEnabled();
   await expect(page.locator('#parcoursInfoBackgroundColor')).toBeEnabled();
+  // La taille du texte se juge dans la vignette : grande taille, fiche
+  // dessinée plus large.
+  const drawnSpan = () => page.locator('#parcoursInfo [data-info-design="card"] canvas').evaluate((canvas) => {
+    const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+    let minX = canvas.width;
+    let maxX = 0;
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        if (data[(y * canvas.width + x) * 4 + 3] > 0) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+        }
+      }
+    }
+    return maxX - minX;
+  });
+  await page.locator('#parcoursInfoSize').fill('9');
+  await expect.poll(async () => (await info(page)).settings.size).toBe(9);
+  const small = await drawnSpan();
+  await page.locator('#parcoursInfoSize').fill('28');
+  await expect.poll(async () => (await info(page)).settings.size).toBe(28);
+  const large = await drawnSpan();
+  expect(large).toBeGreaterThan(small * 1.8);
   expect(errors).toEqual([]);
 });
 

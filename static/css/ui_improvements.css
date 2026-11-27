@@ -4833,9 +4833,11 @@ body[data-mode="parcours"] .rhythm-rate-field {
     height: 84px;
     border-radius: 4px;
     /* Fond de carte stylisé : la fiche se juge sur un fond clair et
-       texturé, comme sur la carte. */
+       texturé, comme sur la carte — et sur la bande sombre à droite
+       (fond satellite ou thème sombre), que la fiche recouvre en partie. */
     background-color: #e9efe6;
     background-image:
         linear-gradient(115deg, transparent 46%, rgba(255, 255, 255, 0.9) 46%, rgba(255, 255, 255, 0.9) 50%, transparent 50%),
-        linear-gradient(20deg, transparent 70%, rgba(170, 205, 230, 0.8) 70%);
+        linear-gradient(20deg, transparent 70%, rgba(170, 205, 230, 0.8) 70%),
+        linear-gradient(100deg, transparent 58%, rgba(24, 38, 52, 0.95) 58.5%);
 }

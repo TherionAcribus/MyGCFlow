@@ -607,7 +607,11 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
   rapprochées, la suivante coupe la durée réglée) garde une fiche nette à
   l'opacité pleine sur sa moitié centrale au lieu de clignoter sans
   jamais s'afficher franchement. Les vignettes des designs dessinent une
-  fiche d'exemple avec les réglages courants.
+  fiche d'exemple avec les réglages courants : l'échelle y est constante,
+  calée pour que la taille maximale (28 px) remplisse la vignette — la
+  taille réglée s'y juge donc (petite taille, petite fiche) — et le fond
+  stylisé porte une bande sombre en partie droite, pour juger contraste
+  et opacité comme sur un fond satellite ou un thème sombre.
 
 Relevé : `getParcoursSnapshot().info` — `settings`, `play` (`current`,
 `near`, `hidden`, `fixed`, `alpha`, `size` de la dernière image) et `rest`
