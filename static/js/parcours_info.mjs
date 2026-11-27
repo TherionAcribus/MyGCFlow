@@ -165,15 +165,21 @@ function overlaps(a, b) {
     return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
 
-const SIDES = ['right', 'left', 'top', 'bottom'];
+const SIDES = ['right', 'left', 'top', 'bottom', 'bottom_right', 'bottom_left', 'top_right', 'top_left'];
 
 function candidate(item, side) {
     const { x, y, w, h } = item;
     const gap = Math.max(0, Number(item.gap) || 0);
+    // Diagonales : le coin le plus proche à `gap` du point (à 45°).
+    const diag = gap / Math.SQRT2;
     if (side === 'right') return { x: x + gap, y: y - h / 2, w, h, side };
     if (side === 'left') return { x: x - gap - w, y: y - h / 2, w, h, side };
     if (side === 'top') return { x: x - w / 2, y: y - gap - h, w, h, side };
-    return { x: x - w / 2, y: y + gap, w, h, side };
+    if (side === 'bottom') return { x: x - w / 2, y: y + gap, w, h, side };
+    if (side === 'bottom_right') return { x: x + diag, y: y + diag, w, h, side };
+    if (side === 'bottom_left') return { x: x - diag - w, y: y + diag, w, h, side };
+    if (side === 'top_right') return { x: x + diag, y: y - diag - h, w, h, side };
+    return { x: x - diag - w, y: y - diag - h, w, h, side };
 }
 
 function inside(rect, width, height, margin) {
@@ -181,15 +187,31 @@ function inside(rect, width, height, margin) {
         && rect.x + rect.w <= width - margin && rect.y + rect.h <= height - margin;
 }
 
+function overlapArea(a, b) {
+    const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    return w > 0 && h > 0 ? w * h : 0;
+}
+
+// Rectangle ramené dans l'image au plus près de sa position — une fiche
+// plus large que l'image reste visible par son bord gauche ou haut.
+function clampInside(rect, width, height, margin) {
+    const x = Math.min(Math.max(rect.x, margin), Math.max(margin, width - margin - rect.w));
+    const y = Math.min(Math.max(rect.y, margin), Math.max(margin, height - margin - rect.h));
+    return { ...rect, x, y };
+}
+
 // Fiches posées à côté de leur étape, par priorité décroissante (ordre de
 // `items` : l'étape en cours d'abord, puis de la plus récente à la plus
-// ancienne). Chaque fiche essaie droite, gauche, dessus, dessous (`gap` :
-// distance du point au bord de la fiche) et prend la première place dans
-// l'image qui ne recouvre ni une fiche déjà posée ni un obstacle (pastilles
-// des étapes, `obstacles`). Une fiche sans place est masquée — sauf
-// `force` (l'étape en cours) : elle prend la première place dans l'image,
-// même sur une autre. Renvoie, dans l'ordre d'`items`, { x, y, w, h, side }
-// ou null.
+// ancienne). Chaque fiche essaie droite, gauche, dessus, dessous puis les
+// quatre diagonales (`gap` : distance du point au bord de la fiche) et
+// prend la première place dans l'image qui ne recouvre ni une fiche déjà
+// posée ni un obstacle (pastilles des étapes, `obstacles`). Une fiche sans
+// place est masquée — sauf `force` (l'étape en cours) : elle prend la place
+// qui recouvre le moins (fiches posées et obstacles), à égalité dans
+// l'ordre d'essai, ramenée dans l'image si elle en sortait — jamais hors
+// cadre ni sur un cartouche qu'elle peut éviter. Renvoie, dans l'ordre
+// d'`items`, { x, y, w, h, side } ou null.
 //
 // `memory` (Map key → side, optionnelle) stabilise le placement d'une image
 // à l'autre : une fiche dont l'item porte une `key` essaie d'abord le côté
@@ -206,11 +228,9 @@ export function placeInfoLabels(items, { width, height, margin = 4, obstacles = 
         if (!item || !(item.w > 0) || !(item.h > 0)) return null;
         const kept = memory && item.key !== null && item.key !== undefined ? memory.get(item.key) : null;
         const sides = kept && SIDES.includes(kept) ? [kept, ...SIDES.filter((side) => side !== kept)] : SIDES;
-        let fallback = null;
         for (const side of sides) {
             const rect = candidate(item, side);
             if (!inside(rect, width, height, margin)) continue;
-            if (!fallback) fallback = rect;
             if (placed.some((p) => overlaps(rect, p))) continue;
             if (obstacles.some((o) => o !== item.self && overlaps(rect, o))) continue;
             placed.push(rect);
@@ -218,10 +238,24 @@ export function placeInfoLabels(items, { width, height, margin = 4, obstacles = 
             return rect;
         }
         if (item.force) {
-            const rect = fallback || candidate(item, 'right');
-            placed.push(rect);
-            remember(item, rect);
-            return rect;
+            // Aucune place libre : la moins mauvaise — recouvrement minimal,
+            // à égalité la première dans l'ordre d'essai (le côté gardé
+            // d'abord, donc stable) — ramenée dans l'image.
+            let best = null;
+            let bestScore = Infinity;
+            for (const side of sides) {
+                const rect = clampInside(candidate(item, side), width, height, margin);
+                let score = 0;
+                for (const p of placed) score += overlapArea(rect, p);
+                for (const o of obstacles) if (o !== item.self) score += overlapArea(rect, o);
+                if (score < bestScore) {
+                    best = rect;
+                    bestScore = score;
+                }
+            }
+            placed.push(best);
+            remember(item, best);
+            return best;
         }
         return null;
     });

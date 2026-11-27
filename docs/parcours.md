@@ -554,10 +554,11 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
   moins `duration` s d'écran (converties en quanta par `msPerDay`), coupée
   à l'arrivée de la suivante (`infoAlpha`, `currentInfo`) ; `all`
   (« permanent ») = toutes les étapes atteintes. Placement glouton sans
-  chevauchement (`placeInfoLabels` : droite, gauche, dessus, dessous) par
-  priorité — étape en cours toujours posée (`force`), puis de la plus
-  récente à la plus ancienne ; les fiches sans place sont masquées
-  (`hidden` du relevé). Obstacles : pastilles des étapes et cartouches HTML
+  chevauchement (`placeInfoLabels` : droite, gauche, dessus, dessous, puis
+  les quatre diagonales) par priorité — étape en cours toujours posée
+  (`force` : la place qui recouvre le moins, ramenée dans l'image si elle
+  en sortait — jamais hors cadre), puis de la plus récente à la plus
+  ancienne ; les fiches sans place sont masquées (`hidden` du relevé). Obstacles : pastilles des étapes et cartouches HTML
   de la carte (titre, ligne d'infos, légende). Dans une pile, seule la plus
   récente garde sa fiche. L'étape en cours la pose au-delà de l'anneau et
   du géocacheur (`ring`), avec un trait de rappel. Le placement est

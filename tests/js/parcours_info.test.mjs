@@ -182,6 +182,39 @@ test('placement stable : le côté est gardé tant qu\'il tient', () => {
     assert.equal(memory3.size, 0);
 });
 
+test('placement : diagonales, recouvrement minimal, rabattement dans l\'image', () => {
+    const size = { width: 400, height: 300 };
+    // Les quatre côtés cardinaux bloqués par des obstacles près du point :
+    // une diagonale libre prend le relais.
+    const item = { x: 100, y: 100, w: 80, h: 20, gap: 10 };
+    const obstacles = [
+        { x: 118, y: 95, w: 6, h: 10 },    // droite
+        { x: 80, y: 95, w: 6, h: 10 },     // gauche
+        { x: 95, y: 80, w: 10, h: 6 },     // dessus
+        { x: 95, y: 115, w: 10, h: 6 },    // dessous
+    ];
+    const [diag] = placeInfoLabels([item], { ...size, obstacles });
+    assert.equal(diag.side, 'bottom_right');
+    // Toutes les places strictes sont hors cadre ou recouvertes : la fiche
+    // forcée prend celle qui recouvre le moins — ici le dessus, seul sans
+    // recouvrement — plutôt que la première venue sur l'obstacle.
+    const obstacle = { x: 295, y: 140, w: 105, h: 25 };
+    const [forced] = placeInfoLabels([{ x: 390, y: 150, w: 80, h: 20, gap: 10, force: true }],
+        { ...size, obstacles: [obstacle] });
+    assert.equal(forced.side, 'top');
+    // Plus aucune place dans l'image (image étroite) : la fiche forcée est
+    // ramenée dans le cadre au lieu de sortir à droite.
+    const tiny = { width: 100, height: 60 };
+    const [clamped] = placeInfoLabels([{ x: 50, y: 30, w: 80, h: 20, gap: 10, force: true }], tiny);
+    assert.ok(clamped);
+    assert.ok(clamped.x >= 4 && clamped.y >= 4, `dans le cadre : ${clamped.x},${clamped.y}`);
+    assert.ok(clamped.x + clamped.w <= tiny.width - 4 && clamped.y + clamped.h <= tiny.height - 4,
+        `dans le cadre : ${clamped.x}+${clamped.w}, ${clamped.y}+${clamped.h}`);
+    // Une fiche plus large que l'image reste visible par son bord gauche.
+    const [wide] = placeInfoLabels([{ x: 50, y: 30, w: 200, h: 20, gap: 10, force: true }], tiny);
+    assert.equal(wide.x, 4);
+});
+
 test('visibilité en fondu : apparition, disparition, saut en arrière', () => {
     const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≈ ${expected}`);
     const vis = createInfoVisibility();
