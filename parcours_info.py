@@ -31,12 +31,14 @@ FIXED = ("none", "top", "bottom", "top_left", "top_right", "bottom_left", "botto
 DESIGNS = ("tag", "card", "banner", "text")
 FONTS = ("sans", "serif", "mono", "rounded", "condensed", "handwritten")
 ACCENTS = ("stop", "fixed")
+FILTERS = ("all", "favorites", "dt")
 FIELDS = ("name", "dt", "owner", "favorites", "code", "type", "finds")
 
 RANGES = {
     "duration": (1, 15),
     "size": (9, 28),
     "background_opacity": (0, 100),
+    "filter_dt": (1, 5),
 }
 
 _HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -49,6 +51,8 @@ def parcours_info_defaults() -> dict:
         "near": "none",
         "fixed": "none",
         "duration": 3,
+        "filter": "all",
+        "filter_dt": 3,
         "name": True,
         "dt": True,
         "owner": False,
@@ -98,7 +102,8 @@ def coerce_parcours_info(raw, current: dict | None = None) -> dict:
     cur = current if isinstance(current, dict) else {}
     base = {**defaults, **{k: v for k, v in cur.items() if k in defaults}}
     src = raw if isinstance(raw, dict) else {}
-    choices = {"near": NEAR, "fixed": FIXED, "design": DESIGNS, "font": FONTS, "accent": ACCENTS}
+    choices = {"near": NEAR, "fixed": FIXED, "design": DESIGNS, "font": FONTS, "accent": ACCENTS,
+               "filter": FILTERS}
     out = {}
     for key, allowed in choices.items():
         out[key] = _choice(src.get(key), allowed, _choice(base[key], allowed, defaults[key]))
@@ -117,6 +122,6 @@ def parcours_info_table() -> dict:
         "defaults": parcours_info_defaults(),
         "fields": list(FIELDS),
         "choices": {"near": list(NEAR), "fixed": list(FIXED), "design": list(DESIGNS),
-                    "font": list(FONTS), "accent": list(ACCENTS)},
+                    "font": list(FONTS), "accent": list(ACCENTS), "filter": list(FILTERS)},
         "ranges": {key: list(r) for key, r in RANGES.items()},
     }

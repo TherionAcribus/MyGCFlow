@@ -65,7 +65,7 @@ import {
 } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import {
-    createInfoVisibility, currentInfo, fixedInfoPosition, fixedInfoScale, infoContent, infoEnabled, placeInfoLabels,
+    createInfoVisibility, currentInfo, fixedInfoPosition, fixedInfoScale, infoContent, infoEnabled, infoFilterPass, placeInfoLabels,
     secondsToQuanta,
 } from './parcours_info.mjs';
 import { drawInfo, infoFontFamily, infoLayout } from './parcours_info_draw.mjs';
@@ -970,6 +970,7 @@ export function createParcoursPlayDraw(deps) {
                 const stop = timeline.stops[i];
                 if (!isCountedStop(stop) || (cur && i === cur.index)) continue;
                 if (anchors.get(i)?.newest === false) continue;
+                if (!infoFilterPass(stop, info)) continue;
                 const alpha = timing.fadeQ > 0 ? Math.min(1, Math.max(0, (currentQ - stop.q) / timing.fadeQ)) : 1;
                 entries.push({ stop, coords: anchorOf(i), alpha });
             }

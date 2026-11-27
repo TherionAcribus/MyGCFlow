@@ -46,12 +46,27 @@
                     </div>
                 </div>
             </div>
+            <div class="row g-3 mt-1">
+                <div class="col-12 col-md-5">
+                    <label class="form-label" for="parcoursInfoFilter">{{ _("En permanent, montrer") }}</label>
+                    <select id="parcoursInfoFilter" class="form-select" aria-describedby="parcoursInfoWhereHints">
+                        <option value="all">{{ _("Toutes les étapes atteintes") }}</option>
+                        <option value="favorites">{{ _("Celles avec un point favori donné") }}</option>
+                        <option value="dt">{{ _("D ou T au moins égal au seuil") }}</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label" for="parcoursInfoFilterDt">{{ _("Seuil") }}</label>
+                    <input id="parcoursInfoFilterDt" type="number" class="form-control" min="1" max="5" step="1">
+                </div>
+            </div>
             <div id="parcoursInfoWhereHints">
                 <small id="helpInfoCurrent" class="form-hint text-muted" hidden>{{ _("Temporaire : la fiche de l'étape en cours apparaît à l'arrivée du géocacheur et reste au moins la durée minimale, jusqu'à l'étape suivante. Au repos, c'est celle de l'étape survolée.") }}</small>
                 <small id="helpInfoAll" class="form-hint text-muted" hidden>{{ _("Permanent : chaque étape atteinte garde sa fiche ; celles qui n'ont pas la place sont masquées, l'étape en cours passe toujours. Au repos, toutes les fiches.") }}</small>
                 <small id="helpInfoFixed" class="form-hint text-muted" hidden>{{ _("Le cartouche reprend la fiche de l'étape en cours — à éviter là où se trouve le titre.") }}</small>
                 <small id="helpInfoEverywhere" class="form-hint text-muted" hidden>{{ _("Sur la carte et dans la vidéo.") }}</small>
                 <small id="helpInfoDuration" class="form-hint text-muted" hidden>{{ _("Sans effet ici : la durée minimale ne vaut que pour le temporaire et le cartouche.") }}</small>
+                <small id="helpInfoFilter" class="form-hint text-warning" hidden>{{ _("Sans effet ici : le filtre ne vaut que pour le permanent. L'étape en cours, l'étape survolée et la fiche d'exemple passent toujours.") }}</small>
             </div>
             <small id="parcoursInfoOffHint" class="form-hint text-info" hidden>{{ _("La fiche est coupée : choisissez « À côté de la cache » ou « Ailleurs sur l'image » pour l'afficher.") }}</small>
         </div>

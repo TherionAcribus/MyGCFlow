@@ -13,7 +13,7 @@ import { KIND_BASE, KIND_PLACE, isCountedStop, minutesToTime } from './parcours_
 import { stopDetail, stopFacts, stopLabel, stopTime } from './parcours_labels.mjs';
 import { STACK_DISTANCE, fanOffsets, stackLabel, stackStops } from './parcours_stack.mjs';
 import { parcoursExtent, parcoursStops } from './parcours_model.mjs';
-import { infoEnabled } from './parcours_info.mjs';
+import { infoEnabled, infoFilterPass } from './parcours_info.mjs';
 
 const el = (id) => document.getElementById(id);
 
@@ -559,7 +559,7 @@ export function createParcoursPlan(deps) {
             .filter((f) => infoFeatureEligible(f))
             .sort((a, b) => (a.get('index') ?? 0) - (b.get('index') ?? 0))
             .map((f) => infoEntryOf(f))
-            .filter((entry) => entry && entry.stop.key !== first?.stop.key);
+            .filter((entry) => entry && entry.stop.key !== first?.stop.key && infoFilterPass(entry.stop, info));
         return first ? [first, ...entries] : entries;
     }
 

@@ -558,7 +558,11 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
   dernière étape comptée atteinte, de son arrivée jusqu'à son départ et au
   moins `duration` s d'écran (converties en quanta par `msPerDay`), coupée
   à l'arrivée de la suivante (`infoAlpha`, `currentInfo`) ; `all`
-  (« permanent ») = toutes les étapes atteintes. Placement glouton sans
+  (« permanent ») = toutes les étapes atteintes, passant le filtre réglé
+  (`filter` : toutes, celles avec un point favori donné, ou D/T au moins
+  au seuil `filter_dt` — `infoFilterPass` ; l'étape en cours, l'étape
+  survolée et la fiche d'exemple du sous-onglet passent toujours).
+  Placement glouton sans
   chevauchement (`placeInfoLabels` : droite, gauche, dessus, dessous, puis
   les quatre diagonales) par priorité — étape en cours toujours posée
   (`force` : la place qui recouvre le moins, ramenée dans l'image si elle

@@ -10,6 +10,11 @@
       "banner",
       "text"
     ],
+    "filter": [
+      "all",
+      "favorites",
+      "dt"
+    ],
     "fixed": [
       "none",
       "top",
@@ -43,6 +48,8 @@
     "dt": true,
     "duration": 3,
     "favorites": true,
+    "filter": "all",
+    "filter_dt": 3,
     "finds": false,
     "fixed": "none",
     "font": "sans",
@@ -70,6 +77,10 @@
     "duration": [
       1,
       15
+    ],
+    "filter_dt": [
+      1,
+      5
     ],
     "size": [
       9,

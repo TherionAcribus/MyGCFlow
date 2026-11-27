@@ -21,11 +21,13 @@ export const PARCOURS_INFO_CHOICES = Object.freeze({
     design: Object.freeze(['tag', 'card', 'banner', 'text']),
     font: Object.freeze(['sans', 'serif', 'mono', 'rounded', 'condensed', 'handwritten']),
     accent: Object.freeze(['stop', 'fixed']),
+    filter: Object.freeze(['all', 'favorites', 'dt']),
 });
 export const PARCOURS_INFO_RANGES = Object.freeze({
     duration: Object.freeze([1, 15]),
     size: Object.freeze([9, 28]),
     background_opacity: Object.freeze([0, 100]),
+    filter_dt: Object.freeze([1, 5]),
 });
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -36,6 +38,8 @@ export function parcoursInfoDefaults() {
         near: 'none',
         fixed: 'none',
         duration: 3,
+        filter: 'all',
+        filter_dt: 3,
         name: true,
         dt: true,
         owner: false,
@@ -123,6 +127,20 @@ export function infoContent(stop, info) {
     const finds = info?.finds && fc !== null && fc >= 0 ? Math.round(fc) : null;
     if (!name && !dt && !owner && favorites === null && !code && !type && finds === null) return null;
     return { name, dt, owner, favorites, code, type, finds };
+}
+
+// Filtre du permanent (« Quelles étapes ») : l'étape passe-t-elle ? Sans
+// objet hors permanent ; l'étape en cours, le survol et la fiche d'exemple
+// passent toujours — voir les appelants.
+export function infoFilterPass(stop, info) {
+    if (info?.filter === 'favorites') return stop?.favorite === true;
+    if (info?.filter === 'dt') {
+        const min = finite(info.filter_dt) ?? 3;
+        const d = finite(stop?.difficulty);
+        const t = finite(stop?.terrain);
+        return (d !== null && d >= min) || (t !== null && t >= min);
+    }
+    return true;
 }
 
 // Note D ou T : « 2 », « 2,5 » (séparateur de la langue `locale`).

@@ -18,6 +18,7 @@ import {
     infoAlpha,
     infoContent,
     infoEnabled,
+    infoFilterPass,
     normalizeParcoursInfo,
     parcoursInfoDefaults,
     placeInfoLabels,
@@ -108,6 +109,24 @@ test('contenu additionnel : code GC, type, trouvailles — à la carte', () => {
     const lab = infoContent({ key: 'lab:1', kind: 'lab', name: null, code: null, type: 'Lab Cache' }, { ...info, name: false, dt: false });
     assert.equal(lab.type, 'Lab Cache');
     assert.equal(lab.code, null);
+});
+
+test('filtre du permanent : coups de cœur, seuil D/T, tout par défaut', () => {
+    const fav = { favorite: true, difficulty: 1, terrain: 1 };
+    const hard = { favorite: false, difficulty: 4, terrain: 1.5 };
+    const hardT = { favorite: false, difficulty: 1, terrain: 3 };
+    const plain = { favorite: false, difficulty: 2, terrain: 2 };
+    const lab = { favorite: false, difficulty: null, terrain: null };
+    assert.equal(infoFilterPass(plain, undefined), true);
+    assert.equal(infoFilterPass(plain, { filter: 'all' }), true);
+    assert.equal(infoFilterPass(fav, { filter: 'favorites' }), true);
+    assert.equal(infoFilterPass(hard, { filter: 'favorites' }), false);
+    // D OU T au seuil suffit ; un Lab sans notes ne passe pas.
+    assert.equal(infoFilterPass(hard, { filter: 'dt', filter_dt: 3 }), true);
+    assert.equal(infoFilterPass(hardT, { filter: 'dt', filter_dt: 3 }), true);
+    assert.equal(infoFilterPass(plain, { filter: 'dt', filter_dt: 3 }), false);
+    assert.equal(infoFilterPass(lab, { filter: 'dt', filter_dt: 3 }), false);
+    assert.equal(infoFilterPass(plain, { filter: 'dt', filter_dt: 2 }), true);
 });
 
 test('notes D/T au format de la langue', () => {

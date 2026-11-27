@@ -30,6 +30,7 @@ export function createParcoursInfoUI(deps) {
     };
     const VALUE_IDS = {
         near: 'parcoursInfoNear', fixed: 'parcoursInfoFixed', duration: 'parcoursInfoDuration',
+        filter: 'parcoursInfoFilter', filter_dt: 'parcoursInfoFilterDt',
         font: 'parcoursInfoFont', size: 'parcoursInfoSize', text_color: 'parcoursInfoTextColor',
         background_color: 'parcoursInfoBackgroundColor', background_opacity: 'parcoursInfoBackgroundOpacity',
         accent: 'parcoursInfoAccent', accent_color: 'parcoursInfoAccentColor',
@@ -174,6 +175,11 @@ export function createParcoursInfoUI(deps) {
         hint('helpInfoFixed', info.fixed !== 'none');
         hint('helpInfoEverywhere', !off);
         hint('helpInfoDuration', info.near === 'all' && info.fixed === 'none');
+        hint('helpInfoFilter', info.near !== 'all' && info.filter !== 'all');
+        const filterSelect = el('parcoursInfoFilter');
+        if (filterSelect) filterSelect.disabled = info.near !== 'all';
+        const filterDt = el('parcoursInfoFilterDt');
+        if (filterDt) filterDt.disabled = info.near !== 'all' || info.filter !== 'dt';
         // Rien de coché : la fiche ne s'affichera nulle part, le dire.
         const empty = !Object.keys(FIELD_IDS).some((key) => info[key]);
         const emptyHint = el('parcoursInfoEmptyHint');
@@ -189,11 +195,12 @@ export function createParcoursInfoUI(deps) {
             el(id)?.addEventListener('change', () => commit());
         }
         // Valeur bornée réaffichée à la sortie du champ (40 → 28).
-        for (const id of ['parcoursInfoSize', 'parcoursInfoDuration']) el(id)?.addEventListener('blur', sync);
+        for (const id of ['parcoursInfoSize', 'parcoursInfoDuration', 'parcoursInfoFilterDt']) el(id)?.addEventListener('blur', sync);
         // Opacité, taille et couleurs : suivies pendant le glisser et le
         // nuancier, sans attendre la fermeture du contrôle.
         el('parcoursInfoBackgroundOpacity')?.addEventListener('input', () => commit());
         el('parcoursInfoSize')?.addEventListener('input', () => commit());
+        el('parcoursInfoFilterDt')?.addEventListener('input', () => commit());
         for (const id of ['parcoursInfoTextColor', 'parcoursInfoBackgroundColor', 'parcoursInfoAccentColor']) {
             el(id)?.addEventListener('input', () => commit());
         }
