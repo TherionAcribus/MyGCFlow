@@ -65,7 +65,7 @@ import {
 } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import {
-    currentInfo, fixedInfoPosition, infoContent, infoEnabled, placeInfoLabels, secondsToQuanta,
+    createInfoVisibility, currentInfo, fixedInfoPosition, infoContent, infoEnabled, placeInfoLabels, secondsToQuanta,
 } from './parcours_info.mjs';
 import { drawInfo, infoFontFamily, infoLayout } from './parcours_info_draw.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
@@ -758,6 +758,25 @@ export function createParcoursPlayDraw(deps) {
     const INFO_MAX_NEAR = 80;
     let infoDrawn = emptyInfoDrawn();
     let infoLayoutMemo = { info: null, ratio: 0, family: '', glyph: null, layouts: new Map() };
+    // Placement stable et fondus, d'une image à l'autre : côté retenu par
+    // étape (infoSideMemory), opacités en transition (infoVisibility) et
+    // dernière place dessinée des fiches en train de disparaître.
+    const infoSideMemory = new Map();
+    const infoVisibility = createInfoVisibility();
+    let infoLastDrawn = new Map();
+
+    // Temps des fondus, en secondes : celui de la chronologie en lecture, en
+    // pause et en enregistrement (déterministe pour la vidéo image par
+    // image, qui avance la position image par image), l'horloge réelle au
+    // repos.
+    function infoTimeSeconds() {
+        const { clock, currentQ, msPerDay } = S();
+        const state = deps.previewState?.();
+        if (clock?.running || state === 'paused' || state === 'recording') {
+            return (Number(currentQ) || 0) * (Number(msPerDay) > 0 ? Number(msPerDay) : 100) / 1000;
+        }
+        return performance.now() / 1000;
+    }
 
     function emptyInfoDrawn() {
         return { current: null, near: [], hidden: 0, fixed: null, alpha: 0, size: null };
@@ -866,12 +885,33 @@ export function createParcoursPlayDraw(deps) {
             // `ring` : l'étape en cours porte l'anneau et le géocacheur — la
             // fiche et son trait de rappel partent au-delà.
             const reach = entry.ring ? Math.max(radius, entry.ring * ratio) : radius;
-            items.push({ x, y, w: layout.w, h: layout.h, gap: reach + 8 * ratio, force: !!entry.force });
+            items.push({ key: entry.stop.key, x, y, w: layout.w, h: layout.h, gap: reach + 8 * ratio, force: !!entry.force });
             kept.push({ entry, layout, x, y, reach });
         }
-        const rects = placeInfoLabels(items, { width, height, margin: 4 * ratio, obstacles });
+        const rects = placeInfoLabels(items, { width, height, margin: 4 * ratio, obstacles, memory: infoSideMemory });
+        // Fondus d'apparition/disparition : une fiche qui perd ou regagne sa
+        // place d'une image à l'autre (caméra en mouvement) ne saute pas.
+        const presentKeys = [];
+        for (let i = 0; i < kept.length; i++) if (rects[i]) presentKeys.push(kept[i].entry.stop.key);
+        const visibility = infoVisibility.step(infoTimeSeconds(), presentKeys, reducedMotion() ? 0 : INFO_FADE_S);
         const near = [];
         let hidden = 0;
+        const drawn = new Map();
+        // Fiches en train de disparaître, sous les autres, à leur dernière
+        // place et sans trait de rappel — l'opacité repart de celle qu'avait
+        // la fiche (une fiche temporaire en fin de fenêtre, déjà éteinte,
+        // ne ressurgit pas).
+        for (const [key, fade] of visibility) {
+            if (presentKeys.includes(key)) continue;
+            const last = infoLastDrawn.get(key);
+            if (!last) continue;
+            const alpha = fade * last.alpha;
+            if (alpha <= 0) continue;
+            drawInfo(ctx, last.layout, last.rect.x, last.rect.y, {
+                ...infoDrawOptions(info, last.stop, ratio),
+                alpha,
+            });
+        }
         // Du moins prioritaire au plus prioritaire : l'étape en cours dessus.
         for (let i = kept.length - 1; i >= 0; i--) {
             const rect = rects[i];
@@ -880,12 +920,31 @@ export function createParcoursPlayDraw(deps) {
                 continue;
             }
             const { entry, layout, x, y, reach } = kept[i];
-            drawInfo(ctx, layout, rect.x, rect.y, {
-                ...infoDrawOptions(info, entry.stop, ratio),
-                alpha: entry.alpha,
-                leader: { fromX: x, fromY: y, radius: reach },
-            });
+            const alpha = entry.alpha * (visibility.get(entry.stop.key) ?? 1);
+            if (alpha > 0) {
+                drawInfo(ctx, layout, rect.x, rect.y, {
+                    ...infoDrawOptions(info, entry.stop, ratio),
+                    alpha,
+                    leader: { fromX: x, fromY: y, radius: reach },
+                });
+                drawn.set(entry.stop.key, { rect, layout, stop: entry.stop, alpha: entry.alpha });
+            }
             near.unshift(entry.stop.key);
+        }
+        // Les fiches encore visibles gardent leur dernière place connue pour
+        // finir leur fondu ; les autres sont oubliées.
+        const lastDrawn = new Map(drawn);
+        for (const key of visibility.keys()) {
+            if (!lastDrawn.has(key) && infoLastDrawn.has(key)) lastDrawn.set(key, infoLastDrawn.get(key));
+        }
+        infoLastDrawn = lastDrawn;
+        // Au repos, rien ne repeint de lui-même : tant qu'un fondu n'est pas
+        // fini, demande une autre image (en lecture le moteur le fait déjà ;
+        // en pause ou en enregistrement le temps — et les fondus — sont
+        // figés ou déjà repeints image par image).
+        if (infoVisibility.moving() && !S().clock?.running
+            && deps.previewState?.() !== 'paused' && deps.previewState?.() !== 'recording') {
+            requestAnimationFrame(() => deps.getMap()?.render());
         }
         return { near, hidden };
     }

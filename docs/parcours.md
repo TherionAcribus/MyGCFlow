@@ -560,7 +560,21 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
   (`hidden` du relevé). Obstacles : pastilles des étapes et cartouches HTML
   de la carte (titre, ligne d'infos, légende). Dans une pile, seule la plus
   récente garde sa fiche. L'étape en cours la pose au-delà de l'anneau et
-  du géocacheur (`ring`), avec un trait de rappel.
+  du géocacheur (`ring`), avec un trait de rappel. Le placement est
+  **stable d'une image à l'autre** : chaque fiche retient son côté
+  (`memory` de `placeInfoLabels`, clé = étape) et ne le quitte que s'il ne
+  tient plus — sinon les fiches changeraient de côté à chaque mouvement de
+  caméra. Apparitions et disparitions en **fondu** de 0,3 s
+  (`createInfoVisibility` : une fiche qui perd ou regagne sa place ne
+  saute pas ; celle qui disparaît finit son fondu à sa dernière place,
+  sans trait de rappel, depuis l'opacité qu'elle avait — une fiche
+  temporaire en fin de fenêtre, déjà éteinte, ne ressurgit pas). Le temps
+  des fondus est celui de la chronologie en lecture, pause et
+  enregistrement (déterministe pour la vidéo image par image), l'horloge
+  réelle au repos — où le rendu est redemandé tant qu'un fondu n'est pas
+  fini. Un saut en arrière fige l'état (tout net, pas de fiche fantôme) ;
+  lecture réduite : fondus nuls. Le relevé `near`/`hidden` ne voit que le
+  placement de l'image (les fiches en fondu de sortie n'y figurent pas).
 - **Ailleurs** (`fixed`) : cartouche de l'étape en cours (même fenêtre que
   le temporaire), 1,3× plus grand, en haut, en bas ou dans un coin ;
   `fixedInfoPosition` le décale sous (en haut) ou au-dessus (en bas) des

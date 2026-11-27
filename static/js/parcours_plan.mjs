@@ -512,7 +512,9 @@ export function createParcoursPlan(deps) {
         restInfo = { near: [], hidden: 0 };
         if (!infoEnabled(info) || info.near === 'none') return;
         const entries = restInfoEntries(info);
-        if (entries.length) restInfo = deps.drawInfoLabels(event, entries, info);
+        // Même sans entrée (fin de survol) : la lecture laisse finir le
+        // fondu de sortie de la dernière fiche.
+        restInfo = deps.drawInfoLabels(event, entries, info);
     }
 
     // Lignes de la liste correspondant à un point du plan (toutes celles

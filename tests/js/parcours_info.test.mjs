@@ -10,6 +10,7 @@ import {
     PARCOURS_INFO_CHOICES,
     PARCOURS_INFO_FIELDS,
     PARCOURS_INFO_RANGES,
+    createInfoVisibility,
     currentInfo,
     fixedInfoPosition,
     formatRating,
@@ -149,6 +150,69 @@ test('placement sans chevauchement, l’étape en cours toujours', () => {
     // Étape en cours sans place libre : posée quand même.
     const crowded = placeInfoLabels([b, b, b, b, { ...a }], size);
     assert.ok(crowded[4]);
+});
+
+test('placement stable : le côté est gardé tant qu\'il tient', () => {
+    const size = { width: 400, height: 300 };
+    const memory = new Map();
+    // Un obstacle à droite pousse la fiche à gauche.
+    const item = { key: 'GC1', x: 100, y: 100, w: 80, h: 20, gap: 10 };
+    const obstacle = { x: 140, y: 95, w: 10, h: 10 };
+    const [first] = placeInfoLabels([item], { ...size, obstacles: [obstacle], memory });
+    assert.equal(first.side, 'left');
+    assert.equal(memory.get('GC1'), 'left');
+    // L'obstacle disparaît : la fiche garde son côté au lieu de revenir à
+    // droite — pas d'aller-retour d'une image à l'autre.
+    const [kept] = placeInfoLabels([item], { ...size, memory });
+    assert.equal(kept.side, 'left');
+    // Le côté gardé ne tient plus (hors cadre) : repli sur un autre, mémorisé.
+    const near = { key: 'GC1', x: 8, y: 100, w: 80, h: 20, gap: 10 };
+    const [moved] = placeInfoLabels([near], { ...size, memory });
+    assert.notEqual(moved.side, 'left');
+    assert.equal(memory.get('GC1'), moved.side);
+    // Le côté gardé est recouvert par une fiche plus prioritaire : repli.
+    const a = { key: 'GC0', x: 150, y: 100, w: 80, h: 20, gap: 10, force: true };
+    const memory2 = new Map([['GC1', 'right']]);
+    const rects = placeInfoLabels([a, { key: 'GC1', x: 150, y: 100, w: 80, h: 20, gap: 10 }], { ...size, memory: memory2 });
+    assert.equal(rects[0].side, 'right');
+    assert.equal(rects[1].side, 'left');
+    // Sans clé, rien n'est mémorisé.
+    const memory3 = new Map();
+    placeInfoLabels([{ x: 100, y: 100, w: 80, h: 20, gap: 10 }], { ...size, memory: memory3 });
+    assert.equal(memory3.size, 0);
+});
+
+test('visibilité en fondu : apparition, disparition, saut en arrière', () => {
+    const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≈ ${expected}`);
+    const vis = createInfoVisibility();
+    // Première image : la fiche apparaît à 0 puis monte.
+    assert.equal(vis.step(0, ['GC1'], 1).get('GC1'), 0);
+    assert.equal(vis.moving(), true);
+    close(vis.step(0.5, ['GC1'], 1).get('GC1'), 0.5);
+    close(vis.step(0.6, ['GC1'], 1).get('GC1'), 0.6);
+    assert.equal(vis.step(1.5, ['GC1'], 1).get('GC1'), 1);
+    assert.equal(vis.moving(), false);
+    // GC2 apparaît à son tour : elle repart de bas.
+    close(vis.step(1.6, ['GC1', 'GC2'], 1).get('GC2'), 0.1);
+    // GC1 perd sa place : encore dessinée, en décroissant, puis oubliée.
+    close(vis.step(1.7, ['GC2'], 1).get('GC1'), 0.9);
+    close(vis.step(2.2, ['GC2'], 1).get('GC1'), 0.4);
+    assert.equal(vis.moving(), true);   // GC1 descend, GC2 monte encore
+    assert.equal(vis.step(2.7, ['GC2'], 1).has('GC1'), false);
+    // Un trou de temps (onglet masqué) achève le fondu d'un coup.
+    assert.equal(vis.step(20, [], 1).has('GC2'), false);
+    assert.equal(vis.moving(), false);
+    // Saut en arrière : tout est net, pas de fiche fantôme.
+    vis.step(30, ['GC1'], 1);
+    vis.step(29.9, [], 1);
+    const out = vis.step(5, ['GC1'], 1);
+    assert.equal(out.get('GC1'), 1);
+    assert.equal(out.size, 1);
+    // Lecture réduite (fadeS 0) : immédiat.
+    const flat = createInfoVisibility();
+    assert.equal(flat.step(0, ['GC1'], 0).get('GC1'), 1);
+    assert.equal(flat.step(0.1, [], 0).has('GC1'), false);
+    assert.equal(flat.moving(), false);
 });
 
 test('cartouche fixe : bords et coins', () => {

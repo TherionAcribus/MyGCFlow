@@ -190,27 +190,105 @@ function inside(rect, width, height, margin) {
 // `force` (l'étape en cours) : elle prend la première place dans l'image,
 // même sur une autre. Renvoie, dans l'ordre d'`items`, { x, y, w, h, side }
 // ou null.
-export function placeInfoLabels(items, { width, height, margin = 4, obstacles = [] } = {}) {
+//
+// `memory` (Map key → side, optionnelle) stabilise le placement d'une image
+// à l'autre : une fiche dont l'item porte une `key` essaie d'abord le côté
+// qu'elle avait à l'image précédente et ne le quitte que s'il ne tient plus
+// (hors cadre ou recouvert) — sinon les fiches changeraient de côté ou
+// sauteraient à chaque mouvement de caméra. La Map est lue et mise à jour,
+// jamais vidée : l'appelant la remplace quand le contexte change.
+export function placeInfoLabels(items, { width, height, margin = 4, obstacles = [], memory = null } = {}) {
     const placed = [];
+    const remember = (item, rect) => {
+        if (memory && item.key !== null && item.key !== undefined) memory.set(item.key, rect.side);
+    };
     return (items || []).map((item) => {
         if (!item || !(item.w > 0) || !(item.h > 0)) return null;
+        const kept = memory && item.key !== null && item.key !== undefined ? memory.get(item.key) : null;
+        const sides = kept && SIDES.includes(kept) ? [kept, ...SIDES.filter((side) => side !== kept)] : SIDES;
         let fallback = null;
-        for (const side of SIDES) {
+        for (const side of sides) {
             const rect = candidate(item, side);
             if (!inside(rect, width, height, margin)) continue;
             if (!fallback) fallback = rect;
             if (placed.some((p) => overlaps(rect, p))) continue;
             if (obstacles.some((o) => o !== item.self && overlaps(rect, o))) continue;
             placed.push(rect);
+            remember(item, rect);
             return rect;
         }
         if (item.force) {
             const rect = fallback || candidate(item, 'right');
             placed.push(rect);
+            remember(item, rect);
             return rect;
         }
         return null;
     });
+}
+
+// Apparitions et disparitions en fondu des fiches : le placement est refait
+// à chaque image et une fiche peut perdre sa place (ou la regagner) d'une
+// image à l'autre — sans fondu, elle saute. Chaque clé placée monte
+// progressivement vers 1, les clés qui ne sont plus placées descendent vers
+// 0 avant d'être oubliées : l'appelant les dessine encore, à leur dernière
+// place, tant que l'opacité n'est pas nulle.
+//
+// `time` est en secondes, monotone : temps de la chronologie en lecture
+// (déterministe pour la vidéo image par image), horloge réelle au repos.
+// Un retour en arrière (saut dans la lecture) fige l'état : clés placées à
+// 1, fondu de sortie oublié — pas de fiche fantôme qui attendrait un temps
+// déjà dépassé. `fadeS` (durée du fondu, à chaque image) à 0 — lecture
+// réduite — : tout est immédiat.
+export function createInfoVisibility() {
+    const alphas = new Map();
+    let lastTime = null;
+    let moving = false;
+    return {
+        // present : clés placées à cette image. Renvoie une Map key →
+        // opacité (clés placées et clés en train de disparaître).
+        step(time, present, fadeS = 0.3) {
+            const keys = new Set(present);
+            if (lastTime !== null && time < lastTime) {
+                alphas.clear();
+                for (const key of keys) alphas.set(key, 1);
+                lastTime = time;
+                moving = false;
+                return new Map(alphas);
+            }
+            const dt = lastTime === null ? 0 : Math.min(time - lastTime, fadeS || 1);
+            lastTime = time;
+            const move = fadeS > 0 ? dt / fadeS : 1;
+            moving = false;
+            const out = new Map();
+            for (const key of keys) {
+                const alpha = Math.min(1, (alphas.get(key) ?? 0) + move);
+                alphas.set(key, alpha);
+                if (alpha < 1) moving = true;
+                out.set(key, alpha);
+            }
+            for (const [key, before] of [...alphas]) {
+                if (keys.has(key)) continue;
+                const alpha = before - move;
+                if (alpha <= 0) {
+                    alphas.delete(key);
+                    continue;
+                }
+                alphas.set(key, alpha);
+                moving = true;
+                out.set(key, alpha);
+            }
+            return out;
+        },
+        // Vrai tant qu'une fiche n'a pas fini son fondu : le rendu doit
+        // continuer sans attendre une interaction (repos).
+        moving: () => moving,
+        reset() {
+            alphas.clear();
+            lastTime = null;
+            moving = false;
+        },
+    };
 }
 
 // Cartouche fixe de `w` × `h` dans une image `width` × `height` : centré en
