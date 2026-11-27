@@ -14,7 +14,7 @@
 import { isCountedStop } from './parcours_reconstruct.mjs';
 import { reachedIndex } from './parcours_timeline.mjs';
 
-export const PARCOURS_INFO_FIELDS = Object.freeze(['name', 'dt', 'owner', 'favorites', 'code', 'type', 'finds']);
+export const PARCOURS_INFO_FIELDS = Object.freeze(['name', 'dt', 'owner', 'favorites', 'code', 'type', 'finds', 'step']);
 export const PARCOURS_INFO_CHOICES = Object.freeze({
     near: Object.freeze(['none', 'current', 'all']),
     fixed: Object.freeze(['none', 'top', 'bottom', 'top_left', 'top_right', 'bottom_left', 'bottom_right']),
@@ -47,6 +47,8 @@ export function parcoursInfoDefaults() {
         code: false,
         type: false,
         finds: false,
+        step: false,
+        two_lines: false,
         design: 'card',
         font: 'sans',
         size: 13,
@@ -81,7 +83,7 @@ export function normalizeParcoursInfo(raw, current = null) {
     for (const [key, allowed] of Object.entries(PARCOURS_INFO_CHOICES)) {
         out[key] = allowed.includes(src[key]) ? src[key] : (allowed.includes(base[key]) ? base[key] : defaults[key]);
     }
-    for (const key of PARCOURS_INFO_FIELDS) {
+    for (const key of [...PARCOURS_INFO_FIELDS, 'two_lines']) {
         out[key] = typeof src[key] === 'boolean' ? src[key]
             : (typeof base[key] === 'boolean' ? base[key] : defaults[key]);
     }
@@ -125,8 +127,12 @@ export function infoContent(stop, info) {
     const type = info?.type && typeof stop.type === 'string' && stop.type.trim() ? stop.type.trim() : null;
     const fc = finite(stop.foundCount);
     const finds = info?.finds && fc !== null && fc >= 0 ? Math.round(fc) : null;
-    if (!name && !dt && !owner && favorites === null && !code && !type && finds === null) return null;
-    return { name, dt, owner, favorites, code, type, finds };
+    const n = finite(stop.index);
+    const total = finite(stop.stepTotal);
+    const step = info?.step && n !== null && n > 0
+        ? { n: Math.round(n), total: total !== null && total > 0 ? Math.round(total) : null } : null;
+    if (!name && !dt && !owner && favorites === null && !code && !type && finds === null && !step) return null;
+    return { name, dt, owner, favorites, code, type, finds, step };
 }
 
 // Filtre du permanent (« Quelles étapes ») : l'étape passe-t-elle ? Sans

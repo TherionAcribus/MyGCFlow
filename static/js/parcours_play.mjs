@@ -819,6 +819,7 @@ export function createParcoursPlayDraw(deps) {
         if (!layouts.has(key)) {
             layouts.set(key, infoLayout(ctx, infoContent(stop, info), {
                 design: info.design,
+                twoLines: info.two_lines,
                 family,
                 size: info.size * ratio * scale,
                 locale: document.documentElement.lang || undefined,

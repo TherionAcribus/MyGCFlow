@@ -74,7 +74,7 @@ test('contenu : éléments cochés et connus, rien pour un lieu', () => {
     const stop = {
         key: 'GC1', kind: 'find', name: ' Le moulin ', difficulty: 2.5, terrain: 3, owner: 'Famille', favoritePoints: 42,
     };
-    const empty = { code: null, type: null, finds: null };
+    const empty = { code: null, type: null, finds: null, step: null };
     assert.deepEqual(infoContent(stop, info), { name: 'Le moulin', dt: { d: 2.5, t: 3 }, owner: 'Famille', favorites: 42, ...empty });
     // PF inconnus (jamais collectés), D/T absents (Lab) : omis.
     assert.deepEqual(infoContent({ key: 'lab:1', kind: 'lab', name: 'Étape', difficulty: null, terrain: null }, info),
@@ -102,13 +102,23 @@ test('contenu additionnel : code GC, type, trouvailles — à la carte', () => {
     assert.equal(content.finds, 137);
     // Décochés ou inconnus (jamais collectés) : omis.
     assert.deepEqual(infoContent(stop, { ...info, code: false, type: false, finds: false }),
-        { name: 'Le moulin', dt: { d: 2.5, t: 3 }, owner: null, favorites: null, code: null, type: null, finds: null });
+        { name: 'Le moulin', dt: { d: 2.5, t: 3 }, owner: null, favorites: null, code: null, type: null, finds: null, step: null });
     assert.equal(infoContent({ ...stop, foundCount: null }, info).finds, null);
     assert.equal(infoContent({ ...stop, foundCount: 0 }, info).finds, 0);
     // Un Lab n'a pas de code, mais son type « Lab Cache » se montre.
     const lab = infoContent({ key: 'lab:1', kind: 'lab', name: null, code: null, type: 'Lab Cache' }, { ...info, name: false, dt: false });
     assert.equal(lab.type, 'Lab Cache');
     assert.equal(lab.code, null);
+});
+
+test('numéro d\'étape : « n/total » sur les étapes comptées, rien sinon', () => {
+    const info = normalizeParcoursInfo({ near: 'current', step: true, name: false, dt: false });
+    const stop = { key: 'GC1', kind: 'find', index: 3, stepTotal: 12 };
+    assert.deepEqual(infoContent(stop, info).step, { n: 3, total: 12 });
+    // Décoché, lieu (index null) ou total inconnu.
+    assert.equal(infoContent(stop, { ...info, step: false }), null);
+    assert.equal(infoContent({ ...stop, index: null }, info), null);
+    assert.deepEqual(infoContent({ ...stop, stepTotal: null }, info).step, { n: 3, total: null });
 });
 
 test('filtre du permanent : coups de cœur, seuil D/T, tout par défaut', () => {
@@ -397,8 +407,20 @@ test('contenu additionnel au dessin : trouvailles avec les faits, code et type e
     }
     assert.ok(items.some((i) => i.text === 'GC9ABC'));
     // Contenu réduit au code seul : pas de séparateur orphelin.
-    const onlyCode = infoLayout(ctx, { name: null, dt: null, owner: null, favorites: null, code: 'GC1', type: null, finds: null }, { ...opts, design: 'text' });
+    const onlyCode = infoLayout(ctx, { name: null, dt: null, owner: null, favorites: null, code: 'GC1', type: null, finds: null, step: null }, { ...opts, design: 'text' });
     assert.notEqual(onlyCode.rows[0].items[0].kind, 'sep');
+});
+
+test('numéro d\'étape au dessin : en tête des faits, coloré accent', () => {
+    const ctx = fakeContext();
+    const content = { name: 'Le moulin', dt: { d: 2.5, t: 3 }, owner: null, favorites: null, code: null, type: null, finds: null, step: { n: 3, total: 12 } };
+    const layout = infoLayout(ctx, content, { size: 10, design: 'card' });
+    const facts = layout.rows[1];
+    assert.equal(facts.items[0].text, '3/12');
+    assert.equal(facts.items[0].role, 'step');
+    // Sans total : le numéro seul.
+    const alone = infoLayout(ctx, { ...content, step: { n: 3, total: null } }, { size: 10, design: 'card' });
+    assert.equal(alone.rows[1].items[0].text, '3');
 });
 
 test('nom trop long tronqué, contenu partiel', () => {
@@ -408,6 +430,35 @@ test('nom trop long tronqué, contenu partiel', () => {
     assert.ok(long.rows[0].items[0].w <= 10 * 1.08 * 22 + 1);
     const only = infoLayout(ctx, { name: null, dt: null, owner: null, favorites: 7 }, { size: 10, design: 'card' });
     assert.equal(only.rows.length, 1);
+});
+
+test('nom sur deux lignes : coupure aux mots, seconde ligne tronquée', () => {
+    const ctx = fakeContext();
+    // Faux contexte : 6,6 px par caractère à 11 px — 35 caractères tiennent
+    // dans les 242 px de la ligne, 41 non.
+    const words = 'aaaaa bbbbb ccccc ddddd eeeee fffff ggggg hhhhh iiiii jjjjj';
+    const content = { name: words, dt: null, owner: null, favorites: null, code: null, type: null, finds: null, step: null };
+    const wrapped = infoLayout(ctx, content, { size: 10, design: 'card', twoLines: true });
+    assert.equal(wrapped.rows.length, 2);
+    assert.equal(wrapped.rows[0].items[0].text, 'aaaaa bbbbb ccccc ddddd eeeee fffff');
+    assert.equal(wrapped.rows[1].items[0].text, 'ggggg hhhhh iiiii jjjjj');
+    // Coupé (le défaut) : une seule ligne tronquée.
+    const cut = infoLayout(ctx, content, { size: 10, design: 'card' });
+    assert.equal(cut.rows.length, 1);
+    assert.ok(cut.rows[0].items[0].text.endsWith('…'));
+    // Nom court : une ligne même avec le réglage.
+    const short = infoLayout(ctx, { ...content, name: 'Le moulin' }, { size: 10, design: 'card', twoLines: true });
+    assert.equal(short.rows.length, 1);
+    // L'étiquette reste d'une ligne par nature.
+    const tag = infoLayout(ctx, content, { size: 10, design: 'tag', twoLines: true });
+    assert.equal(tag.rows.length, 1);
+    // Reste trop long : la seconde ligne est tronquée.
+    const longer = infoLayout(ctx, { ...content, name: `${words} kkkkk lllll mmmmm` }, { size: 10, design: 'card', twoLines: true });
+    assert.equal(longer.rows.length, 2);
+    assert.ok(longer.rows[1].items[0].text.endsWith('…'));
+    // Un premier mot trop long tient tronqué sur la première ligne.
+    const firstWord = infoLayout(ctx, { ...content, name: `${'x'.repeat(60)} court` }, { size: 10, design: 'card', twoLines: true });
+    assert.ok(firstWord.rows[0].items[0].text.endsWith('…'));
 });
 
 test('couleurs : bandeau à la couleur d’accent, texte contrasté', () => {

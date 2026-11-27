@@ -26,7 +26,7 @@ const COLOR_SETS = Object.freeze({
 export function createParcoursInfoUI(deps) {
     const FIELD_IDS = {
         name: 'parcoursInfoName', dt: 'parcoursInfoDt', owner: 'parcoursInfoOwner', favorites: 'parcoursInfoFavorites',
-        code: 'parcoursInfoCode', type: 'parcoursInfoType', finds: 'parcoursInfoFinds',
+        code: 'parcoursInfoCode', type: 'parcoursInfoType', finds: 'parcoursInfoFinds', step: 'parcoursInfoStep',
     };
     const VALUE_IDS = {
         near: 'parcoursInfoNear', fixed: 'parcoursInfoFixed', duration: 'parcoursInfoDuration',
@@ -46,6 +46,8 @@ export function createParcoursInfoUI(deps) {
             const input = el(id);
             if (input) raw[key] = input.checked;
         }
+        const twoLines = el('parcoursInfoTwoLines');
+        if (twoLines) raw.two_lines = twoLines.checked;
         return normalizeParcoursInfo({ ...raw, ...extra }, deps.getInfo());
     }
 
@@ -56,13 +58,14 @@ export function createParcoursInfoUI(deps) {
     // Fiche d'exemple des vignettes.
     function sample(info) {
         return {
-            name: info.name ? t('Le trésor du vieux moulin') : null,
+            name: info.name ? t('Le trésor caché du vieux moulin de la vallée') : null,
             dt: info.dt ? { d: 2.5, t: 3 } : null,
             owner: info.owner ? 'GeoFamille' : null,
             favorites: info.favorites ? 42 : null,
             code: info.code ? 'GC8F2K7' : null,
             type: info.type ? 'Multi-cache' : null,
             finds: info.finds ? 137 : null,
+            step: info.step ? { n: 3, total: 12 } : null,
         };
     }
 
@@ -74,7 +77,7 @@ export function createParcoursInfoUI(deps) {
         const pageFamily = getComputedStyle(document.body).fontFamily || null;
         const content = sample(info);
         const empty = !content.name && !content.dt && !content.owner && content.favorites === null
-            && !content.code && !content.type && content.finds === null;
+            && !content.code && !content.type && content.finds === null && !content.step;
         for (const button of document.querySelectorAll('#parcoursInfo [data-info-design]')) {
             const design = button.dataset.infoDesign;
             button.setAttribute('aria-pressed', String(design === info.design));
@@ -91,6 +94,7 @@ export function createParcoursInfoUI(deps) {
             const size = info.size * ratio;
             const layout = infoLayout(ctx, content, {
                 design,
+                twoLines: info.two_lines,
                 family: infoFontFamily(info.font, pageFamily),
                 size,
                 locale: document.documentElement.lang || undefined,
@@ -146,6 +150,8 @@ export function createParcoursInfoUI(deps) {
             const input = el(id);
             if (input) input.checked = info[key];
         }
+        const twoLines = el('parcoursInfoTwoLines');
+        if (twoLines) twoLines.checked = info.two_lines;
         const opacity = el('parcoursInfoBackgroundOpacityValue');
         if (opacity) opacity.textContent = `${info.background_opacity}%`;
         // Interrupteur : reflète l'état et retient la dernière configuration
@@ -191,7 +197,7 @@ export function createParcoursInfoUI(deps) {
 
     function bind() {
         if (!el('parcoursInfo')) return;
-        for (const id of [...Object.values(VALUE_IDS), ...Object.values(FIELD_IDS)]) {
+        for (const id of [...Object.values(VALUE_IDS), ...Object.values(FIELD_IDS), 'parcoursInfoTwoLines']) {
             el(id)?.addEventListener('change', () => commit());
         }
         // Valeur bornée réaffichée à la sortie du champ (40 → 28).

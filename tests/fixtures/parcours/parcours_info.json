@@ -57,7 +57,9 @@
     "near": "none",
     "owner": false,
     "size": 13,
+    "step": false,
     "text_color": "#212529",
+    "two_lines": false,
     "type": false
   },
   "fields": [
@@ -67,7 +69,8 @@
     "favorites",
     "code",
     "type",
-    "finds"
+    "finds",
+    "step"
   ],
   "ranges": {
     "background_opacity": [

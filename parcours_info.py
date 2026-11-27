@@ -32,7 +32,8 @@ DESIGNS = ("tag", "card", "banner", "text")
 FONTS = ("sans", "serif", "mono", "rounded", "condensed", "handwritten")
 ACCENTS = ("stop", "fixed")
 FILTERS = ("all", "favorites", "dt")
-FIELDS = ("name", "dt", "owner", "favorites", "code", "type", "finds")
+FIELDS = ("name", "dt", "owner", "favorites", "code", "type", "finds", "step")
+BOOLS = ("two_lines",)
 
 RANGES = {
     "duration": (1, 15),
@@ -60,6 +61,8 @@ def parcours_info_defaults() -> dict:
         "code": False,
         "type": False,
         "finds": False,
+        "step": False,
+        "two_lines": False,
         "design": "card",
         "font": "sans",
         "size": 13,
@@ -107,7 +110,7 @@ def coerce_parcours_info(raw, current: dict | None = None) -> dict:
     out = {}
     for key, allowed in choices.items():
         out[key] = _choice(src.get(key), allowed, _choice(base[key], allowed, defaults[key]))
-    for key in FIELDS:
+    for key in FIELDS + BOOLS:
         out[key] = _bool(src.get(key), _bool(base[key], defaults[key]))
     for key in ("text_color", "background_color", "accent_color"):
         out[key] = _color(src.get(key), _color(base[key], defaults[key]))

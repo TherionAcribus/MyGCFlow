@@ -752,6 +752,14 @@ historiques comme `Cancel`→`Annuler`). Commandes dans README.md
 `-k _tr` de l'extract est obligatoire : sans lui, les chaînes passées par
 `_tr()` (settings_manager.py, task_manager.py) disparaissent en silence du
 pot — une quinzaine de msgids. Ajouter une langue : `docs/translations.md`.
+Remplir une nouvelle traduction : édition **chirurgicale** du .po — `pybabel
+update` marque souvent la nouvelle entrée `#, fuzzy` (devinée d'une chaîne
+proche, ignorée à la compilation) : poser le msgstr ET retirer le drapeau.
+Ne jamais réécrire le .po avec polib (reformate tout). Vérifier après
+`extract` que le diff de messages.pot est petit (références de lignes +
+nouvelles chaînes) : un extract SINON — avec des mots-clés `-k` manquants —
+marque des centaines de chaînes obsolètes à l'`update` suivant, et le diff
+explose (incident du 2026-12-19).
 Côté JS, seul helper : `t()` via `pkg.t(...)` ; l'appeler **hors** d'un
 template literal, sinon pybabel ne l'extrait pas — et sans chaînage
 optionnel : `pkg.t?.('…')` n'est pas extrait non plus (chaîne absente du

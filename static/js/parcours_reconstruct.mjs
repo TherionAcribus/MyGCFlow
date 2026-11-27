@@ -771,5 +771,6 @@ export function reconstructParcours(inputs, {
         }
         days.push(day);
     }
+    for (const day of days) for (const stop of day.stops) if (stop.index) stop.stepTotal = index;
     return { days, stopCount: index, dropped };
 }

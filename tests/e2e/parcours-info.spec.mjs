@@ -108,6 +108,13 @@ test('défauts : fiche coupée, sous-onglet Fiches avec ses quatre designs', asy
   await expect.poll(async () => (await info(page)).settings.size).toBe(28);
   const large = await drawnSpan();
   expect(large).toBeGreaterThan(small * 1.8);
+
+  // Nom sur deux lignes : la case écrit le réglage du thème.
+  await expect(page.locator('#parcoursInfoTwoLines')).not.toBeChecked();
+  await page.locator('#parcoursInfoTwoLines').check();
+  await expect.poll(async () => (await info(page)).settings.two_lines).toBe(true);
+  await page.locator('#parcoursInfoTwoLines').uncheck();
+  await expect.poll(async () => (await info(page)).settings.two_lines).toBe(false);
   expect(errors).toEqual([]);
 });
 
@@ -178,6 +185,14 @@ test('au repos : permanent sur les étapes, temporaire sur l’étape survolée,
   await expect.poll(async () => (await info(page)).settings.code).toBe(true);
   await expect(page.locator('#parcoursInfoEmptyHint')).toBeHidden();
   await expect.poll(async () => (await info(page)).rest.near.length).toBeGreaterThan(2);
+
+  // Le numéro d'étape aussi : toute étape comptée en porte un.
+  await page.locator('#parcoursInfoCode').uncheck();
+  await page.locator('#parcoursInfoStep').check();
+  await expect.poll(async () => (await info(page)).settings.step).toBe(true);
+  await expect.poll(async () => (await info(page)).rest.near.length).toBeGreaterThan(2);
+  await page.locator('#parcoursInfoStep').uncheck();
+  await page.locator('#parcoursInfoName').check();
   expect(errors).toEqual([]);
 });
 

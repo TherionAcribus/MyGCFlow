@@ -538,8 +538,9 @@ ms bruts) et `timeline.dayStartQ`.
 
 ### Fiche des caches (`points.parcours_info`)
 
-Nom, D/T, code GC, type, propriétaire, PF de la fiche (`favoritePoints`)
-et trouvailles de la cache (`foundCount`) d'une étape, **au choix** (sept
+Nom, numéro d'étape (« 3/12 », `index`/`stepTotal` de la reconstruction),
+D/T, code GC, type, propriétaire, PF de la fiche (`favoritePoints`)
+et trouvailles de la cache (`foundCount`) d'une étape, **au choix** (huit
 cases ; rien de coché = rien d'affiché). Bloc du thème
 `points.parcours_info` (`parcours_info.py`, copie `parcours_info.mjs`, table
 comparée via `tests/fixtures/parcours/parcours_info.json`), sous-onglet
@@ -550,10 +551,13 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
 - **Contenu** (`infoContent`) : un élément inconnu est omis — Lab sans D/T
   ni propriétaire ni code, PF et trouvailles connus seulement après
   « Compléter depuis geocaching.com ». Lieux et bases n'ont jamais de
-  fiche. À la fiche (design `card`) : D/T, PF (cœur) et trouvailles (coche)
-  sur la ligne des faits, code, type et propriétaire sur la ligne
-  discrète, séparés de « · » — jamais doublé ni en tête sur les designs à
-  ligne unique.
+  fiche. À la fiche (design `card`) : numéro d'étape (couleur d'accent,
+  en tête), D/T, PF (cœur) et trouvailles (coche) sur la ligne des faits,
+  code, type et propriétaire sur la ligne discrète, séparés de « · » —
+  jamais doublé ni en tête sur les designs à ligne unique. Le nom est
+  tronqué de « … » à la largeur de la fiche, ou coupé aux mots sur deux
+  lignes (`two_lines` — seule la seconde est tronquée ; l'étiquette reste
+  d'une ligne par nature).
 - **À côté de la cache** (`near`) : `current` (« temporaire ») = la
   dernière étape comptée atteinte, de son arrivée jusqu'à son départ et au
   moins `duration` s d'écran (converties en quanta par `msPerDay`), coupée

@@ -76,6 +76,10 @@ export function infoLayout(ctx, content, opts = {}) {
     // designs à ligne unique).
     const detail = (px, chips) => {
         const items = [];
+        if (content.step) {
+            const total = content.step.total;
+            items.push(measured(ctx, bold(px), total ? `${content.step.n}/${total}` : `${content.step.n}`, { kind: 'text', role: 'step' }));
+        }
         if (content.dt) {
             if (chips) {
                 const chipFont = bold(px * 0.92);
@@ -112,11 +116,30 @@ export function infoLayout(ctx, content, opts = {}) {
         return items;
     };
 
-    const name = (px) => {
-        if (!content.name) return null;
-        ctx.font = bold(px);
-        return measured(ctx, bold(px), fitText(ctx, content.name, px * NAME_MAX_EM), { kind: 'text', role: 'title' });
+    // Le nom tient sur une ligne, tronqué de « … » ; avec `twoLines` (sauf
+    // étiquette, une ligne par nature), il se coupe aux mots sur deux
+    // lignes et seule la seconde est tronquée.
+    const nameLines = (px) => {
+        if (!content.name) return [];
+        const font = bold(px);
+        ctx.font = font;
+        const maxW = px * NAME_MAX_EM;
+        const item = (text) => measured(ctx, font, text, { kind: 'text', role: 'title' });
+        if (!opts.twoLines || design === 'tag') return [item(fitText(ctx, content.name, maxW))];
+        if (ctx.measureText(content.name).width <= maxW) return [item(content.name)];
+        const words = content.name.split(/\s+/).filter(Boolean);
+        let first = words[0] || '';
+        let i = 1;
+        while (i < words.length && ctx.measureText(`${first} ${words[i]}`).width <= maxW) {
+            first = `${first} ${words[i]}`;
+            i++;
+        }
+        const lines = [item(ctx.measureText(first).width > maxW ? fitText(ctx, first, maxW) : first)];
+        const rest = words.slice(i).join(' ');
+        if (rest) lines.push(item(fitText(ctx, rest, maxW)));
+        return lines;
     };
+    const name = (px) => nameLines(px)[0] || null;
 
     // Lignes : liste d'éléments posés de gauche à droite ; `glue` colle
     // l'élément au suivant (cœur et nombre, icône et nom).
@@ -136,8 +159,7 @@ export function infoLayout(ctx, content, opts = {}) {
         rows = [{ items, px: titlePx }];
     } else if (design === 'card') {
         rows = [];
-        const title = name(titlePx);
-        if (title) rows.push({ items: [title], px: titlePx });
+        for (const line of nameLines(titlePx)) rows.push({ items: [line], px: titlePx });
         const facts = detail(detailPx, true).filter((item) => item.role !== 'muted');
         if (facts.length) rows.push({ items: facts, px: detailPx });
         const muted = detail(detailPx, false).filter((item) => item.role === 'muted');
@@ -145,8 +167,7 @@ export function infoLayout(ctx, content, opts = {}) {
         if (muted.length) rows.push({ items: muted, px: detailPx * 0.95 });
     } else {
         rows = [];
-        const title = name(titlePx);
-        if (title) rows.push({ items: [title], px: titlePx });
+        for (const line of nameLines(titlePx)) rows.push({ items: [line], px: titlePx });
         const items = [];
         for (const item of detail(detailPx, false)) join(items, item);
         if (items.length) rows.push({ items, px: detailPx });
@@ -320,7 +341,7 @@ export function drawInfo(ctx, layout, x, y, opts = {}) {
                 ctx.fillText(item.text, ix + layout.chipPad, cy);
                 continue;
             }
-            const color = item.role === 'heart' ? colors.heart : item.role === 'muted' || item.role === 'finds' ? colors.muted : colors.text;
+            const color = item.role === 'heart' ? colors.heart : item.role === 'step' ? colors.accent : item.role === 'muted' || item.role === 'finds' ? colors.muted : colors.text;
             if (colors.halo) {
                 ctx.save();
                 ctx.lineJoin = 'round';
