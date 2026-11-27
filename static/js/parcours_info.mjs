@@ -128,7 +128,11 @@ export function formatRating(value, locale) {
 // Fenêtre « temporaire » d'une étape : de son arrivée jusqu'à son départ, et
 // au moins `holdQ` quanta (la durée réglée), coupée à `untilQ` (arrivée de
 // l'étape suivante : jamais deux fiches temporaires à la fois). Opacité
-// 0-1, avec un fondu de `fadeQ` quanta à l'entrée et à la sortie.
+// 0-1, avec un fondu de `fadeQ` quanta à l'entrée et à la sortie — borné au
+// quart de la fenêtre : une fenêtre courte (étapes rapprochées, l'arrivée
+// suivante coupe la durée réglée) garde une fiche nette, à l'opacité pleine
+// sur sa moitié centrale, au lieu de clignoter sans jamais s'afficher
+// franchement ; une fenêtre longue garde le fondu réglé.
 export function infoAlpha(stop, q, { holdQ = 0, fadeQ = 0, untilQ = Infinity } = {}) {
     const start = Number(stop?.q);
     if (!Number.isFinite(start) || !(q >= start)) return 0;
@@ -137,7 +141,9 @@ export function infoAlpha(stop, q, { holdQ = 0, fadeQ = 0, untilQ = Infinity } =
     if (Number.isFinite(untilQ)) end = Math.min(end, untilQ);
     if (q >= end) return 0;
     if (!(fadeQ > 0)) return 1;
-    return Math.max(0, Math.min(1, (q - start) / fadeQ, (end - q) / fadeQ));
+    const fade = Math.min(fadeQ, (end - start) / 4);
+    if (!(fade > 0)) return 1;
+    return Math.max(0, Math.min(1, (q - start) / fade, (end - q) / fade));
 }
 
 // Fiche « temporaire » à la position `q` : la dernière étape comptée

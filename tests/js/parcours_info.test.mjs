@@ -109,6 +109,15 @@ test('fenêtre temporaire : visite, durée minimale, étape suivante, fondus', (
     // Fondus d'entrée et de sortie.
     assert.equal(infoAlpha(stop, 101.5, { holdQ: 30, fadeQ: 3 }), 0.5);
     assert.equal(infoAlpha(stop, 128.5, { holdQ: 30, fadeQ: 3 }), 0.5);
+    // Fenêtre courte (4 quanta < 2× le fondu de 3) : le fondu est borné au
+    // quart de la fenêtre — opacité pleine sur la moitié centrale au lieu
+    // d'un pic voilé à 0,67.
+    const brief = { q: 100, departQ: 104 };
+    assert.equal(infoAlpha(brief, 101, { fadeQ: 3 }), 1);
+    assert.equal(infoAlpha(brief, 102, { fadeQ: 3 }), 1);
+    assert.equal(infoAlpha(brief, 103, { fadeQ: 3 }), 1);
+    assert.equal(infoAlpha(brief, 100.5, { fadeQ: 3 }), 0.5);
+    assert.equal(infoAlpha(brief, 103.5, { fadeQ: 3 }), 0.5);
 });
 
 test('fiche en cours : dernière étape comptée atteinte, lieux ignorés', () => {

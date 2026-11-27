@@ -593,9 +593,12 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
   `text` (texte seul, liseré de la couleur du fond) ; police (piles de
   `name_labels.mjs`), taille, couleurs du texte et du fond, opacité,
   accent « couleur de l'étape » (`paintOfStop`) ou fixe. Fondu de 0,3 s
-  (et glissement du cartouche), sans mouvement en lecture réduite. Les
-  vignettes des designs dessinent une fiche d'exemple avec les réglages
-  courants.
+  (et glissement du cartouche), sans mouvement en lecture réduite — borné
+  au quart de la fenêtre de l'étape : une fenêtre courte (étapes
+  rapprochées, la suivante coupe la durée réglée) garde une fiche nette à
+  l'opacité pleine sur sa moitié centrale au lieu de clignoter sans
+  jamais s'afficher franchement. Les vignettes des designs dessinent une
+  fiche d'exemple avec les réglages courants.
 
 Relevé : `getParcoursSnapshot().info` — `settings`, `play` (`current`,
 `near`, `hidden`, `fixed`, `alpha`, `size` de la dernière image) et `rest`
