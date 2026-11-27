@@ -14,7 +14,7 @@
 import { isCountedStop } from './parcours_reconstruct.mjs';
 import { reachedIndex } from './parcours_timeline.mjs';
 
-export const PARCOURS_INFO_FIELDS = Object.freeze(['name', 'dt', 'owner', 'favorites']);
+export const PARCOURS_INFO_FIELDS = Object.freeze(['name', 'dt', 'owner', 'favorites', 'code', 'type', 'finds']);
 export const PARCOURS_INFO_CHOICES = Object.freeze({
     near: Object.freeze(['none', 'current', 'all']),
     fixed: Object.freeze(['none', 'top', 'bottom', 'top_left', 'top_right', 'bottom_left', 'bottom_right']),
@@ -40,6 +40,9 @@ export function parcoursInfoDefaults() {
         dt: true,
         owner: false,
         favorites: true,
+        code: false,
+        type: false,
+        finds: false,
         design: 'card',
         font: 'sans',
         size: 13,
@@ -114,8 +117,12 @@ export function infoContent(stop, info) {
     const owner = info?.owner && typeof stop.owner === 'string' && stop.owner.trim() ? stop.owner.trim() : null;
     const pf = finite(stop.favoritePoints);
     const favorites = info?.favorites && pf !== null && pf >= 0 ? Math.round(pf) : null;
-    if (!name && !dt && !owner && favorites === null) return null;
-    return { name, dt, owner, favorites };
+    const code = info?.code && typeof stop.code === 'string' && stop.code.trim() ? stop.code.trim() : null;
+    const type = info?.type && typeof stop.type === 'string' && stop.type.trim() ? stop.type.trim() : null;
+    const fc = finite(stop.foundCount);
+    const finds = info?.finds && fc !== null && fc >= 0 ? Math.round(fc) : null;
+    if (!name && !dt && !owner && favorites === null && !code && !type && finds === null) return null;
+    return { name, dt, owner, favorites, code, type, finds };
 }
 
 // Note D ou T : « 2 », « 2,5 » (séparateur de la langue `locale`).

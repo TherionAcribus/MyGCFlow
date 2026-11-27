@@ -72,12 +72,24 @@
                     <span class="form-check-label">{{ _("Difficulté / terrain") }}</span>
                 </label>
                 <label class="form-check mb-0">
+                    <input id="parcoursInfoCode" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Code GC") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoType" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Type de cache") }}</span>
+                </label>
+                <label class="form-check mb-0">
                     <input id="parcoursInfoOwner" class="form-check-input" type="checkbox">
                     <span class="form-check-label">{{ _("Propriétaire") }}</span>
                 </label>
                 <label class="form-check mb-0">
                     <input id="parcoursInfoFavorites" class="form-check-input" type="checkbox">
                     <span class="form-check-label">{{ _("Points favoris") }}</span>
+                </label>
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoFinds" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Trouvailles de la cache") }}</span>
                 </label>
             </div>
             <small class="form-hint text-muted">{{ _("Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni propriétaire, et les points favoris ne sont connus qu'après « Compléter depuis geocaching.com » (onglet Données). Les lieux et les bases n'ont pas de fiche.") }}</small>

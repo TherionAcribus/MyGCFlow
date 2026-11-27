@@ -172,6 +172,12 @@ test('au repos : permanent sur les étapes, temporaire sur l’étape survolée,
   for (const id of ['#parcoursInfoName', '#parcoursInfoDt', '#parcoursInfoFavorites']) await page.locator(id).uncheck();
   await expect(page.locator('#parcoursInfoEmptyHint')).toBeVisible();
   await expect.poll(async () => (await info(page)).rest.near).toEqual([]);
+
+  // Le code GC seul suffit à une fiche : les étapes en ont un.
+  await page.locator('#parcoursInfoCode').check();
+  await expect.poll(async () => (await info(page)).settings.code).toBe(true);
+  await expect(page.locator('#parcoursInfoEmptyHint')).toBeHidden();
+  await expect.poll(async () => (await info(page)).rest.near.length).toBeGreaterThan(2);
   expect(errors).toEqual([]);
 });
 

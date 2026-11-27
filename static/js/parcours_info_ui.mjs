@@ -26,6 +26,7 @@ const COLOR_SETS = Object.freeze({
 export function createParcoursInfoUI(deps) {
     const FIELD_IDS = {
         name: 'parcoursInfoName', dt: 'parcoursInfoDt', owner: 'parcoursInfoOwner', favorites: 'parcoursInfoFavorites',
+        code: 'parcoursInfoCode', type: 'parcoursInfoType', finds: 'parcoursInfoFinds',
     };
     const VALUE_IDS = {
         near: 'parcoursInfoNear', fixed: 'parcoursInfoFixed', duration: 'parcoursInfoDuration',
@@ -58,6 +59,9 @@ export function createParcoursInfoUI(deps) {
             dt: info.dt ? { d: 2.5, t: 3 } : null,
             owner: info.owner ? 'GeoFamille' : null,
             favorites: info.favorites ? 42 : null,
+            code: info.code ? 'GC8F2K7' : null,
+            type: info.type ? 'Multi-cache' : null,
+            finds: info.finds ? 137 : null,
         };
     }
 
@@ -68,7 +72,8 @@ export function createParcoursInfoUI(deps) {
         const accent = info.accent === 'fixed' ? info.accent_color : (deps.accentSample?.() || info.accent_color);
         const pageFamily = getComputedStyle(document.body).fontFamily || null;
         const content = sample(info);
-        const empty = !content.name && !content.dt && !content.owner && content.favorites === null;
+        const empty = !content.name && !content.dt && !content.owner && content.favorites === null
+            && !content.code && !content.type && content.finds === null;
         for (const button of document.querySelectorAll('#parcoursInfo [data-info-design]')) {
             const design = button.dataset.infoDesign;
             button.setAttribute('aria-pressed', String(design === info.design));

@@ -38,23 +38,29 @@
     "accent_color": "#0072c6",
     "background_color": "#ffffff",
     "background_opacity": 92,
+    "code": false,
     "design": "card",
     "dt": true,
     "duration": 3,
     "favorites": true,
+    "finds": false,
     "fixed": "none",
     "font": "sans",
     "name": true,
     "near": "none",
     "owner": false,
     "size": 13,
-    "text_color": "#212529"
+    "text_color": "#212529",
+    "type": false
   },
   "fields": [
     "name",
     "dt",
     "owner",
-    "favorites"
+    "favorites",
+    "code",
+    "type",
+    "finds"
   ],
   "ranges": {
     "background_opacity": [

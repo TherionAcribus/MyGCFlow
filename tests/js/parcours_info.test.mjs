@@ -73,10 +73,11 @@ test('contenu : éléments cochés et connus, rien pour un lieu', () => {
     const stop = {
         key: 'GC1', kind: 'find', name: ' Le moulin ', difficulty: 2.5, terrain: 3, owner: 'Famille', favoritePoints: 42,
     };
-    assert.deepEqual(infoContent(stop, info), { name: 'Le moulin', dt: { d: 2.5, t: 3 }, owner: 'Famille', favorites: 42 });
+    const empty = { code: null, type: null, finds: null };
+    assert.deepEqual(infoContent(stop, info), { name: 'Le moulin', dt: { d: 2.5, t: 3 }, owner: 'Famille', favorites: 42, ...empty });
     // PF inconnus (jamais collectés), D/T absents (Lab) : omis.
     assert.deepEqual(infoContent({ key: 'lab:1', kind: 'lab', name: 'Étape', difficulty: null, terrain: null }, info),
-        { name: 'Étape', dt: null, owner: null, favorites: null });
+        { name: 'Étape', dt: null, owner: null, favorites: null, ...empty });
     assert.equal(infoContent({ ...stop, favoritePoints: 0 }, info).favorites, 0);
     // Rien de coché ne soit connu : pas de fiche.
     assert.equal(infoContent({ key: 'lab:2', kind: 'lab', name: '' }, info), null);
@@ -84,8 +85,29 @@ test('contenu : éléments cochés et connus, rien pour un lieu', () => {
     assert.equal(infoContent({ key: 'b', kind: 'base', name: 'Hôtel' }, info), null);
     // Éléments décochés.
     assert.deepEqual(infoContent(stop, { ...info, name: false, owner: false }), {
-        name: null, dt: { d: 2.5, t: 3 }, owner: null, favorites: 42,
+        name: null, dt: { d: 2.5, t: 3 }, owner: null, favorites: 42, ...empty,
     });
+});
+
+test('contenu additionnel : code GC, type, trouvailles — à la carte', () => {
+    const info = normalizeParcoursInfo({ near: 'current', code: true, type: true, finds: true });
+    const stop = {
+        key: 'GC1', kind: 'find', name: 'Le moulin', code: ' GC9ABC ', type: 'Multi-cache',
+        difficulty: 2.5, terrain: 3, foundCount: 137,
+    };
+    const content = infoContent(stop, info);
+    assert.equal(content.code, 'GC9ABC');
+    assert.equal(content.type, 'Multi-cache');
+    assert.equal(content.finds, 137);
+    // Décochés ou inconnus (jamais collectés) : omis.
+    assert.deepEqual(infoContent(stop, { ...info, code: false, type: false, finds: false }),
+        { name: 'Le moulin', dt: { d: 2.5, t: 3 }, owner: null, favorites: null, code: null, type: null, finds: null });
+    assert.equal(infoContent({ ...stop, foundCount: null }, info).finds, null);
+    assert.equal(infoContent({ ...stop, foundCount: 0 }, info).finds, 0);
+    // Un Lab n'a pas de code, mais son type « Lab Cache » se montre.
+    const lab = infoContent({ key: 'lab:1', kind: 'lab', name: null, code: null, type: 'Lab Cache' }, { ...info, name: false, dt: false });
+    assert.equal(lab.type, 'Lab Cache');
+    assert.equal(lab.code, null);
 });
 
 test('notes D/T au format de la langue', () => {
@@ -330,6 +352,34 @@ test('mesure des quatre designs : une ligne pour l’étiquette, plusieurs sinon
     const glyph = infoLayout(ctx, CONTENT, { ...opts, design: 'banner', glyphs: { user: '' } });
     assert.ok(glyph.rows[1].items.some((i) => i.text === 'GeoFamille'));
     assert.equal(infoLayout(ctx, null, opts), null);
+});
+
+test('contenu additionnel au dessin : trouvailles avec les faits, code et type en discret', () => {
+    const ctx = fakeContext();
+    const full = { ...CONTENT, code: 'GC9ABC', type: 'Multi-cache', finds: 137 };
+    const opts = { size: 12, locale: 'fr' };
+    const card = infoLayout(ctx, full, { ...opts, design: 'card' });
+    // Trouvailles sur la ligne des faits : coche puis nombre, collés.
+    const facts = card.rows[1].items;
+    const check = facts.findIndex((i) => i.text === '✓');
+    assert.ok(check >= 0 && facts[check + 1].text === '137');
+    assert.equal(facts[check].glue, true);
+    // Code, type et propriétaire sur la ligne discrète, sans séparateur en tête.
+    const meta = card.rows[2].items;
+    assert.notEqual(meta[0].kind, 'sep');
+    assert.deepEqual(meta.filter((i) => i.kind !== 'sep').map((i) => i.text).slice(0, 2), ['GC9ABC', 'Multi-cache']);
+    assert.ok(meta.some((i) => i.kind === 'sep'), 'éléments séparés de « · »');
+    // Ligne unique (étiquette) : un « · » entre groupes, jamais doublé ni en tête.
+    const tag = infoLayout(ctx, full, { ...opts, design: 'tag' });
+    const items = tag.rows[0].items;
+    assert.notEqual(items[0].kind, 'sep');
+    for (let i = 1; i < items.length; i++) {
+        assert.ok(!(items[i].kind === 'sep' && items[i - 1].kind === 'sep'), 'pas de double séparateur');
+    }
+    assert.ok(items.some((i) => i.text === 'GC9ABC'));
+    // Contenu réduit au code seul : pas de séparateur orphelin.
+    const onlyCode = infoLayout(ctx, { name: null, dt: null, owner: null, favorites: null, code: 'GC1', type: null, finds: null }, { ...opts, design: 'text' });
+    assert.notEqual(onlyCode.rows[0].items[0].kind, 'sep');
 });
 
 test('nom trop long tronqué, contenu partiel', () => {

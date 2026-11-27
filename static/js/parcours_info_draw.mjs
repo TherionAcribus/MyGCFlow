@@ -20,6 +20,7 @@ import { formatRating } from './parcours_info.mjs';
 
 export const INFO_HEART_COLOR = '#e03131';
 const HEART = '♥';
+const CHECK = '✓';
 const NAME_MAX_EM = 22;
 
 export function infoFontFamily(font, pageFamily = null) {
@@ -69,7 +70,10 @@ export function infoLayout(ctx, content, opts = {}) {
     const favText = content.favorites !== null && content.favorites !== undefined
         ? content.favorites.toLocaleString(locale) : null;
 
-    // Éléments de détail, dans l'ordre : D/T, PF, propriétaire.
+    // Éléments de détail : les faits (D/T, PF, trouvailles — rôles non
+    // « muted ») puis la ligne discrète (code, type, propriétaire — « muted »,
+    // séparés de « · », le premier séparateur joint les deux groupes sur les
+    // designs à ligne unique).
     const detail = (px, chips) => {
         const items = [];
         if (content.dt) {
@@ -84,11 +88,26 @@ export function infoLayout(ctx, content, opts = {}) {
             items.push(measured(ctx, bold(px), HEART, { kind: 'text', role: 'heart', glue: true }));
             items.push(measured(ctx, regular(px), favText, { kind: 'text', role: 'text' }));
         }
+        const findsText = content.finds !== null && content.finds !== undefined
+            ? content.finds.toLocaleString(locale) : null;
+        if (findsText !== null) {
+            items.push(measured(ctx, bold(px), CHECK, { kind: 'text', role: 'finds', glue: true }));
+            items.push(measured(ctx, regular(px), findsText, { kind: 'text', role: 'text' }));
+        }
+        const meta = [];
+        if (content.code) meta.push([measured(ctx, regular(px), content.code, { kind: 'text', role: 'muted' })]);
+        if (content.type) meta.push([measured(ctx, regular(px), content.type, { kind: 'text', role: 'muted' })]);
         if (content.owner) {
             if (userGlyph) {
-                items.push(measured(ctx, icon(px), userGlyph, { kind: 'text', role: 'muted', glue: true }));
-                items.push(measured(ctx, regular(px), content.owner, { kind: 'text', role: 'muted' }));
-            } else items.push(measured(ctx, regular(px), by(content.owner), { kind: 'text', role: 'muted' }));
+                meta.push([
+                    measured(ctx, icon(px), userGlyph, { kind: 'text', role: 'muted', glue: true }),
+                    measured(ctx, regular(px), content.owner, { kind: 'text', role: 'muted' }),
+                ]);
+            } else meta.push([measured(ctx, regular(px), by(content.owner), { kind: 'text', role: 'muted' })]);
+        }
+        for (const group of meta) {
+            items.push({ kind: 'sep', w: 0, text: ' · ', font: regular(px), role: 'muted' });
+            items.push(...group);
         }
         return items;
     };
@@ -102,14 +121,18 @@ export function infoLayout(ctx, content, opts = {}) {
     // Lignes : liste d'éléments posés de gauche à droite ; `glue` colle
     // l'élément au suivant (cœur et nombre, icône et nom).
     let rows;
+    const join = (items, item) => {
+        // Jamais de séparateur en tête, jamais doublé.
+        if (!items.length && item.kind === 'sep') return;
+        const prev = items[items.length - 1];
+        if (prev && item.kind !== 'sep' && prev.kind !== 'sep' && !prev.glue) items.push({ kind: 'sep', w: 0, text: ' · ', font: regular(detailPx) });
+        items.push(item);
+    };
     if (single) {
         const items = [];
         const title = name(titlePx);
         if (title) items.push(title);
-        for (const item of detail(detailPx, false)) {
-            if (items.length && !items[items.length - 1].glue) items.push({ kind: 'sep', w: 0, text: ' · ', font: regular(detailPx) });
-            items.push(item);
-        }
+        for (const item of detail(detailPx, false)) join(items, item);
         rows = [{ items, px: titlePx }];
     } else if (design === 'card') {
         rows = [];
@@ -117,17 +140,15 @@ export function infoLayout(ctx, content, opts = {}) {
         if (title) rows.push({ items: [title], px: titlePx });
         const facts = detail(detailPx, true).filter((item) => item.role !== 'muted');
         if (facts.length) rows.push({ items: facts, px: detailPx });
-        const owner = detail(detailPx, false).filter((item) => item.role === 'muted');
-        if (owner.length) rows.push({ items: owner, px: detailPx * 0.95 });
+        const muted = detail(detailPx, false).filter((item) => item.role === 'muted');
+        if (muted[0]?.kind === 'sep') muted.shift();
+        if (muted.length) rows.push({ items: muted, px: detailPx * 0.95 });
     } else {
         rows = [];
         const title = name(titlePx);
         if (title) rows.push({ items: [title], px: titlePx });
         const items = [];
-        for (const item of detail(detailPx, false)) {
-            if (items.length && !items[items.length - 1].glue) items.push({ kind: 'sep', w: 0, text: ' · ', font: regular(detailPx) });
-            items.push(item);
-        }
+        for (const item of detail(detailPx, false)) join(items, item);
         if (items.length) rows.push({ items, px: detailPx });
     }
     rows = rows.filter((row) => row.items.length);
@@ -299,7 +320,7 @@ export function drawInfo(ctx, layout, x, y, opts = {}) {
                 ctx.fillText(item.text, ix + layout.chipPad, cy);
                 continue;
             }
-            const color = item.role === 'heart' ? colors.heart : item.role === 'muted' ? colors.muted : colors.text;
+            const color = item.role === 'heart' ? colors.heart : item.role === 'muted' || item.role === 'finds' ? colors.muted : colors.text;
             if (colors.halo) {
                 ctx.save();
                 ctx.lineJoin = 'round';

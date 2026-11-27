@@ -538,8 +538,9 @@ ms bruts) et `timeline.dayStartQ`.
 
 ### Fiche des caches (`points.parcours_info`)
 
-Nom, D/T, propriétaire et PF de la fiche (`favoritePoints`) d'une étape,
-**au choix** (quatre cases ; rien de coché = rien d'affiché). Bloc du thème
+Nom, D/T, code GC, type, propriétaire, PF de la fiche (`favoritePoints`)
+et trouvailles de la cache (`foundCount`) d'une étape, **au choix** (sept
+cases ; rien de coché = rien d'affiché). Bloc du thème
 `points.parcours_info` (`parcours_info.py`, copie `parcours_info.mjs`, table
 comparée via `tests/fixtures/parcours/parcours_info.json`), sous-onglet
 Style › Fiches propre à la page (`menu_info_parcours.html`,
@@ -547,8 +548,12 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
 `none`) : un thème antérieur garde son rendu.
 
 - **Contenu** (`infoContent`) : un élément inconnu est omis — Lab sans D/T
-  ni propriétaire, PF connus seulement après « Compléter depuis
-  geocaching.com ». Lieux et bases n'ont jamais de fiche.
+  ni propriétaire ni code, PF et trouvailles connus seulement après
+  « Compléter depuis geocaching.com ». Lieux et bases n'ont jamais de
+  fiche. À la fiche (design `card`) : D/T, PF (cœur) et trouvailles (coche)
+  sur la ligne des faits, code, type et propriétaire sur la ligne
+  discrète, séparés de « · » — jamais doublé ni en tête sur les designs à
+  ligne unique.
 - **À côté de la cache** (`near`) : `current` (« temporaire ») = la
   dernière étape comptée atteinte, de son arrivée jusqu'à son départ et au
   moins `duration` s d'écran (converties en quanta par `msPerDay`), coupée

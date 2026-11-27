@@ -31,7 +31,7 @@ FIXED = ("none", "top", "bottom", "top_left", "top_right", "bottom_left", "botto
 DESIGNS = ("tag", "card", "banner", "text")
 FONTS = ("sans", "serif", "mono", "rounded", "condensed", "handwritten")
 ACCENTS = ("stop", "fixed")
-FIELDS = ("name", "dt", "owner", "favorites")
+FIELDS = ("name", "dt", "owner", "favorites", "code", "type", "finds")
 
 RANGES = {
     "duration": (1, 15),
@@ -53,6 +53,9 @@ def parcours_info_defaults() -> dict:
         "dt": True,
         "owner": False,
         "favorites": True,
+        "code": False,
+        "type": False,
+        "finds": False,
         "design": "card",
         "font": "sans",
         "size": 13,

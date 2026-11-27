@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-27 13:19+0100\n"
+"POT-Creation-Date: 2026-11-27 20:02+0100\n"
 "PO-Revision-Date: 2026-11-16 09:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -643,7 +643,8 @@ msgstr "Import abgelehnt: Die Datei enthält strukturelle Fehler"
 msgid "les logs ont changé depuis l'aperçu : relancez-le"
 msgstr "die Logs haben sich seit der Vorschau geändert: Starten Sie diese erneut"
 
-#: poses_dataset.py:635 templates/menu_names.html:134
+#: poses_dataset.py:635 templates/menu_info_parcours.html:76
+#: templates/menu_names.html:134
 msgid "Code GC"
 msgstr "GC-Code"
 
@@ -2276,7 +2277,7 @@ msgid "Jour de la semaine"
 msgstr "Wochentag"
 
 #: static/js/chart_labels.mjs:113 templates/_filter_cache_attrs.html:9
-#: templates/_filter_cache_attrs.html:10
+#: templates/_filter_cache_attrs.html:10 templates/menu_info_parcours.html:80
 msgid "Type de cache"
 msgstr "Cache-Typ"
 
@@ -2300,7 +2301,7 @@ msgid "Difficulté / terrain"
 msgstr "Schwierigkeit / Gelände"
 
 #: static/js/chart_labels.mjs:120 templates/menu_filtre.html:184
-#: templates/menu_filtre.html:185 templates/menu_info_parcours.html:76
+#: templates/menu_filtre.html:185 templates/menu_info_parcours.html:84
 msgid "Propriétaire"
 msgstr "Owner"
 
@@ -6353,11 +6354,11 @@ msgstr "Die Fotoeinstellungen konnten nicht gespeichert werden."
 msgid "Ouvrir la photo ${name} dans l’onglet Photos"
 msgstr "Foto ${name} im Tab Fotos öffnen"
 
-#: static/js/parcours_info_ui.mjs:57
+#: static/js/parcours_info_ui.mjs:58
 msgid "Le trésor du vieux moulin"
 msgstr "Der Schatz der alten Mühle"
 
-#: static/js/parcours_info_ui.mjs:94 static/js/parcours_play.mjs:842
+#: static/js/parcours_info_ui.mjs:97 static/js/parcours_play.mjs:842
 #, python-brace-format
 msgid "par ${owner}"
 msgstr "von ${owner}"
@@ -8662,14 +8663,14 @@ msgid "Comme l'écran"
 msgstr "Wie der Bildschirm"
 
 #: static/js/stats_page_dashboard.js:351 templates/_app_header.html:52
-#: templates/menu_info_parcours.html:152 templates/menu_options.html:34
+#: templates/menu_info_parcours.html:164 templates/menu_options.html:34
 #: templates/menu_stats.html:368 templates/menu_style.html:169
 #: templates/stats_page.html:800
 msgid "Clair"
 msgstr "Hell"
 
 #: static/js/stats_page_dashboard.js:352 templates/_app_header.html:53
-#: templates/menu_info_parcours.html:155 templates/menu_options.html:35
+#: templates/menu_info_parcours.html:167 templates/menu_options.html:35
 #: templates/menu_stats.html:367 templates/menu_style.html:172
 #: templates/stats_page.html:801
 msgid "Sombre"
@@ -13235,7 +13236,7 @@ msgstr "um sie separat zu gestalten."
 msgid "Réglez le"
 msgstr "Stellen Sie den"
 
-#: templates/guide.html:249 templates/menu_info_parcours.html:136
+#: templates/guide.html:249 templates/menu_info_parcours.html:148
 #: templates/menu_informations.html:144 templates/menu_informations.html:285
 #: templates/menu_stats.html:383
 msgid "Texte"
@@ -18011,13 +18012,13 @@ msgstr "Ausrichtung"
 msgid "Retourner en miroir"
 msgstr "Spiegeln"
 
-#: templates/menu_images.html:293 templates/menu_info_parcours.html:140
+#: templates/menu_images.html:293 templates/menu_info_parcours.html:152
 #: templates/menu_informations.html:212 templates/menu_names.html:352
 #: templates/menu_stats.html:379 templates/stats_page.html:797
 msgid "Fond"
 msgstr "Hintergrund"
 
-#: templates/menu_images.html:297 templates/menu_info_parcours.html:144
+#: templates/menu_images.html:297 templates/menu_info_parcours.html:156
 #: templates/menu_names.html:364 templates/menu_stats.html:391
 msgid "Opacité du fond"
 msgstr "Deckkraft des Hintergrunds"
@@ -18259,11 +18260,15 @@ msgstr "Inhalt"
 msgid "Nom de la cache"
 msgstr "Name des Caches"
 
-#: templates/menu_info_parcours.html:80
+#: templates/menu_info_parcours.html:88
 msgid "Points favoris"
 msgstr "Favoritenpunkte"
 
-#: templates/menu_info_parcours.html:83
+#: templates/menu_info_parcours.html:92
+msgid "Trouvailles de la cache"
+msgstr "Funde des Caches"
+
+#: templates/menu_info_parcours.html:95
 msgid ""
 "Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni "
 "propriétaire, et les points favoris ne sont connus qu'après « Compléter "
@@ -18274,70 +18279,70 @@ msgstr ""
 "D/T noch Owner, und Favoritenpunkte sind erst nach „Von geocaching.com "
 "ergänzen“ (Reiter Daten) bekannt. Orte und Basen haben keine Karte."
 
-#: templates/menu_info_parcours.html:84
+#: templates/menu_info_parcours.html:96
 msgid "Aucun élément coché : la fiche ne s'affiche nulle part."
 msgstr "Nichts angehakt: Die Karte wird nirgends angezeigt."
 
-#: templates/menu_info_parcours.html:90
+#: templates/menu_info_parcours.html:102
 msgid "Design"
 msgstr "Design"
 
-#: templates/menu_info_parcours.html:93
+#: templates/menu_info_parcours.html:105
 msgid "Design de la fiche"
 msgstr "Kartendesign"
 
-#: templates/menu_info_parcours.html:95
+#: templates/menu_info_parcours.html:107
 msgid "Étiquette"
 msgstr "Etikett"
 
-#: templates/menu_info_parcours.html:96
+#: templates/menu_info_parcours.html:108
 msgid "Fiche"
 msgstr "Karte"
 
-#: templates/menu_info_parcours.html:97
+#: templates/menu_info_parcours.html:109
 msgid "Bandeau"
 msgstr "Banner"
 
-#: templates/menu_info_parcours.html:98
+#: templates/menu_info_parcours.html:110
 msgid "Texte seul"
 msgstr "Nur Text"
 
-#: templates/menu_info_parcours.html:108 templates/menu_informations.html:164
+#: templates/menu_info_parcours.html:120 templates/menu_informations.html:164
 #: templates/menu_names.html:284
 msgid "Police"
 msgstr "Schriftart"
 
-#: templates/menu_info_parcours.html:110 templates/menu_names.html:286
+#: templates/menu_info_parcours.html:122 templates/menu_names.html:286
 msgid "Sans empattement"
 msgstr "Ohne Serifen"
 
-#: templates/menu_info_parcours.html:111 templates/menu_names.html:287
+#: templates/menu_info_parcours.html:123 templates/menu_names.html:287
 msgid "Avec empattement"
 msgstr "Mit Serifen"
 
-#: templates/menu_info_parcours.html:112 templates/menu_names.html:289
+#: templates/menu_info_parcours.html:124 templates/menu_names.html:289
 msgid "Arrondie"
 msgstr "Abgerundet"
 
-#: templates/menu_info_parcours.html:113
+#: templates/menu_info_parcours.html:125
 msgid "Condensée"
 msgstr "Schmal"
 
-#: templates/menu_info_parcours.html:114 templates/menu_names.html:43
+#: templates/menu_info_parcours.html:126 templates/menu_names.html:43
 #: templates/menu_names.html:288
 msgid "Machine à écrire"
 msgstr "Schreibmaschine"
 
-#: templates/menu_info_parcours.html:115 templates/menu_names.html:291
+#: templates/menu_info_parcours.html:127 templates/menu_names.html:291
 msgid "Manuscrite"
 msgstr "Handschriftlich"
 
-#: templates/menu_info_parcours.html:119 templates/menu_names.html:79
+#: templates/menu_info_parcours.html:131 templates/menu_names.html:79
 #: templates/menu_stats.html:404
 msgid "Taille du texte"
 msgstr "Textgröße"
 
-#: templates/menu_info_parcours.html:122 templates/menu_names.html:82
+#: templates/menu_info_parcours.html:134 templates/menu_names.html:82
 #: templates/menu_points.html:37 templates/menu_points.html:207
 #: templates/menu_points.html:272 templates/menu_points.html:331
 #: templates/menu_points.html:381 templates/menu_points.html:545
@@ -18345,27 +18350,27 @@ msgstr "Textgröße"
 msgid "px"
 msgstr "px"
 
-#: templates/menu_info_parcours.html:126
+#: templates/menu_info_parcours.html:138
 msgid "Couleur d'accent"
 msgstr "Akzentfarbe"
 
-#: templates/menu_info_parcours.html:129
+#: templates/menu_info_parcours.html:141
 msgid "Celle de l'étape"
 msgstr "Farbe der Station"
 
-#: templates/menu_info_parcours.html:130
+#: templates/menu_info_parcours.html:142
 msgid "Couleur fixe"
 msgstr "Feste Farbe"
 
-#: templates/menu_info_parcours.html:132
+#: templates/menu_info_parcours.html:144
 msgid "Couleur d'accent fixe"
 msgstr "Feste Akzentfarbe"
 
-#: templates/menu_info_parcours.html:158 templates/stats_page.html:414
+#: templates/menu_info_parcours.html:170 templates/stats_page.html:414
 msgid "Par défaut"
 msgstr "Standard"
 
-#: templates/menu_info_parcours.html:162
+#: templates/menu_info_parcours.html:174
 msgid ""
 "Les vignettes montrent une fiche d'exemple avec vos réglages. Bandeau : "
 "le fond prend la couleur d'accent, le texte s'y adapte. Texte seul : le "
