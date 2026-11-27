@@ -213,6 +213,14 @@ export function createParcoursInfoUI(deps) {
         // (dont celle des icônes) arrivent.
         document.querySelector('a[href="#tabParcoursInfo"]')?.addEventListener('shown.bs.tab', sync);
         document.fonts?.ready?.then(() => sync());
+        // Fiche épinglée d'exemple : la carte est redessinée quand le
+        // sous-onglet — ou l'onglet Style qui le contient — apparaît ou
+        // disparaît.
+        const studioToggled = () => deps.onStudioToggle?.();
+        for (const link of document.querySelectorAll('a[href="#tabParcoursInfo"], a[href="#style"]')) {
+            link.addEventListener('shown.bs.tab', studioToggled);
+            link.addEventListener('hidden.bs.tab', studioToggled);
+        }
         sync();
     }
 

@@ -61,6 +61,10 @@ test('défauts : fiche coupée, sous-onglet Fiches avec ses quatre designs', asy
   await expect(page.locator('#parcoursInfo [data-info-design="card"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#parcoursInfoOffHint')).toBeVisible();
   await expect(page.locator('#parcoursInfoEmptyHint')).toBeHidden();
+  // Coupée, mais le sous-onglet ouvert épingle une fiche d'exemple.
+  await expect.poll(async () => (await info(page)).rest.preview).not.toBeNull();
+  const pinned = (await info(page)).rest;
+  expect(pinned.near).toEqual([pinned.preview]);
   // Coupée par défaut : l'interrupteur est levé.
   await expect(page.locator('#parcoursInfoOn')).not.toBeChecked();
   // Les vignettes sont dessinées (canevas non vide).
@@ -127,10 +131,13 @@ test('au repos : permanent sur les étapes, temporaire sur l’étape survolée,
   const all = (await info(page)).rest.near;
   expect(all.every((key) => key.startsWith('GCPAR'))).toBe(true);
 
-  // Temporaire : rien tant que rien n'est survolé, puis l'étape de la ligne.
+  // Temporaire, sous-onglet ouvert : la fiche d'exemple reste épinglée tant
+  // que rien n'est survolé.
   await page.locator('#parcoursInfoNear').selectOption('current');
-  await expect.poll(async () => (await info(page)).rest.near).toEqual([]);
+  await expect.poll(async () => (await info(page)).rest.preview).not.toBeNull();
+  // L'onglet Style quitté, l'exemple disparaît ; le survol prend le relais.
   await page.locator('a[href="#data"]').click();
+  await expect.poll(async () => (await info(page)).rest).toMatchObject({ preview: null, near: [] });
   const row = page.locator('.parcours-stop[data-stop-key="GCPAR04"]');
   await row.scrollIntoViewIfNeeded();
   await row.hover();

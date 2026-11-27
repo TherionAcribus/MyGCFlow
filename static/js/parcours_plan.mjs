@@ -458,8 +458,65 @@ export function createParcoursPlan(deps) {
     // Temporaire (« étape en cours ») : celle de l'étape survolée, sur la
     // carte ou dans la liste. Dessinée par la lecture (`drawInfoLabels`),
     // au-dessus du plan.
+    //
+    // Sous-onglet Style › Fiches ouvert : le réglage se juge tout de suite —
+    // une vraie fiche est épinglée sur l'étape la plus proche du centre de
+    // la vue (`preview` du relevé), même si la fiche est coupée, et le
+    // survol d'une autre étape montre la sienne. En permanent, tout est
+    // déjà visible : rien de plus. L'étape épinglée est gardée tant qu'elle
+    // est visible, pour ne pas sauter d'une étape à l'autre au fil du
+    // panoramique.
     let infoHover = null;          // { key, feature } de l'étape survolée
-    let restInfo = { near: [], hidden: 0 };
+    let infoPreview = null;        // { key, feature } de l'étape épinglée
+    let restInfo = { near: [], hidden: 0, preview: null };
+
+    // Le sous-onglet Fiches est-il ouvert — et visible : un volet d'onglet
+    // masqué (onglet principal quitté) n'a pas de boîte de mise en page.
+    function studioOpen() {
+        const pane = el('tabParcoursInfo');
+        return !!pane && pane.classList.contains('active') && pane.offsetParent !== null;
+    }
+
+    function infoEntryOf(feature, force = false, preview = false) {
+        const stop = deps.stopByKey(feature.get('key'));
+        return stop ? { stop, coords: feature.getGeometry().getCoordinates(), alpha: 1, force, preview } : null;
+    }
+
+    function infoFeatureEligible(feature) {
+        const role = feature.get('role');
+        const kind = feature.get('kind');
+        if (kind === KIND_PLACE || kind === KIND_BASE) return false;
+        return role === 'fan' || (role === 'stop' && !feature.get('stacked') && !feature.get('stackKeys'));
+    }
+
+    // Fiche épinglée du studio : l'étape la plus proche du centre de la
+    // vue, gardée tant qu'elle reste valide et visible.
+    function previewInfoEntry() {
+        const source = parcoursLayer?.getSource();
+        const map = deps.getMap();
+        const center = map?.getView()?.getCenter();
+        if (!source || !center) return null;
+        if (infoPreview?.feature && source.hasFeature(infoPreview.feature) && infoFeatureEligible(infoPreview.feature)) {
+            const px = map.getPixelFromCoordinate(infoPreview.feature.getGeometry().getCoordinates());
+            const size = map.getSize() || [0, 0];
+            if (px[0] >= 0 && px[1] >= 0 && px[0] <= size[0] && px[1] <= size[1]) {
+                return infoEntryOf(infoPreview.feature, true, true);
+            }
+        }
+        let best = null;
+        let bestDist = Infinity;
+        for (const feature of source.getFeatures()) {
+            if (!infoFeatureEligible(feature)) continue;
+            const [x, y] = feature.getGeometry().getCoordinates();
+            const d = (x - center[0]) ** 2 + (y - center[1]) ** 2;
+            if (d < bestDist) {
+                bestDist = d;
+                best = feature;
+            }
+        }
+        infoPreview = best ? { key: best.get('key'), feature: best } : null;
+        return best ? infoEntryOf(best, true, true) : null;
+    }
 
     function setInfoHover(target) {
         let next = null;
@@ -474,16 +531,13 @@ export function createParcoursPlan(deps) {
         if ((next?.key ?? null) === (infoHover?.key ?? null)) return;
         infoHover = next;
         const info = paints.infoSettings();
-        if (info.near !== 'none' && infoEnabled(info)) parcoursLayer?.changed();
+        if (studioOpen() || (info.near !== 'none' && infoEnabled(info))) parcoursLayer?.changed();
     }
 
-    function restInfoEntries(info) {
+    function restInfoEntries(info, studio) {
         const source = parcoursLayer?.getSource();
         if (!source || S().clock?.running) return [];
-        const entryOf = (feature, force = false) => {
-            const stop = deps.stopByKey(feature.get('key'));
-            return stop ? { stop, coords: feature.getGeometry().getCoordinates(), alpha: 1, force } : null;
-        };
+        if (!studio) infoPreview = null;
         let first = null;
         if (infoHover?.key) {
             const stop = deps.stopByKey(infoHover.key);
@@ -492,29 +546,34 @@ export function createParcoursPlan(deps) {
                 first = { stop, coords: feature.getGeometry().getCoordinates(), alpha: 1, force: true };
             }
         }
-        if (info.near === 'current') return first ? [first] : [];
+        // Studio ouvert : fiche coupée (« nulle part ») — le survol et la
+        // fiche épinglée montrent quand même le rendu en cours de réglage.
+        const mode = studio && info.near === 'none' ? 'current' : info.near;
+        if (mode === 'current') {
+            if (first) return [first];
+            if (!studio) return [];
+            const preview = previewInfoEntry();
+            return preview ? [preview] : [];
+        }
         const entries = source.getFeatures()
-            .filter((f) => {
-                const role = f.get('role');
-                const kind = f.get('kind');
-                if (kind === KIND_PLACE || kind === KIND_BASE) return false;
-                if (role === 'fan') return true;
-                return role === 'stop' && !f.get('stacked') && !f.get('stackKeys');
-            })
+            .filter((f) => infoFeatureEligible(f))
             .sort((a, b) => (a.get('index') ?? 0) - (b.get('index') ?? 0))
-            .map((f) => entryOf(f))
+            .map((f) => infoEntryOf(f))
             .filter((entry) => entry && entry.stop.key !== first?.stop.key);
         return first ? [first, ...entries] : entries;
     }
 
     function drawRestInfo(event) {
         const info = paints.infoSettings();
-        restInfo = { near: [], hidden: 0 };
-        if (!infoEnabled(info) || info.near === 'none') return;
-        const entries = restInfoEntries(info);
+        restInfo = { near: [], hidden: 0, preview: null };
+        const studio = studioOpen() && !S().clock?.running;
+        if (!studio && (!infoEnabled(info) || info.near === 'none')) return;
+        const entries = restInfoEntries(info, studio);
         // Même sans entrée (fin de survol) : la lecture laisse finir le
         // fondu de sortie de la dernière fiche.
-        restInfo = deps.drawInfoLabels(event, entries, info);
+        const out = deps.drawInfoLabels(event, entries, info);
+        const preview = entries.find((entry) => entry?.preview);
+        restInfo = { ...out, preview: preview && out.near.includes(preview.stop.key) ? preview.stop.key : null };
     }
 
     // Lignes de la liste correspondant à un point du plan (toutes celles

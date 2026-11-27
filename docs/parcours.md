@@ -587,6 +587,15 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
 - **Au repos** (couche du plan, postrender) : permanent = toutes les
   étapes seules à leur place (une pile fermée n'en a pas, son éventail
   oui) ; temporaire = l'étape survolée, sur la carte ou dans la liste.
+  **Sous-onglet Style › Fiches ouvert** : une vraie fiche d'exemple est
+  épinglée sur l'étape la plus proche du centre de la vue — même fiche
+  coupée, pour juger les réglages tout de suite — et le survol d'une
+  autre étape montre la sienne (en permanent, tout est déjà visible).
+  L'étape épinglée est gardée tant qu'elle reste visible à l'écran, pour
+  ne pas sauter d'étape en étape au fil du panoramique ; l'exemple
+  disparaît dès que le sous-onglet — ou l'onglet Style — est quitté. Le
+  cartouche, lui, n'a pas d'exemple au repos (il suit l'étape en cours,
+  qui n'existe qu'en lecture).
 - **Design** (`parcours_info_draw.mjs`, canevas, filmé) : `tag` (une
   ligne en pilule), `card` (nom, D et T en pastilles, PF, propriétaire,
   barre d'accent), `banner` (fond à la couleur d'accent, texte contrasté),
@@ -602,7 +611,8 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
 
 Relevé : `getParcoursSnapshot().info` — `settings`, `play` (`current`,
 `near`, `hidden`, `fixed`, `alpha`, `size` de la dernière image) et `rest`
-(`near`, `hidden`, `hover`). Tests : `tests/test_parcours_info.py`,
+(`near`, `hidden`, `hover`, `preview` — clé de la fiche d'exemple épinglée
+ou `null`). Tests : `tests/test_parcours_info.py`,
 `tests/js/parcours_info.test.mjs`, `test_stop_owner_for_the_cache_card` de
 test_parcours_api.py, e2e `tests/e2e/parcours-info.spec.mjs`.
 

@@ -1507,6 +1507,11 @@ const infoUI = createParcoursInfoUI({
     commitInfo: commitParcoursInfo,
     accentSample: () => paints.stopStyle().colors.find,
     tablerGlyph,
+    // Fiche épinglée d'exemple : apparition/disparition avec le sous-onglet.
+    onStudioToggle: () => {
+        planMap.refreshInfo();
+        pkg.getMap?.()?.render();
+    },
 });
 
 function commitParcoursInfo(info) {
