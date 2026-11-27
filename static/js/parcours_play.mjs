@@ -789,6 +789,19 @@ export function createParcoursPlayDraw(deps) {
     // Mesure mémorisée par étape et échelle, refaite au changement de
     // réglages (objet remplacé), de densité de pixels, de police ou quand le
     // glyphe de l'icône arrive (police d'icônes chargée).
+    function invalidateInfoMemo() {
+        infoLayoutMemo = { info: null, ratio: 0, family: '', glyph: null, layouts: new Map(), sprites: new Map() };
+    }
+
+    // fonts.ready ne se résout qu'une fois ; loadingdone couvre une webfont
+    // appliquée plus tard (font-display: swap). L'invalidation seule ne
+    // suffit pas : il faut aussi repeindre, d'où le render.
+    if (typeof document !== 'undefined') {
+        const invalidate = () => { invalidateInfoMemo(); deps.getMap()?.render(); };
+        try { document.fonts?.ready?.then(invalidate); } catch (_) { /* police indisponible */ }
+        try { document.fonts?.addEventListener?.('loadingdone', invalidate); } catch (_) { /* idem */ }
+    }
+
     function ensureInfoMemo(info, ratio) {
         const family = infoFontFamily(info.font, pageFontFamily());
         const glyph = deps.tablerGlyph('ti-user');
@@ -825,7 +838,7 @@ export function createParcoursPlayDraw(deps) {
 
     function overlayRects(canvasWidth) {
         const now = performance.now();
-        if (now - overlayMemo.at < 250 && overlayMemo.width === canvasWidth) return overlayMemo.rects;
+        if (!deps.isRecording?.() && now - overlayMemo.at < 250 && overlayMemo.width === canvasWidth) return overlayMemo.rects;
         const mapEl = deps.getMap()?.getTargetElement?.();
         const base = mapEl?.getBoundingClientRect();
         const rects = [];

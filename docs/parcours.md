@@ -630,7 +630,11 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
   fiche complète à densité 2 : 235 ms en direct contre 1 ms en copie,
   2026-11-27). Mesures et bitmaps partagent le même cycle de vie
   (`ensureInfoMemo`) : invalidés ensemble au changement de réglages, de
-  densité ou de police.
+  densité ou de police — y compris une webfont arrivant après coup
+  (`fonts.ready` et `loadingdone`, comme overlay_canvas.js, avec
+  redessin). En enregistrement image par image, les obstacles (titre,
+  ligne d'infos, légende) sont relus à chaque image au lieu du cache de
+  250 ms : le placement de la vidéo suit exactement l'aperçu.
 
 Relevé : `getParcoursSnapshot().info` — `settings`, `play` (`current`,
 `near`, `hidden`, `fixed`, `alpha`, `size` de la dernière image) et `rest`
