@@ -579,7 +579,11 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
 - **Ailleurs** (`fixed`) : cartouche de l'étape en cours (même fenêtre que
   le temporaire), 1,3× plus grand, en haut, en bas ou dans un coin ;
   `fixedInfoPosition` le décale sous (en haut) ou au-dessus (en bas) des
-  cartouches HTML qu'il chevaucherait.
+  cartouches HTML qu'il chevaucherait et le borne dans l'image — même
+  décalé par plusieurs cartouches ou trop large, il reste visible, quitte
+  en tout dernier recours à recouvrir ce qu'il évitait. L'agrandissement
+  est réduit quand le cartouche dépasserait la largeur de l'image
+  (`fixedInfoScale` : long nom, grande taille, vidéo verticale).
 - **Au repos** (couche du plan, postrender) : permanent = toutes les
   étapes seules à leur place (une pile fermée n'en a pas, son éventail
   oui) ; temporaire = l'étape survolée, sur la carte ou dans la liste.

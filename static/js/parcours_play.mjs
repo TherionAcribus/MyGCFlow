@@ -65,7 +65,8 @@ import {
 } from './parcours_photo_draw.mjs';
 import { composeTransform } from './travel_trail.mjs';
 import {
-    createInfoVisibility, currentInfo, fixedInfoPosition, infoContent, infoEnabled, placeInfoLabels, secondsToQuanta,
+    createInfoVisibility, currentInfo, fixedInfoPosition, fixedInfoScale, infoContent, infoEnabled, placeInfoLabels,
+    secondsToQuanta,
 } from './parcours_info.mjs';
 import { drawInfo, infoFontFamily, infoLayout } from './parcours_info_draw.mjs';
 import { dateOfDayIndex } from './evolution_timeline.mjs';
@@ -985,10 +986,16 @@ export function createParcoursPlayDraw(deps) {
         const cur = currentInfo(timeline, currentQ, infoTiming(info));
         if (!cur) return;
         const stop = timeline.stops[cur.index];
-        const layout = infoLayoutOf(ctx, stop, info, ratio, INFO_FIXED_SCALE);
+        const margin = 24 * ratio;
+        // Trop large pour l'image (long nom, grande taille, vidéo
+        // verticale) : l'agrandissement est réduit pour tenir en largeur.
+        const base = infoLayoutOf(ctx, stop, info, ratio, 1);
+        if (!base) return;
+        const scale = fixedInfoScale(ctx.canvas.width - 2 * margin, base.w, INFO_FIXED_SCALE);
+        const layout = scale === 1 ? base : infoLayoutOf(ctx, stop, info, ratio, scale);
         if (!layout) return;
         const pos = fixedInfoPosition(info.fixed, layout.w, layout.h, ctx.canvas.width, ctx.canvas.height,
-            { margin: 24 * ratio, avoid: overlayRects(ctx.canvas.width) });
+            { margin, avoid: overlayRects(ctx.canvas.width) });
         if (!pos) return;
         const slide = reducedMotion() ? 0 : (1 - cur.alpha) * 12 * ratio * (info.fixed.startsWith('top') ? -1 : 1);
         drawInfo(ctx, layout, pos.x, pos.y + slide, { ...infoDrawOptions(info, stop, ratio), alpha: cur.alpha });

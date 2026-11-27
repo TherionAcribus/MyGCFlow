@@ -329,6 +329,9 @@ export function createInfoVisibility() {
 // haut ou en bas, ou dans un coin, à `margin` du bord. `avoid` : cartouches
 // de la carte (titre, ligne d'infos, légende — { x, y, w, h }) ; un
 // cartouche en haut passe dessous, un cartouche en bas passe dessus.
+// Borné dans l'image : même décalé sous plusieurs cartouches ou trop large
+// pour l'image, il reste visible — quitte, en tout dernier recours, à
+// recouvrir ce qu'il évitait.
 export function fixedInfoPosition(position, w, h, width, height, { margin = 16, avoid = [] } = {}) {
     const left = margin;
     const right = width - margin - w;
@@ -353,5 +356,17 @@ export function fixedInfoPosition(position, w, h, width, height, { margin = 16, 
         if (!hit) break;
         pos = { x: pos.x, y: downward ? hit.y + hit.h + margin / 2 : hit.y - margin / 2 - h };
     }
-    return pos;
+    return {
+        x: Math.min(Math.max(pos.x, margin), Math.max(margin, width - margin - w)),
+        y: Math.min(Math.max(pos.y, margin), Math.max(margin, height - margin - h)),
+    };
+}
+
+// Échelle du cartouche fixe : `maxScale` tant qu'il tient dans `fitWidth`
+// (largeur de l'image moins ses marges), réduit sinon — un long nom ou une
+// grande taille ne déborde pas en vidéo verticale. `layoutWidth` est la
+// largeur mesurée à l'échelle 1 ; la largeur croît avec l'échelle.
+export function fixedInfoScale(fitWidth, layoutWidth, maxScale) {
+    if (!(layoutWidth > 0) || !(fitWidth > 0)) return maxScale;
+    return Math.max(0.1, Math.min(maxScale, fitWidth / layoutWidth));
 }

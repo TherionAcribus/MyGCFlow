@@ -13,6 +13,7 @@ import {
     createInfoVisibility,
     currentInfo,
     fixedInfoPosition,
+    fixedInfoScale,
     formatRating,
     infoAlpha,
     infoContent,
@@ -261,6 +262,19 @@ test('cartouche fixe : bords et coins', () => {
     const infos = { x: 400, y: 450, w: 200, h: 30 };
     assert.deepEqual(fixedInfoPosition('bottom', 100, 40, 1000, 500, { margin: 20, avoid: [infos] }), { x: 450, y: 400 });
     assert.deepEqual(fixedInfoPosition('top_right', 100, 40, 1000, 500, { margin: 20, avoid: [title, infos] }), { x: 880, y: 20 });
+    // Décalé hors de l'image par un grand cartouche à éviter : borné dans
+    // l'image, quitte à recouvrir — jamais hors cadre.
+    const big = { x: 400, y: 20, w: 200, h: 470 };
+    const clamped = fixedInfoPosition('top', 100, 40, 1000, 500, { margin: 20, avoid: [big] });
+    assert.ok(clamped.y + 40 <= 500 - 20 && clamped.y >= 20, `dans le cadre : y = ${clamped.y}`);
+    // Trop large pour l'image : au bord, pas de coordonnée négative.
+    const wide = fixedInfoPosition('top', 1200, 40, 1000, 500, { margin: 20 });
+    assert.equal(wide.x, 20);
+    // Échelle : tant que le cartouche tient, l'agrandissement maximal ;
+    // réduit pour tenir en largeur sinon, plancher à 0,1.
+    assert.equal(fixedInfoScale(800, 200, 1.3), 1.3);
+    assert.equal(fixedInfoScale(300, 400, 1.3), 0.75);
+    assert.equal(fixedInfoScale(10, 400, 1.3), 0.1);
 });
 
 // Faux contexte : largeur = 0,6 em par caractère, appels de texte relevés.
