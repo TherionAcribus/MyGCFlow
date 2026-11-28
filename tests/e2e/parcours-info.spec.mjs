@@ -288,3 +288,35 @@ test('lieux et bases : la case ouvre la fiche du lieu, nom seul', async ({ page,
   await expect.poll(async () => (await info(page)).rest.near.some((key) => key.startsWith('place:'))).toBe(false);
   expect(errors).toEqual([]);
 });
+
+test('tout réinitialiser : l’onglet revient aux défauts après confirmation', async ({ page }) => {
+  const errors = collectErrors(page);
+  await openReady(page);
+  await openInfoTab(page);
+
+  // Des réglages bien éloignés des défauts.
+  await page.locator('#parcoursInfoNear').selectOption('all');
+  await page.locator('#parcoursInfo [data-info-design="banner"]').click();
+  await page.locator('#parcoursInfoSize').fill('20');
+  await page.locator('#parcoursInfoPlaces').check();
+  await expect.poll(async () => (await info(page)).settings).toMatchObject({
+    near: 'all', design: 'banner', size: 20, places: true,
+  });
+
+  // Le bouton demande confirmation ; annuler ne change rien.
+  await page.locator('#parcoursInfoReset').click();
+  await expect(page.locator('.gcm-confirm-modal')).toBeVisible();
+  await page.locator('.gcm-confirm-modal [data-gcm-role="cancel"]').click();
+  await expect(page.locator('.gcm-confirm-modal')).toHaveCount(0);
+  await expect.poll(async () => (await info(page)).settings.near).toBe('all');
+
+  // Confirmé : tout revient aux défauts — fiche coupée comprise.
+  await page.locator('#parcoursInfoReset').click();
+  await page.locator('.gcm-confirm-modal [data-gcm-role="confirm"]').click();
+  await expect.poll(async () => (await info(page)).settings).toMatchObject({
+    near: 'none', fixed: 'none', design: 'card', size: 13, places: false, two_lines: false,
+    name: true, dt: true, favorites: true, owner: false,
+  });
+  await expect(page.locator('#parcoursInfoOn')).not.toBeChecked();
+  expect(errors).toEqual([]);
+});

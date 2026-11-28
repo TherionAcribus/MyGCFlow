@@ -471,6 +471,15 @@ def _v26_ids_lieux_parcours(db):
             "SELECT 'parcours_place', COALESCE(MAX(id), 0) FROM parcours_place")
 
 
+def _v27_fiche_etape_parcours(db):
+    # Parcours : fiche de l'étape forcée ou masquée (« force » / « hide »,
+    # null : suit les réglages). Idempotent.
+    with db.engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(parcours_override)")}
+        if "info_card" not in columns:
+            conn.exec_driver_sql("ALTER TABLE parcours_override ADD COLUMN info_card VARCHAR(8)")
+
+
 MIGRATIONS = [
     (1, _v1_colonnes_et_index),
     (2, _v2_tables_lab),
@@ -498,6 +507,7 @@ MIGRATIONS = [
     (24, _v24_photo_favorite_parcours),
     (25, _v25_affichage_photos_par_parcours),
     (26, _v26_ids_lieux_parcours),
+    (27, _v27_fiche_etape_parcours),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-27 21:38+0100\n"
+"POT-Creation-Date: 2026-11-28 07:46+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -6285,6 +6285,15 @@ msgstr "The hidden treasure of the old valley mill"
 msgid "par ${owner}"
 msgstr "by ${owner}"
 
+#: static/js/parcours_info_ui.mjs:272
+msgid "Remettre tous les réglages de la fiche par défaut ?"
+msgstr "Reset all cache card settings to default?"
+
+#: static/js/parcours_info_ui.mjs:273 static/js/parcours_info_ui.mjs:276
+#: static/js/profiles.js:978 templates/menu_style.html:335
+msgid "Réinitialiser"
+msgstr "Reset"
+
 #: static/js/parcours_labels.mjs:71 static/js/parcours_labels.mjs:220
 #, python-brace-format
 msgid "${km} km"
@@ -7862,10 +7871,6 @@ msgstr "No theme"
 #, python-brace-format
 msgid "Copier vers « ${mode} »"
 msgstr "Copy to “${mode}”"
-
-#: static/js/profiles.js:978 templates/menu_style.html:335
-msgid "Réinitialiser"
-msgstr "Reset"
 
 #: static/js/profiles.js:983
 msgid "Définir comme par défaut"
@@ -18094,6 +18099,10 @@ msgstr ""
 "background takes the accent color and the text adapts to it. Text only: "
 "the background becomes the outline of the letters. The “elsewhere” box is"
 " a little larger than the card placed next to the cache."
+
+#: templates/menu_info_parcours.html:210
+msgid "Tout réinitialiser"
+msgstr "Reset all"
 
 #: templates/menu_informations.html:11
 msgid "Mode de réglage"

@@ -7,7 +7,7 @@
 //
 // L'écriture dans le thème et le rafraîchissement de la carte sont injectés
 // (commitInfo) — pas d'import de parcours_data.js.
-import { t } from './notifications.js';
+import { showConfirmation, t } from './notifications.js';
 import { normalizeParcoursInfo, parcoursInfoDefaults } from './parcours_info.mjs';
 import { drawInfo, infoFontFamily, infoLayout } from './parcours_info_draw.mjs';
 
@@ -224,6 +224,17 @@ export function createParcoursInfoUI(deps) {
         for (const button of document.querySelectorAll('#parcoursInfo [data-info-design]')) {
             button.addEventListener('click', () => commit({ design: button.dataset.infoDesign }));
         }
+        // Tout réinitialiser : les défauts complets, pas seulement les
+        // couleurs — confirmé, les réglages en cours sont perdus.
+        el('parcoursInfoReset')?.addEventListener('click', () => {
+            showConfirmation(
+                t('Remettre tous les réglages de la fiche par défaut ?'),
+                t('Réinitialiser'),
+                () => deps.commitInfo(normalizeParcoursInfo(parcoursInfoDefaults(), deps.getInfo())),
+                null,
+                { confirmText: t('Réinitialiser'), danger: true },
+            );
+        });
         for (const button of document.querySelectorAll('#parcoursInfo [data-info-colors]')) {
             button.addEventListener('click', () => {
                 const set = button.dataset.infoColors === 'reset'

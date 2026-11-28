@@ -409,7 +409,7 @@ def duplicate(session, parcours_id: int) -> Parcours:
             parcours_id=row.id, stop_key=_remap_place_key(o.stop_key, place_ids), rank=o.rank,
             pinned_time=o.pinned_time, day=o.day, excluded=o.excluded,
             leg_mode=o.leg_mode, visit_min=o.visit_min,
-            latitude=o.latitude, longitude=o.longitude))
+            latitude=o.latitude, longitude=o.longitude, info_card=o.info_card))
     session.commit()
     return row
 
@@ -492,7 +492,8 @@ def import_parcours(session, data: dict) -> Parcours:
                 o.excluded = False
             # Une ligne vide n'a pas de sens, comme dans patch_overrides.
             if not o.excluded and all(getattr(o, f) is None for f in
-                                      ('rank', 'pinned_time', 'day', 'leg_mode', 'visit_min', 'latitude')):
+                                      ('rank', 'pinned_time', 'day', 'leg_mode', 'visit_min', 'latitude',
+                                       'info_card')):
                 continue
             session.add(o)
         session.commit()
@@ -518,6 +519,8 @@ _ICON_RE = re.compile(r'ti-[a-z0-9][a-z0-9-]{0,46}')
 # Mode du trajet vers l'étape suivante (lot 6) ; `straight` : ligne droite,
 # sans itinéraire (avion, ferry…).
 LEG_MODES = ('walk', 'bike', 'car', 'straight')
+# Fiche de l'étape forcée ou masquée ; absent/null : suit les réglages.
+INFO_CARD_STATES = ('force', 'hide')
 MAX_VISIT_MIN = 12 * 60                    # douze heures de visite à une étape
 MAX_OVERRIDES = 2000
 MAX_PLACES = 200
@@ -552,6 +555,7 @@ def override_to_dict(row: ParcoursOverride) -> dict:
         'visitMin': row.visit_min,
         'position': ({'lat': row.latitude, 'lon': row.longitude}
                      if row.latitude is not None and row.longitude is not None else None),
+        'infoCard': row.info_card,
     }
 
 
@@ -636,13 +640,18 @@ def _override_columns(patch, parcours: Parcours) -> dict:
                     or not (-90 <= values[0] <= 90 and -180 <= values[1] <= 180):
                 raise ParcoursError('override-invalid')
             columns['latitude'], columns['longitude'] = (round(float(v), 6) for v in values)
+    if 'infoCard' in patch:
+        if patch['infoCard'] is not None and patch['infoCard'] not in INFO_CARD_STATES:
+            raise ParcoursError('override-invalid')
+        columns['info_card'] = patch['infoCard']
     return columns
 
 
 def _override_is_empty(row: ParcoursOverride) -> bool:
     """Une ligne sans plus aucun ajustement n'a pas de sens : à retirer."""
     return (row.rank is None and row.pinned_time is None and row.day is None and not row.excluded
-            and row.leg_mode is None and row.visit_min is None and row.latitude is None)
+            and row.leg_mode is None and row.visit_min is None and row.latitude is None
+            and row.info_card is None)
 
 
 def patch_overrides(session, parcours_id: int, patches) -> dict:

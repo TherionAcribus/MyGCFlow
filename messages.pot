@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-27 21:38+0100\n"
+"POT-Creation-Date: 2026-11-28 07:46+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -6171,6 +6171,15 @@ msgstr ""
 msgid "par ${owner}"
 msgstr ""
 
+#: static/js/parcours_info_ui.mjs:272
+msgid "Remettre tous les réglages de la fiche par défaut ?"
+msgstr ""
+
+#: static/js/parcours_info_ui.mjs:273 static/js/parcours_info_ui.mjs:276
+#: static/js/profiles.js:978 templates/menu_style.html:335
+msgid "Réinitialiser"
+msgstr ""
+
 #: static/js/parcours_labels.mjs:71 static/js/parcours_labels.mjs:220
 #, python-brace-format
 msgid "${km} km"
@@ -7720,10 +7729,6 @@ msgstr ""
 #: static/js/profiles.js:973
 #, python-brace-format
 msgid "Copier vers « ${mode} »"
-msgstr ""
-
-#: static/js/profiles.js:978 templates/menu_style.html:335
-msgid "Réinitialiser"
 msgstr ""
 
 #: static/js/profiles.js:983
@@ -17122,6 +17127,10 @@ msgid ""
 "le fond prend la couleur d'accent, le texte s'y adapte. Texte seul : le "
 "fond devient le liseré des lettres. Le cartouche « ailleurs » est un peu "
 "plus grand que la fiche posée à côté de la cache."
+msgstr ""
+
+#: templates/menu_info_parcours.html:210
+msgid "Tout réinitialiser"
 msgstr ""
 
 #: templates/menu_informations.html:11

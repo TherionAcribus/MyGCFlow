@@ -545,7 +545,9 @@ cases ; rien de coché = rien d'affiché). Bloc du thème
 `points.parcours_info` (`parcours_info.py`, copie `parcours_info.mjs`, table
 comparée via `tests/fixtures/parcours/parcours_info.json`), sous-onglet
 Style › Fiches propre à la page (`menu_info_parcours.html`,
-`parcours_info_ui.mjs`). **Coupée par défaut** (`near` et `fixed` à
+`parcours_info_ui.mjs` ; « Tout réinitialiser » en bas remet tous les
+réglages de la fiche aux défauts après confirmation, là où le « Par
+défaut » des couleurs ne touche qu'aux couleurs). **Coupée par défaut** (`near` et `fixed` à
 `none`) : un thème antérieur garde son rendu.
 
 - **Contenu** (`infoContent`) : un élément inconnu est omis — Lab sans D/T

@@ -316,6 +316,9 @@ class ParcoursOverride(db.Model):
     # prime sur toute autre (mystery résolue jamais corrigée sur le site).
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
+    # Fiche de l'étape (lot « fiches ») : « force » (toujours, même filtrée)
+    # ou « hide » (jamais) ; null : suit les réglages de l'onglet Style.
+    info_card = db.Column(db.String(8))
 
     __table_args__ = (
         db.UniqueConstraint('parcours_id', 'stop_key', name='uq_parcours_override_key'),
