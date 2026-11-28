@@ -274,20 +274,22 @@
                                             title="{{ _('Exporter l’itinéraire en GPX (une route par journée)') }}">
                                     <i class="ti ti-route me-1" aria-hidden="true"></i><span>{{ _("Exporter GPX") }}</span>
                                 </button></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li id="parcoursResetAdjustmentsItem" hidden><button type="button" id="btnParcoursResetAdjustments" class="dropdown-item">
+                                <!-- Le séparateur vit dans le <li> masquable :
+                                     sans ajustements, il ne reste pas seul
+                                     en bas du menu. -->
+                                <li id="parcoursResetAdjustmentsItem" hidden><hr class="dropdown-divider"><button type="button" id="btnParcoursResetAdjustments" class="dropdown-item">
                                     <i class="ti ti-eraser me-1" aria-hidden="true"></i>{{ _("Réinitialiser les ajustements") }}
                                 </button></li>
                             </ul>
                         </div>
-                        <div class="input-group input-group-sm ms-auto parcours-stops-search" style="width: 15rem;">
+                        <div class="input-group input-group-sm ms-auto parcours-stops-search">
                             <span class="input-group-text"><i class="ti ti-search" aria-hidden="true"></i></span>
                             <input type="search" id="parcoursStopsSearch" class="form-control"
                                    placeholder="{{ _('Nom ou code GC…') }}"
                                    aria-label="{{ _('Rechercher une étape') }}">
                             <button type="button" id="parcoursStopsReview" class="btn btn-outline-secondary"
                                     aria-pressed="false" title="{{ _('Étapes à vérifier : heure déduite de la géographie seule') }}">
-                                <i class="ti ti-alert-circle" aria-hidden="true"></i>
+                                <i class="ti ti-alert-circle" aria-hidden="true"></i><span class="parcours-review-count small ms-1" hidden></span>
                             </button>
                         </div>
                     </div>
@@ -296,7 +298,10 @@
                     </div>
                     <form id="parcoursPlaceForm" class="card card-body py-2 px-3 mb-3" hidden novalidate>
                         <div class="row g-2">
-                            <div class="col-5">
+                            <!-- Type en pleine largeur : en colonne étroite,
+                                 les longs libellés (« Base (départ et retour
+                                 de la journée) ») étaient tronqués. -->
+                            <div class="col-12">
                                 <label class="form-label small mb-1" for="parcoursPlaceKind">{{ _("Type") }}</label>
                                 <select id="parcoursPlaceKind" class="form-select form-select-sm">
                                     <option value="place">{{ _("Lieu (une étape de plus)") }}</option>

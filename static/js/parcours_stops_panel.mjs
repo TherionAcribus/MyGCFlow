@@ -103,6 +103,22 @@ export function createStopsPanel(deps) {
             (field) => normalized(field).includes(needle));
     }
 
+    // « À vérifier » : heure purement déduite de la géographie — prédicat
+    // du filtre du même nom et du compteur porté par son bouton.
+    const isReviewStop = (stop) => stop.confidence === CONFIDENCE_GEO;
+
+    // Compteur du bouton « à vérifier » : les étapes que le filtre
+    // montrerait (hors recherche texte et hors exclues), affiché même
+    // quand le filtre est inactif ; masqué à zéro.
+    function updateReviewCount() {
+        const count = el('parcoursStopsReview')?.querySelector('.parcours-review-count');
+        if (!count) return;
+        const days = s().ordered?.days || [];
+        const n = days.reduce((total, day) => total + day.stops.filter(isReviewStop).length, 0);
+        count.textContent = n > 0 ? String(n) : '';
+        count.hidden = n === 0;
+    }
+
     // Champ lié une fois : la frappe est débouncée, reconstruire toute la
     // liste à chaque touche serait lourd sur un long séjour. Le bouton « à
     // vérifier » vit dans le même input-group et n'est lié qu'ici aussi.
@@ -138,6 +154,7 @@ export function createStopsPanel(deps) {
         if (!box) return;
         bindDrag(box);
         bindSearch();
+        updateReviewCount();
         if (tools) tools.hidden = !ordered;
         if (status === 'loading') {
             if (summary) summary.textContent = t('Chargement…');
@@ -159,7 +176,7 @@ export function createStopsPanel(deps) {
         // comme au filtrage des journées.
         const filtered = !!needle || filterReview;
         const predicate = filtered
-            ? (stop) => (!filterReview || stop.confidence === CONFIDENCE_GEO)
+            ? (stop) => (!filterReview || isReviewStop(stop))
                 && (!needle || stopMatches(stop, needle))
             : null;
         if (summary) {

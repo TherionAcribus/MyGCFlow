@@ -4172,6 +4172,15 @@ body[data-mode="parcours"] .rhythm-rate-field {
     max-height: max(20rem, 42vh);
     overflow-y: auto;
 }
+
+/* Recherche des étapes dans la barre d'outils : elle grandit avec la place
+   disponible et retombe proprement en pleine largeur quand la première
+   ligne est pleine, au lieu d'une largeur fixe (15 rem en inline). */
+.parcours-stops-search {
+    flex: 1 1 10rem;
+    min-width: 0;
+    max-width: 18rem;
+}
 #parcoursFormSection { margin-top: 1rem; }
 /* Sans parcours ouvert, aucune section affichée : le titre part avec elles. */
 .parcours-area-enrich:not(:has(> .parcours-enrich:not([hidden]))) {

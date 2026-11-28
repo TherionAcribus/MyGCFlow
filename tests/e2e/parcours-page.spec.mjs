@@ -596,13 +596,19 @@ test('filtre « à vérifier » : étapes à heure déduite de la géographie', 
 
   // Journée 1 : ordre des logs retenu (confiance « logged ») ; journée 2 :
   // une seule cache à log et une earthcache loguée après coup — heures
-  // déduites de la géographie seule (confiance « geo »).
+  // déduites de la géographie seule (confiance « geo »). Le bouton porte
+  // leur nombre avant même d'être activé.
+  const count = review.locator('.parcours-review-count');
+  await expect(count).toBeVisible();
+  await expect(count).toHaveText('2');
   await review.click();
   await expect(review).toHaveAttribute('aria-pressed', 'true');
   await expect(stops).toHaveCount(2);
   for (const stop of await stops.all()) {
     await expect(stop).toHaveAttribute('data-confidence', 'geo');
   }
+  // Filtre actif : le compteur reste cohérent avec les lignes affichées.
+  await expect(count).toHaveText('2');
   // La journée sans étape à vérifier disparaît, le résumé compte le filtre.
   await expect(page.locator('.parcours-day')).toHaveCount(1);
   await expect(page.locator('#parcoursSummary')).toContainText('2 étapes sur 5');
@@ -620,6 +626,19 @@ test('filtre « à vérifier » : étapes à heure déduite de la géographie', 
   await review.click();
   await expect(review).toHaveAttribute('aria-pressed', 'false');
   await expect(stops).toHaveCount(5);
+
+  // Les deux étapes épinglées deviennent des heures sûres : plus rien à
+  // vérifier, le compteur disparaît. Épinglage par l'UI (leurs heures
+  // estimées, reprises dans le champ) — la page ne relit pas les
+  // ajustements écrits derrière son dos.
+  for (const key of ['GCPAR04', 'GCPAR05']) {
+    await page.locator(`.parcours-stop[data-stop-key="${key}"] .parcours-stop-text`).click();
+    await page.locator(`.parcours-stop-edit[data-edit-key="${key}"] .parcours-edit-pin`).click();
+    await expect.poll(async () => (await snapshot(page)).days[1].reasons.filter((r) => r === 'pinned').length)
+      .toBe(key === 'GCPAR04' ? 1 : 2);
+    await page.locator(`.parcours-stop[data-stop-key="${key}"] .parcours-stop-text`).click();
+  }
+  await expect(count).toBeHidden();
   expect(errors).toEqual([]);
 });
 

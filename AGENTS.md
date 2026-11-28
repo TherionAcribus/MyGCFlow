@@ -513,7 +513,9 @@ Autres repères :
   clique via `openStopsMenu(page)` de parcours-helpers.mjs. Filtre
   « à vérifier » (`#parcoursStopsReview`, combinable avec la recherche) :
   `stop.confidence === CONFIDENCE_GEO` (heure déduite de la géographie
-  seule ; la fixture n'en a que sur la journée 2).
+  seule ; la fixture n'en a que sur la journée 2) — le bouton porte le
+  compte des étapes concernées (`.parcours-review-count`, masqué à zéro,
+  hors recherche texte et hors exclues).
   Actions des lignes d'étape (lire, monter, descendre, poignée) : dans un
   conteneur `.parcours-stop-actions` superposé au bout de la ligne, hors du
   flux — le texte prend toute la largeur au repos — visible au
