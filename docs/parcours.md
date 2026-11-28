@@ -557,7 +557,14 @@ défaut » des couleurs ne touche qu'aux couleurs). **Coupée par défaut** (`ne
   — en temporaire un lieu visité devient l'étape en cours (et coupe la
   fenêtre de la cache précédente), en permanent ils participent comme les
   caches (le filtre du permanent, qui vise les caches, les écarte dès
-  qu'il est actif). À la fiche (design `card`) : numéro d'étape (couleur d'accent,
+  qu'il est actif).
+- **Réglage par étape** (`infoCard` de l'ajustement, sélecteur « Fiche »
+  de la bulle de l'étape, migration v27) : « masquée » (`hide`) — jamais
+  de fiche, quel que soit le mode (le contenu est vide, donc ni temporaire,
+  ni permanent, ni survol, ni cartouche) ; « forcée » (`force`) — en
+  permanent, passe outre le filtre et posée en priorité juste après
+  l'étape en cours, recouvrant au besoin comme elle ; « normale » (null)
+  suit les réglages, et l'effacement retire la ligne d'ajustement. À la fiche (design `card`) : numéro d'étape (couleur d'accent,
   en tête), D/T, PF (cœur) et trouvailles (coche) sur la ligne des faits,
   code, type et propriétaire sur la ligne discrète, séparés de « · » —
   jamais doublé ni en tête sur les designs à ligne unique. Le nom est

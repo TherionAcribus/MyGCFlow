@@ -1022,10 +1022,14 @@ export function createParcoursPlayDraw(deps) {
                 const stop = timeline.stops[i];
                 if ((!isCountedStop(stop) && !info.places) || (cur && i === cur.index)) continue;
                 if (anchors.get(i)?.newest === false) continue;
-                if (!infoFilterPass(stop, info)) continue;
+                const forced = stop.infoCard === 'force';
+                if (!forced && !infoFilterPass(stop, info)) continue;
                 const alpha = timing.fadeQ > 0 ? Math.min(1, Math.max(0, (currentQ - stop.q) / timing.fadeQ)) : 1;
-                entries.push({ stop, coords: anchorOf(i), alpha });
+                entries.push({ stop, coords: anchorOf(i), alpha, force: forced });
             }
+            // Les fiches forcées sont posées en priorité, juste après l'étape
+            // en cours : les ordinaires s'effacent autour d'elles.
+            entries.sort((a, b) => (b.force === true) - (a.force === true));
         }
         const out = drawNearLabels(event, entries, info);
         infoDrawn.near = out.near;

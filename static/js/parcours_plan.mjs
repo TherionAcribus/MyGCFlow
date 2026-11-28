@@ -343,6 +343,27 @@ export function createParcoursPlan(deps) {
             wrap.append(row);
         }
 
+        // Fiche de l'étape : normale (suit les réglages de l'onglet Style),
+        // toujours (même filtrée, posée en priorité) ou jamais.
+        const cardRow = document.createElement('div');
+        cardRow.className = 'parcours-bubble-row';
+        const cardLabel = document.createElement('span');
+        cardLabel.className = 'gc-popup-note';
+        cardLabel.textContent = t('Fiche');
+        const cardSelect = document.createElement('select');
+        cardSelect.className = 'form-select form-select-sm parcours-bubble-card';
+        cardSelect.setAttribute('aria-label', t('Fiche de l’étape'));
+        for (const [value, label] of [['', t('Normale')], ['force', t('Toujours')], ['hide', t('Jamais')]]) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            cardSelect.append(option);
+        }
+        cardSelect.value = stop.infoCard === 'force' || stop.infoCard === 'hide' ? stop.infoCard : '';
+        cardSelect.addEventListener('change', done(() => deps.saveOverrides([{ key: stop.key, infoCard: cardSelect.value || null }])));
+        cardRow.append(cardLabel, cardSelect);
+        wrap.append(cardRow);
+
         const actions = document.createElement('div');
         actions.className = 'parcours-bubble-row';
         if (isCountedStop(stop)) {
@@ -561,7 +582,10 @@ export function createParcoursPlan(deps) {
             .filter((f) => infoFeatureEligible(f, info.places))
             .sort((a, b) => (a.get('index') ?? 0) - (b.get('index') ?? 0))
             .map((f) => infoEntryOf(f))
-            .filter((entry) => entry && entry.stop.key !== first?.stop.key && infoFilterPass(entry.stop, info));
+            .filter((entry) => entry && entry.stop.key !== first?.stop.key
+                && (entry.stop.infoCard === 'force' || infoFilterPass(entry.stop, info)))
+            .map((entry) => (entry.stop.infoCard === 'force' ? { ...entry, force: true } : entry));
+        entries.sort((a, b) => (b.force === true) - (a.force === true));
         return first ? [first, ...entries] : entries;
     }
 

@@ -752,14 +752,21 @@ historiques comme `Cancel`→`Annuler`). Commandes dans README.md
 `-k _tr` de l'extract est obligatoire : sans lui, les chaînes passées par
 `_tr()` (settings_manager.py, task_manager.py) disparaissent en silence du
 pot — une quinzaine de msgids. Ajouter une langue : `docs/translations.md`.
-Remplir une nouvelle traduction : édition **chirurgicale** du .po — `pybabel
-update` marque souvent la nouvelle entrée `#, fuzzy` (devinée d'une chaîne
-proche, ignorée à la compilation) : poser le msgstr ET retirer le drapeau.
-Ne jamais réécrire le .po avec polib (reformate tout). Vérifier après
-`extract` que le diff de messages.pot est petit (références de lignes +
-nouvelles chaînes) : un extract SINON — avec des mots-clés `-k` manquants —
-marque des centaines de chaînes obsolètes à l'`update` suivant, et le diff
-explose (incident du 2026-12-19).
+Remplir une nouvelle traduction : la bibliothèque babel elle-même —
+`read_po(io.BytesIO(data))` (matérialiser avec `list(catalog)` avant toute
+écriture : la lecture est paresseuse), poser les msgstr, retirer les
+drapeaux `#, fuzzy` (`message.flags.discard('fuzzy')` — pybabel update
+devine d'une chaîne proche et le fuzzy est ignoré à la compilation), puis
+`write_po(buf, catalog)` — arguments dans CET ordre, vérifié byte-identique
+à la sortie de pybabel update. Ne jamais utiliser polib (reformate tout).
+Vérifier après `extract` que le diff de messages.pot est petit (références
+de lignes + nouvelles chaînes) : un extract incomplet — mots-clés `-k`
+manquants, ou un fichier nommé `nul` à la racine (réservé Windows, brise
+os.path) — tronque le pot, et l'`update` suivant passe des centaines de
+chaînes en obsolètes puis les recrée VIDES (double incident du 2026-12-19).
+En cas de catastrophe : les traductions restent lisibles dans les entrées
+`#~` obsolètes — récolter msgid→msgstr avec read_po (actif prime), restaurer,
+update, remplir.
 Côté JS, seul helper : `t()` via `pkg.t(...)` ; l'appeler **hors** d'un
 template literal, sinon pybabel ne l'extrait pas — et sans chaînage
 optionnel : `pkg.t?.('…')` n'est pas extrait non plus (chaîne absente du

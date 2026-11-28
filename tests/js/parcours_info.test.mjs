@@ -130,6 +130,15 @@ test('numéro d\'étape : « n/total » sur les étapes comptées, rien sinon', 
     assert.deepEqual(infoContent({ ...stop, stepTotal: null }, info).step, { n: 3, total: null });
 });
 
+test('fiche masquée par étape : infoCard « hide » ne montre jamais rien', () => {
+    const info = normalizeParcoursInfo({ near: 'current' });
+    const stop = { key: 'GC1', kind: 'find', name: 'Le moulin', difficulty: 2.5, terrain: 3 };
+    assert.ok(infoContent(stop, info) !== null);
+    assert.equal(infoContent({ ...stop, infoCard: 'hide' }, info), null);
+    // « force » ne change pas le contenu, seulement le filtre et la priorité.
+    assert.ok(infoContent({ ...stop, infoCard: 'force' }, info) !== null);
+});
+
 test('filtre du permanent : coups de cœur, seuil D/T, tout par défaut', () => {
     const fav = { favorite: true, difficulty: 1, terrain: 1 };
     const hard = { favorite: false, difficulty: 4, terrain: 1.5 };

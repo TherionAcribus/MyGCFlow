@@ -320,3 +320,42 @@ test('tout réinitialiser : l’onglet revient aux défauts après confirmation'
   await expect(page.locator('#parcoursInfoOn')).not.toBeChecked();
   expect(errors).toEqual([]);
 });
+
+test('réglage par étape : masquée jamais, forcée passe outre le filtre', async ({ page, request }) => {
+  const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
+  const errors = collectErrors(page);
+  // Les patchs passent par l'API : la page est rechargée pour les relire.
+  // Les patchs passent par l'API : la page est rechargée pour les relire,
+  // et les réglages de la fiche (en mémoire) sont reposés à chaque fois.
+  const openFiltered = async () => {
+    await openReady(page);
+    await openInfoTab(page);
+    await page.locator('#parcoursInfoNear').selectOption('all');
+    await page.locator('#parcoursInfoFilter').selectOption('dt');
+    await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'all', filter: 'dt' });
+  };
+  const setCard = async (key, infoCard) => {
+    const patch = await request.patch(`/api/parcours/${id}/overrides`, { data: { overrides: [{ key, infoCard }] } });
+    expect(patch.ok()).toBeTruthy();
+    await openFiltered();
+  };
+  await setCard('GCPAR04', 'hide');
+
+  // Filtre D/T au seuil 3 : la fixture (D 1,5 / T 2 partout) vide tout.
+  await expect.poll(async () => (await info(page)).rest.near).toEqual([]);
+
+  // Filtre retiré : toutes les étapes ont leur fiche, sauf GCPAR04 masquée.
+  await page.locator('#parcoursInfoFilter').selectOption('all');
+  await expect.poll(async () => (await info(page)).rest.near.length).toBeGreaterThan(2);
+  expect((await info(page)).rest.near).not.toContain('GCPAR04');
+
+  // GCPAR02 forcée : seule rescapée du filtre.
+  await page.locator('#parcoursInfoFilter').selectOption('dt');
+  await setCard('GCPAR02', 'force');
+  await expect.poll(async () => (await info(page)).rest.near).toEqual(['GCPAR02']);
+
+  // Retiré, le filtre s'applique à nouveau à toutes.
+  await setCard('GCPAR02', null);
+  await expect.poll(async () => (await info(page)).rest.near).toEqual([]);
+  expect(errors).toEqual([]);
+});

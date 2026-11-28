@@ -116,7 +116,7 @@ function finite(value) {
 // éléments cochés : null pour un lieu, une base, ou quand rien de coché
 // n'est connu (Lab sans D/T ni propriétaire, PF jamais collectés…).
 export function infoContent(stop, info) {
-    if (!stop || (!isCountedStop(stop) && !info?.places)) return null;
+    if (!stop || stop.infoCard === 'hide' || (!isCountedStop(stop) && !info?.places)) return null;
     const name = info?.name && typeof stop.name === 'string' && stop.name.trim() ? stop.name.trim() : null;
     const d = finite(stop.difficulty);
     const t = finite(stop.terrain);

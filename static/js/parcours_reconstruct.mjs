@@ -763,7 +763,10 @@ export function reconstructParcours(inputs, {
         const baseEnd = hasStops
             && (scope?.end || scope?.both || bases.all.end || bases.all.both || null);
         const day = reconstructDay(rawDay, { overrides, prevEnd, baseStart, baseEnd, trackAnchors, photoAnchors, legHints, options: raw });
-        for (const stop of day.stops) stop.index = isCountedStop(stop) ? ++index : null;
+        for (const stop of day.stops) {
+            stop.index = isCountedStop(stop) ? ++index : null;
+            stop.infoCard = overrides?.get?.(stop.key)?.infoCard || null;
+        }
         dropped += day.dropped;
         if (day.stops.length > 0) {
             const last = day.stops[day.stops.length - 1];

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-28 07:46+0100\n"
+"POT-Creation-Date: 2026-11-28 07:58+0100\n"
 "PO-Revision-Date: 2025-09-01 19:27+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -3586,7 +3586,7 @@ msgstr "${period} (ongoing)"
 msgid "${period} (au ${date})"
 msgstr "${period} (to ${date})"
 
-#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:1266
+#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:1272
 #: static/js/parcours_tbar.mjs:71 static/js/parcours_tbar.mjs:158
 #, python-brace-format
 msgid "Jour ${n}"
@@ -4849,8 +4849,8 @@ msgstr "This image will be permanently deleted from the library."
 #: static/js/images_ui.js:1356 static/js/images_ui.js:2453
 #: static/js/parcours_list.mjs:171 static/js/parcours_list.mjs:342
 #: static/js/parcours_photos_panel.mjs:561
-#: static/js/parcours_photos_panel.mjs:568 static/js/parcours_plan.mjs:419
-#: static/js/parcours_plan.mjs:426 static/js/profiles.js:979
+#: static/js/parcours_photos_panel.mjs:568 static/js/parcours_plan.mjs:442
+#: static/js/parcours_plan.mjs:449 static/js/profiles.js:979
 #: static/js/recent_videos.js:60 static/js/recent_videos.js:121
 #: static/js/stats_page_card_actions.js:123
 #: static/js/stats_page_card_actions.js:130 static/js/stats_page_cards.js:410
@@ -7117,80 +7117,100 @@ msgstr "Pin"
 msgid "Retirer l’heure épinglée"
 msgstr "Remove the pinned time"
 
-#: static/js/parcours_plan.mjs:407 static/js/parcours_stops_panel.mjs:1039
+#: static/js/parcours_plan.mjs:411 templates/menu_info_parcours.html:133
+msgid "Fiche"
+msgstr "Card"
+
+#: static/js/parcours_plan.mjs:414
+msgid "Fiche de l’étape"
+msgstr "Stop card"
+
+#: static/js/parcours_plan.mjs:415 templates/stats_page.html:356
+msgid "Normale"
+msgstr "Normal"
+
+#: static/js/parcours_plan.mjs:415
+msgid "Toujours"
+msgstr "Always"
+
+#: static/js/parcours_plan.mjs:415 templates/menu_info_parcours.html:24
+msgid "Jamais"
+msgstr "Never"
+
+#: static/js/parcours_plan.mjs:430 static/js/parcours_stops_panel.mjs:1039
 msgid "Exclure du parcours"
 msgstr "Exclude from the trip"
 
-#: static/js/parcours_plan.mjs:407
+#: static/js/parcours_plan.mjs:430
 msgid "Exclure"
 msgstr "Exclude"
 
-#: static/js/parcours_plan.mjs:412
+#: static/js/parcours_plan.mjs:435
 msgid "Revenir à la position de la cache"
 msgstr "Back to the cache's position"
 
-#: static/js/parcours_plan.mjs:412
+#: static/js/parcours_plan.mjs:435
 msgid "Position d’origine"
 msgstr "Original position"
 
-#: static/js/parcours_plan.mjs:417 static/js/parcours_stops_panel.mjs:1044
+#: static/js/parcours_plan.mjs:440 static/js/parcours_stops_panel.mjs:1044
 #: static/js/parcours_stops_panel.mjs:1045
 #: templates/menu_data_evolution.html:34 templates/modal_evolution.html:74
 msgid "Supprimer la base"
 msgstr "Delete the dataset"
 
-#: static/js/parcours_plan.mjs:417 static/js/parcours_stops_panel.mjs:1044
+#: static/js/parcours_plan.mjs:440 static/js/parcours_stops_panel.mjs:1044
 #: static/js/parcours_stops_panel.mjs:1045
 msgid "Supprimer le lieu"
 msgstr "Delete the place"
 
-#: static/js/parcours_plan.mjs:422
+#: static/js/parcours_plan.mjs:445
 msgid "Supprimer cette base du parcours ?"
 msgstr "Delete this base from the trip?"
 
-#: static/js/parcours_plan.mjs:422
+#: static/js/parcours_plan.mjs:445
 msgid "Supprimer ce lieu du parcours ?"
 msgstr "Delete this spot from the trip?"
 
-#: static/js/parcours_plan.mjs:432
+#: static/js/parcours_plan.mjs:455
 msgid "Tous les réglages de l’étape"
 msgstr "All settings of the stop"
 
-#: static/js/parcours_plan.mjs:432
+#: static/js/parcours_plan.mjs:455
 msgid "Détails"
 msgstr "Details"
 
-#: static/js/parcours_plan.mjs:439
+#: static/js/parcours_plan.mjs:462
 msgid "Glissez le repère sur la carte pour le déplacer."
 msgstr "Drag the marker on the map to move it."
 
-#: static/js/parcours_plan.mjs:440
+#: static/js/parcours_plan.mjs:463
 msgid "Glissez l’étape sur la carte pour corriger sa position."
 msgstr "Drag the stop on the map to correct its position."
 
-#: static/js/parcours_plan.mjs:471
+#: static/js/parcours_plan.mjs:494
 msgid "Poser un lieu ici"
 msgstr "Add a spot here"
 
-#: static/js/parcours_plan.mjs:472
+#: static/js/parcours_plan.mjs:495
 msgid "Poser une base ici"
 msgstr "Add a base here"
 
-#: static/js/parcours_play.mjs:1260
+#: static/js/parcours_play.mjs:1266
 #, python-brace-format
 msgid "${n} jours plus tard · ${date}"
 msgstr "${n} days later · ${date}"
 
-#: static/js/parcours_play.mjs:1284 static/js/parcours_play.mjs:1301
+#: static/js/parcours_play.mjs:1290 static/js/parcours_play.mjs:1307
 #, python-brace-format
 msgid "${n} journées"
 msgstr "${n} days"
 
-#: static/js/parcours_play.mjs:1286
+#: static/js/parcours_play.mjs:1292
 msgid "Le parcours"
 msgstr "The trip"
 
-#: static/js/parcours_play.mjs:1302 static/js/parcours_tbar.mjs:94
+#: static/js/parcours_play.mjs:1308 static/js/parcours_tbar.mjs:94
 msgid "Fin du parcours"
 msgstr "End of the trip"
 
@@ -17848,10 +17868,6 @@ msgstr "Show the cache card"
 msgid "À côté de la cache"
 msgstr "Next to the cache"
 
-#: templates/menu_info_parcours.html:24
-msgid "Jamais"
-msgstr "Never"
-
 #: templates/menu_info_parcours.html:25
 msgid "Étape en cours (temporaire)"
 msgstr "Current stop (temporary)"
@@ -18008,10 +18024,6 @@ msgstr "Card design"
 #: templates/menu_info_parcours.html:132
 msgid "Étiquette"
 msgstr "Label"
-
-#: templates/menu_info_parcours.html:133
-msgid "Fiche"
-msgstr "Card"
 
 #: templates/menu_info_parcours.html:134
 msgid "Bandeau"
@@ -21830,10 +21842,6 @@ msgstr "as"
 #: templates/stats_page.html:354
 msgid "Hauteur"
 msgstr "Height"
-
-#: templates/stats_page.html:356
-msgid "Normale"
-msgstr "Normal"
 
 #: templates/stats_page.html:357
 msgid "Grande"

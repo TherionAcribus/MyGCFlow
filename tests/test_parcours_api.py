@@ -562,11 +562,11 @@ class AdjustmentTests(_Base):
         self.assertEqual(response.status_code, 200, response.get_json())
         self.assertEqual(response.get_json()["overrides"], [
             {"key": "GC1", "rank": 2, "pinnedTime": "10:15", "day": None, "excluded": False,
-             "legMode": None, "visitMin": 45, "position": None},
+             "legMode": None, "visitMin": 45, "position": None, "infoCard": None},
             {"key": "GC2", "rank": None, "pinnedTime": None, "day": "2025-07-13", "excluded": True,
-             "legMode": "car", "visitMin": None, "position": None},
+             "legMode": "car", "visitMin": None, "position": None, "infoCard": None},
             {"key": "GC3", "rank": None, "pinnedTime": None, "day": None, "excluded": False,
-             "legMode": None, "visitMin": None, "position": {"lat": 45.123457, "lon": 5.5}},
+             "legMode": None, "visitMin": None, "position": {"lat": 45.123457, "lon": 5.5}, "infoCard": None},
         ])
         # Patch partiel ; une étape sans plus d'ajustement perd sa ligne.
         payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
@@ -576,7 +576,25 @@ class AdjustmentTests(_Base):
         ]}).get_json()
         self.assertEqual(payload["overrides"], [
             {"key": "GC1", "rank": None, "pinnedTime": "10:15", "day": None, "excluded": False,
-             "legMode": None, "visitMin": 45, "position": None}])
+             "legMode": None, "visitMin": 45, "position": None, "infoCard": None}])
+        # Fiche forcée ou masquée : posée, gardée au patch partiel, effacée
+        # par null — une étape qui n'a plus que cela garde sa ligne.
+        payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC1", "infoCard": "force"},
+        ]}).get_json()
+        self.assertEqual(payload["overrides"][0]["infoCard"], "force")
+        payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC1", "infoCard": "hide"},
+        ]}).get_json()
+        self.assertEqual(payload["overrides"][0]["infoCard"], "hide")
+        payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC4", "infoCard": "hide"},
+        ]}).get_json()
+        self.assertEqual([o["key"] for o in payload["overrides"]], ["GC1", "GC4"])
+        payload = self.patch(f"/api/parcours/{pid}/overrides", {"overrides": [
+            {"key": "GC4", "infoCard": None},
+        ]}).get_json()
+        self.assertEqual([o["key"] for o in payload["overrides"]], ["GC1"])
         inputs = self.get(f"/api/parcours/{pid}/inputs").get_json()
         self.assertEqual([o["key"] for o in inputs["overrides"]], ["GC1"])
         self.assertEqual(inputs["places"], [])
@@ -614,6 +632,8 @@ class AdjustmentTests(_Base):
             ([{"key": "GC1", "rank": True}], "override-invalid"),
             ([{"key": "GC1", "excluded": "oui"}], "override-invalid"),
             ([{"key": "GC1", "legMode": "avion"}], "override-invalid"),
+            ([{"key": "GC1", "infoCard": "toujours"}], "override-invalid"),
+            ([{"key": "GC1", "infoCard": True}], "override-invalid"),
             ([{"key": "GC1", "visitMin": -5}], "override-invalid"),
             ([{"key": "GC1", "visitMin": 721}], "override-invalid"),
             ([{"key": "GC1", "position": {"lat": 91, "lon": 5}}], "override-invalid"),
