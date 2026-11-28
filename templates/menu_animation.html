@@ -9,7 +9,7 @@
                 <div class="card-body">
                     <ul class="nav nav-tabs nav-tabs-sm" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="animationConfigTab" data-bs-toggle="tab" data-bs-target="#animationConfigPane" type="button" role="tab" aria-controls="animationConfigPane" aria-selected="true">{{ _("Dates & rythme") }}</button>
+                            <button class="nav-link active" id="animationConfigTab" data-bs-toggle="tab" data-bs-target="#animationConfigPane" type="button" role="tab" aria-controls="animationConfigPane" aria-selected="true">{% if mode == 'parcours' %}{{ _("Rythme") }}{% else %}{{ _("Dates & rythme") }}{% endif %}</button>
                         </li>
                         <!-- Pastilles : signalent ce qui pèse sur la vidéo sans
                              ouvrir le sous-onglet (suivi activé, musique

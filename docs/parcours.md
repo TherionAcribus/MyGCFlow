@@ -663,7 +663,7 @@ test_parcours_api.py, e2e `tests/e2e/parcours-info.spec.mjs`.
 ### Finitions (lot 7)
 
 Réglages de la section « Lecture » de l'onglet Animation & vidéo (sous-onglet
-« Dates & rythme » ; caméra, cadrage et géocacheur dans le sous-onglet
+« Rythme » ; caméra, cadrage et géocacheur dans le sous-onglet
 « Caméra »), lus à chaque image : ils s'appliquent aussi en pleine lecture.
 
 **Caméra** (`parcours_camera.mjs`, réglage « Caméra », défaut « Suit le

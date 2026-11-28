@@ -1,5 +1,5 @@
 // Réglages de lecture de la page Parcours (onglet Animation : section
-// « Lecture » de « Dates & rythme », sous-onglet « Caméra » ; Style ›
+// « Lecture » de « Rythme », sous-onglet « Caméra » ; Style ›
 // Titres : « Titre affiché ») : rythme, heures affichées, caméra, tête du
 // géocacheur, cartons de journée, nuit pointillée, titre. Persistés dans le parcours ouvert (surcharges éparses,
 // `saveParcoursPlayback`) — la préférence globale `parcours_playback` sert

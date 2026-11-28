@@ -215,7 +215,7 @@ test('réglages : caméra fixe, simple point, sans nuit ni carton, enregistrés'
   const errors = collectErrors(page);
   const rest = await openReady(page);
   // Réglages de lecture dans l'onglet Animation : caméra et géocacheur dans
-  // son sous-onglet « Caméra », le reste sous « Dates & rythme ».
+  // son sous-onglet « Caméra », le reste sous « Rythme ».
   await page.locator('a[href="#animation"]').click();
   await page.locator('#cameraConfigTab').click();
   await page.locator('#parcoursCamera').selectOption('fixed');

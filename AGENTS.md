@@ -91,7 +91,8 @@ Autres repères :
   `EncodingError`). Tout audio destiné au navigateur (version lisible d'un
   .wma, cf. `audio_library.py`) est donc produit en FLAC, pas en AAC/M4A.
 - L'onglet Animation & vidéo a quatre sous-onglets (`#animationConfigTab`
-  « Dates & rythme », `#cameraConfigTab`, `#musicConfigTab`,
+  « Dates & rythme » — « Rythme » sur la page Parcours, dont la plage de
+  dates est celle du parcours —, `#cameraConfigTab`, `#musicConfigTab`,
   `#recordingConfigTab`). Un contrôle d'un sous-onglet fermé n'est pas
   visible : l'ouvrir avant tout `fill`/`check`/`toBeVisible` — et un
   `toBeHidden` y passerait à tort. Recliquer `a[href="#animation"]` ne
