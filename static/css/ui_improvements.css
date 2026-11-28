@@ -4130,8 +4130,9 @@ body[data-mode="parcours"] .rhythm-rate-field {
 /* Onglet Données de /parcours : parcours, étapes, enrichissements. Large :
    étapes à droite, sur toute la hauteur (la 2e rangée prend le surplus, sans
    creuser d'écart sous la liste). Étroit — fenêtre < 992 px, ou panneau
-   latéral, où le viewport reste large — : une colonne, étapes juste sous la
-   liste ; elles passaient après quatre cartes. */
+   latéral, où le viewport reste large — : une colonne, enrichir juste sous
+   la liste (trois sections repliées compactes, toujours visibles), étapes
+   en dernier. */
 .parcours-data-grid {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -4149,13 +4150,27 @@ body[data-mode="parcours"] .rhythm-rate-field {
     .parcours-data-grid {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: none;
-        grid-template-areas: "list" "stops" "enrich";
+        grid-template-areas: "list" "enrich" "stops";
     }
 }
 .layout-sidebar .parcours-data-grid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
-    grid-template-areas: "list" "stops" "enrich";
+    grid-template-areas: "list" "enrich" "stops";
+}
+/* Long parcours : la liste des étapes défile en interne — « Enrichir »
+   garde sa place quelle que soit la longueur, et le titre comme la barre
+   d'outils restent visibles au-dessus de la liste. Les journées se replient
+   (« Tout plier ») : la boîte ne déborde alors plus. */
+@media (max-width: 991.98px) {
+    #parcoursStops {
+        max-height: max(20rem, 42vh);
+        overflow-y: auto;
+    }
+}
+.layout-sidebar #parcoursStops {
+    max-height: max(20rem, 42vh);
+    overflow-y: auto;
 }
 #parcoursFormSection { margin-top: 1rem; }
 /* Sans parcours ouvert, aucune section affichée : le titre part avec elles. */

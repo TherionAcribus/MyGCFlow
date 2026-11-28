@@ -381,7 +381,10 @@ Autres repères :
   repliés — `openEnrichSection(page, 'tracks' | 'routing' | 'collect')`
   avant tout clic ou `toBeVisible` (un `toBeHidden` y passerait à tort) ; le
   formulaire de création est replié dès qu'un parcours existe
-  (`#btnParcoursNew` le rouvre). Après
+  (`#btnParcoursNew` le rouvre). Onglet Données étroit (panneau latéral,
+  < 992 px) : « Enrichir » avant les étapes, la liste `#parcoursStops` défile
+  en interne (barre d'outils et titre stables au-dessus ; un spec ne doit pas
+  compter sur tout visible sans défiler). Après
   un ajustement (PATCH puis reconstruction), attendre que
   `adjustmentRevision` augmente avant de lire l'ordre. `parcours_playback`
   accepte un patch partiel : une nouvelle sous-clé doit entrer dans la

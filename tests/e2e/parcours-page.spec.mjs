@@ -278,10 +278,11 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   await expect(page.locator('#parcoursFormSection')).toBeHidden();
   await expect(page.locator('#btnParcoursNew')).toBeVisible();
 
-  // Disposition. Panneau latéral (défaut à 1280 px) : une colonne, étapes
-  // sous la liste, avant « Enrichir le parcours » — elles venaient après
-  // quatre cartes. Grands réglages (panneau sous la carte, large) : étapes à
-  // droite de la liste. Disposition retenue par le localStorage du test.
+  // Disposition. Panneau latéral (défaut à 1280 px) : une colonne, enrichir
+  // juste sous la liste (sections repliées compactes, toujours visibles),
+  // étapes en dernier, bornées en hauteur avec défilement interne. Grands
+  // réglages (panneau sous la carte, large) : étapes à droite de la liste.
+  // Disposition retenue par le localStorage du test.
   const box = (selector) => page.locator(selector).evaluate((node) => {
     const { top, left } = node.getBoundingClientRect();
     return { top, left };
@@ -291,7 +292,7 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
     ['.parcours-area-list', '.parcours-area-stops', '.parcours-area-enrich'].map(box));
   expect(stops.left).toBe(list.left);
   expect(stops.top).toBeGreaterThan(list.top);
-  expect(enrich.top).toBeGreaterThan(stops.top);
+  expect(stops.top).toBeGreaterThan(enrich.top);
   await page.locator('#layoutPresets [data-layout="tabs"]').click();
   await page.evaluate(() => document.activeElement.blur());
   await expect.poll(async () => (await box('.parcours-area-stops')).left - (await box('.parcours-area-list')).left)
@@ -305,6 +306,29 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   }).toBe(true);
   await page.locator('#layoutPresets [data-layout="sidebar"]').click();
   await page.evaluate(() => document.activeElement.blur());
+
+  // Liste des étapes bornée en hauteur, barre d'outils stable : « Enrichir »
+  // garde sa place quelle que soit la longueur du parcours, et le titre comme
+  // la barre d'outils restent visibles au-dessus de la liste qui défile.
+  const stopsMetrics = await page.locator('#parcoursStops').evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { overflowY: style.overflowY, maxHeight: style.maxHeight, clientHeight: el.clientHeight };
+  });
+  expect(stopsMetrics.overflowY).toBe('auto');
+  expect(stopsMetrics.maxHeight).not.toBe('none');
+  const innerHeight = await page.evaluate(() => window.innerHeight);
+  expect(stopsMetrics.clientHeight).toBeLessThanOrEqual(Math.ceil(innerHeight * 0.42) + 40);
+
+  // Défilée tout en bas, la liste laisse la barre d'outils en place. Avec la
+  // fixture, le contenu déborde réellement.
+  const overflow = await page.locator('#parcoursStops').evaluate((el) => {
+    const metrics = { scrollHeight: el.scrollHeight, clientHeight: el.clientHeight };
+    el.scrollTop = el.scrollHeight;
+    return metrics;
+  });
+  expect(overflow.scrollHeight).toBeGreaterThan(overflow.clientHeight);
+  await expect(page.locator('#parcoursStopsTools')).toBeVisible();
+  await page.locator('#parcoursStops').evaluate((el) => { el.scrollTop = 0; });
 
   // Synthèse du minutage : étapes et journées, pas les quanta du moteur
   // (« 178 jours · 10 jours/s » pour un week-end).
