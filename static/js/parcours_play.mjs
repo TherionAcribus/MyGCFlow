@@ -1734,7 +1734,10 @@ export function createParcoursPlayDraw(deps) {
         const slots = photoSlots(timeline);
         spriteFrame += 1;
         for (const card of cards) {
-            const thumb = card.pinned || card.round ? photoThumbs.get(card.photoId) : null;
+            // Vignette (posée, médaillon, case de la bande) : la miniature,
+            // toutes chargées et jamais évincées — la pleine taille d'une
+            // photo loin derrière la tête est relâchée hors enregistrement.
+            const thumb = card.pinned || card.round || card.thumb ? photoThumbs.get(card.photoId) : null;
             const img = imageReady(thumb) ? thumb : photoImages.get(card.photoId);
             if (!imageReady(img)) continue;
             const photo = photoById(card.photoId);

@@ -16,9 +16,6 @@
                 <div class="card">
                     <div class="card-body">
                         <div id="parcoursPhotoSummary" class="fw-medium mb-1" aria-live="polite"></div>
-                        <div class="form-hint text-muted mb-2">
-                            {{ _("Une photo géolocalisée se rattache seule à l'étape la plus proche (150 m) et son heure cale celle de l'étape. Sans GPS, l'heure de l'appareil est supposée juste : la photo va à l'étape visitée à cette heure, ou à la position lue sur une trace GPS du parcours. Recalez l'horloge d'un appareil décalé, ou choisissez l'étape à la main.") }}
-                        </div>
                         <input type="file" id="parcoursPhotoInput" class="visually-hidden" multiple
                                accept="image/*,.heic,.heif" aria-label="{{ _('Photos à ajouter') }}">
                         <button type="button" id="btnParcoursAddPhotos" class="btn btn-sm btn-outline-primary">
@@ -31,6 +28,12 @@
                         <div class="gpx-dropzone__hint">
                             <i class="ti ti-drag-drop me-1"></i>{{ _("ou glissez-déposez vos fichiers n'importe où sur la page") }}
                         </div>
+                        <details class="parcours-photo-link-help mt-2">
+                            <summary class="small text-muted">{{ _("Comment les photos se rattachent aux étapes ?") }}</summary>
+                            <div class="form-hint text-muted mt-1">
+                                {{ _("Une photo géolocalisée se rattache seule à l'étape la plus proche (150 m) et son heure cale celle de l'étape. Sans GPS, l'heure de l'appareil est supposée juste : la photo va à l'étape visitée à cette heure, ou à la position lue sur une trace GPS du parcours. Recalez l'horloge d'un appareil décalé, ou choisissez l'étape à la main.") }}
+                            </div>
+                        </details>
                         <div id="parcoursCameras" class="mt-2"></div>
 
                         <!-- Filtre et sélection de plusieurs photos ; grille par journée -->
@@ -125,6 +128,7 @@
             </h5>
             <div class="card">
                 <div class="card-body">
+                    <div id="parcoursPhotoDisplayEmpty" class="form-hint text-muted mb-2" hidden>{{ _("Ces réglages s'appliqueront aux photos que vous ajouterez.") }}</div>
                     <div id="parcoursPhotoDisplayScope" class="parcours-photo-scope mb-3" role="status">
                         <span id="parcoursPhotoDisplayScopeText" class="small"></span>
                         <span class="parcours-photo-scope-actions">

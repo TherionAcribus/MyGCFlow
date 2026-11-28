@@ -607,12 +607,14 @@ function insideScreen(p, width, height) {
 //                    l'autre : côté `auto` de chaque pile montrée (stopSide).
 // Retour : { cards: [{ photoId, slot, x, y, w, h, frame, scale, rotation,
 // alpha, dx, dy, effectScale, kenBurns, kenBurnsShift, caption,
-// captionAlpha, leader, pinned, round, pinSize, badge }] }, dans l'ordre de
-// dessin (vignettes de la bande d'abord). x, y : centre ; w, h : image sans
-// cadre ; frame : marges en px réels ; scale : réduction d'une vignette ;
-// leader : { from, to } en px réels, ou null ; round (0..1) : part du
-// médaillon (vignette ronde) dans le fondu depuis la carte, pinSize son
-// diamètre (px réels) ; badge : nombre de photos d'une vignette regroupée.
+// captionAlpha, leader, pinned, round, pinSize, badge, thumb }] }, dans
+// l'ordre de dessin (vignettes de la bande d'abord). x, y : centre ; w, h :
+// image sans cadre ; frame : marges en px réels ; scale : réduction d'une
+// vignette ; leader : { from, to } en px réels, ou null ; round (0..1) :
+// part du médaillon (vignette ronde) dans le fondu depuis la carte, pinSize
+// son diamètre (px réels) ; badge : nombre de photos d'une vignette
+// regroupée ; thumb : vignette posée dans la bande, dessinée depuis la
+// miniature plutôt que la pleine taille (qui peut être évincée).
 export function photoFrameAt(timeline, qf, display, view) {
     const out = { cards: [] };
     if (!timeline || display.layout === PHOTO_LAYOUT_NONE) return out;
@@ -1077,6 +1079,12 @@ function stripCards(out, slots, qf, display, ctx) {
             card.scale = m.thumbScale;
             card.rotation = 0;
             card.captionAlpha = 0;
+            // Posée dans la bande, la vignette reste montrée longtemps après
+            // la fin du créneau — au-delà de la fenêtre de préchargement et
+            // de l'éviction des pleines tailles : elle est dessinée depuis
+            // la miniature (320 px, toujours chargée), comme les vignettes
+            // laissées sur la carte.
+            card.thumb = true;
             // Vignette sortie à gauche : effacée à mesure.
             const left = thumbX - m.thumbW / 2;
             card.alpha = clamp((left + m.thumbW - margin) / m.thumbW, 0, 1);

@@ -1079,7 +1079,11 @@ marque ni modèle partagent la clé `UNKNOWN_CAMERA` (« ? », ligne
   tailles passées : au-delà de ~40 quanta derrière la tête, l'image est
   relâchée — un retour en arrière la recharge depuis le cache disque
   (`Cache-Control: immutable`), quasi gratuit ; les photos des cartons et
-  les vignettes ne sont jamais évincées. En lecture, une photo encore en
+  les vignettes ne sont jamais évincées. Les cases de la bande de
+  vignettes, montrées bien au-delà de cette fenêtre, sont d'ailleurs
+  dessinées depuis les miniatures comme les vignettes épinglées (`thumb`
+  des cartes) — sans quoi l'éviction les faisait disparaître en lecture
+  et en pause (jamais dans la vidéo, qui n'évince rien). En lecture, une photo encore en
   chargement n'est simplement pas dessinée. Avant un enregistrement, elles
   sont toutes chargées et
   attendues (`parcoursPhotosReady`, branché sur le `whenImagesReady` de
@@ -1187,7 +1191,9 @@ Un bandeau en tête de la carte dit la portée (`photoDisplayScope`) et,
 quand le parcours a ses propres réglages, propose « Revenir aux réglages
 par défaut » (surcharges oubliées) et « En faire les réglages par défaut »
 (le défaut prend les réglages effectifs, le parcours n'a plus de
-surcharge). Clés :
+surcharge). Parcours ouvert **sans photo** : la colonne est verrouillée —
+les réglages ne peuvent rien montrer — et un hint l'annonce ; sans
+parcours ouvert elle reste active, puisqu'elle écrit le défaut. Clés :
 
 | Clé | Valeurs (défaut en premier) |
 |---|---|

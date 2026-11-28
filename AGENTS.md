@@ -407,8 +407,14 @@ Autres repères :
   la durée ou le plafond par un arrêt puis une réouverture), remis à
   `PHOTO_DISPLAY_DEFAULTS` par le même helper, et
   `parcours_infos_template` (un spec qui écrit `#inputInfosTemplate` sur
-  /parcours). Les photos ont leur onglet
-  (`a[href="#photos"]`, à ouvrir avant tout `fill`/`toBeVisible`) ; pour
+  /parcours). Parcours ouvert SANS photo : la colonne « Affichage dans la
+  vidéo » est verrouillée (`#parcoursPhotoDisplayFields`, styles tout
+  faits, `#parcoursPhotoLayout`, `#parcoursPhotoAutoPreview`, hint
+  `#parcoursPhotoDisplayEmpty`) — mais pas sans parcours ouvert, où elle
+  écrit le défaut global. Les photos ont leur onglet
+  (`a[href="#photos"]`, à ouvrir avant tout `fill`/`toBeVisible` ;
+  l'explication du rattachement y est repliée dans un `<details>`
+  `.parcours-photo-link-help`) ; pour
   relever une photo peinte sans rejouer le parcours, « Voir sur la carte »
   (`.parcours-photo-preview`) ouvre l'aperçu en pause sur son créneau, puis
   `getParcoursSnapshot().photoCards` (exemple : parcours-photo-display.spec.mjs).

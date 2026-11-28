@@ -122,6 +122,45 @@ test('réglages : enregistrés, champs selon le placement, durée et « aucune �
   expect(errors).toEqual([]);
 });
 
+test('sans photo : réglages verrouillés, déverrouillés par un envoi, actifs sans parcours ouvert', async ({ page, request }) => {
+  const errors = collectErrors(page);
+  await createWeekend(request);
+  await openReady(page);
+  await page.locator('a[href="#photos"]').click();
+  // Parcours ouvert sans photo : tout est verrouillé, le hint l'annonce —
+  // sauf le scope notice, visible dans tous les cas. (toBeDisabled ne lit
+  // pas l'attribut d'un fieldset : contrôle du fieldset, donc un descendant.)
+  await expect(page.locator('#parcoursPhotoDisplayFields')).toHaveAttribute('disabled', '');
+  await expect(page.locator('#parcoursPhotoFrame')).toBeDisabled();
+  await expect(page.locator('#parcoursPhotoDisplayEmpty')).toBeVisible();
+  await expect(page.locator('#parcoursPhotoLayout')).toBeDisabled();
+  await expect(page.locator('[data-photo-preset="postcard"]')).toBeDisabled();
+  await expect(page.locator('#parcoursPhotoAutoPreview')).toBeDisabled();
+  await expect(page.locator('#parcoursPhotoDisplayScope')).toBeVisible();
+
+  // Une photo envoyée : tout se déverrouille.
+  await page.locator('#parcoursPhotoInput').setInputFiles(path.join(PHOTOS, 'telephone.jpg'));
+  await expect.poll(async () => (await snapshot(page)).photos.length, { timeout: 30_000 }).toBe(1);
+  await expect(page.locator('#parcoursPhotoDisplayFields')).not.toHaveAttribute('disabled', '');
+  await expect(page.locator('#parcoursPhotoFrame')).toBeEnabled();
+  await expect(page.locator('#parcoursPhotoDisplayEmpty')).toBeHidden();
+  await expect(page.locator('#parcoursPhotoLayout')).toBeEnabled();
+  await expect(page.locator('[data-photo-preset="postcard"]')).toBeEnabled();
+  await expect(page.locator('#parcoursPhotoAutoPreview')).toBeEnabled();
+
+  // Sans parcours ouvert : les réglages écrivent le défaut global — actifs.
+  await deleteAllParcours(request);
+  await page.reload();
+  await page.locator('a[href="#photos"]').click();
+  await expect(page.locator('#parcoursPhotosEmpty')).toBeVisible();
+  await expect(page.locator('#parcoursPhotoDisplayFields')).not.toHaveAttribute('disabled', '');
+  await expect(page.locator('#parcoursPhotoFrame')).toBeEnabled();
+  await expect(page.locator('#parcoursPhotoDisplayEmpty')).toBeHidden();
+  await expect(page.locator('#parcoursPhotoLayout')).toBeEnabled();
+  await expect(page.locator('[data-photo-preset="postcard"]')).toBeEnabled();
+  expect(errors).toEqual([]);
+});
+
 test('réglages propres au parcours, styles tout faits, aperçu automatique', async ({ page, request }) => {
   const errors = collectErrors(page);
   const { parcours, phone } = await withTwoPhotos(page, request);

@@ -343,6 +343,11 @@ test('bande : la photo entre en grand, rejoint sa case, la bande se vide à la j
     const thumb = cards[0];
     assert.ok(thumb.scale < 0.5);
     assert.equal(thumb.captionAlpha, 0);
+    // Posée dans la bande : dessinée depuis la miniature (la pleine taille
+    // est évincée loin derrière la tête hors enregistrement) — la grande,
+    // dans son créneau, garde la pleine taille.
+    assert.equal(thumb.thumb, true);
+    assert.equal(cards[1].thumb, undefined);
     assert.ok(Math.abs(thumb.x - (16 + (thumb.cardW * thumb.scale) / 2)) < 1e-9);
     // Journée suivante : vignettes de la veille gardées…
     cards = photoFrameAt(timeline(), 90, display, VIEW).cards;

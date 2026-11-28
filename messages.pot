@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-28 14:18+0100\n"
+"POT-Creation-Date: 2026-11-28 14:39+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -647,7 +647,7 @@ msgstr ""
 
 #: poses_dataset.py:635 static/js/ui.js:11725
 #: templates/_filter_cache_attrs.html:49 templates/_filter_cache_attrs.html:50
-#: templates/menu_photos_parcours.html:201 templates/stats_page.html:350
+#: templates/menu_photos_parcours.html:205 templates/stats_page.html:350
 msgid "Taille"
 msgstr ""
 
@@ -681,7 +681,7 @@ msgstr ""
 msgid "Région"
 msgstr ""
 
-#: poses_dataset.py:637 templates/menu_photos_parcours.html:280
+#: poses_dataset.py:637 templates/menu_photos_parcours.html:284
 msgid "Apparition"
 msgstr ""
 
@@ -6048,8 +6048,8 @@ msgstr ""
 
 #: static/js/parcours_adjust.mjs:39 static/js/parcours_data.js:373
 #: static/js/parcours_data.js:878 static/js/parcours_data.js:1181
-#: static/js/parcours_photos_panel.mjs:1067
-#: static/js/parcours_photos_panel.mjs:1110
+#: static/js/parcours_photos_panel.mjs:1079
+#: static/js/parcours_photos_panel.mjs:1122
 #: static/js/parcours_playback_ui.mjs:109 static/js/parcours_upload.mjs:120
 #: static/js/parcours_upload.mjs:134 static/js/parcours_upload.mjs:164
 #: templates/_app_header.html:29 templates/_app_header.html:31
@@ -6800,7 +6800,7 @@ msgid ""
 msgstr ""
 
 #: static/js/parcours_photos_panel.mjs:653
-#: templates/menu_photos_parcours.html:55
+#: templates/menu_photos_parcours.html:58
 msgid ""
 "Prises loin de toute étape, elles ne sont pas montrées dans la vidéo. "
 "Faites de chaque endroit un lieu du parcours : ses photos s'y "
@@ -6929,40 +6929,40 @@ msgstr ""
 msgid "Glissez sur la photo pour choisir la partie gardée."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:992
+#: static/js/parcours_photos_panel.mjs:1004
 msgid "Aucune photo dans la vidéo."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:999
+#: static/js/parcours_photos_panel.mjs:1011
 #, python-brace-format
 msgid "1 photo montrée : ${photos} sur ${total} de vidéo."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:1000
+#: static/js/parcours_photos_panel.mjs:1012
 #, python-brace-format
 msgid "${n} photos montrées : ${photos} sur ${total} de vidéo."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:1012
+#: static/js/parcours_photos_panel.mjs:1024
 msgid "Réglages par défaut, communs à tous les parcours."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:1014
+#: static/js/parcours_photos_panel.mjs:1026
 msgid "Réglages propres à ce parcours."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:1015
+#: static/js/parcours_photos_panel.mjs:1027
 msgid ""
 "Ce parcours suit les réglages par défaut ; un changement ne vaudra que "
 "pour lui."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:1067
+#: static/js/parcours_photos_panel.mjs:1079
 #: static/js/parcours_playback_ui.mjs:109 static/js/poses_data.js:131
 msgid "Le réglage s'appliquera à la fin de l'animation."
 msgstr ""
 
-#: static/js/parcours_photos_panel.mjs:1110
+#: static/js/parcours_photos_panel.mjs:1122
 msgid "Ces réglages sont désormais ceux par défaut des parcours."
 msgstr ""
 
@@ -9461,7 +9461,7 @@ msgstr ""
 #: static/js/ui.js:1000 templates/app.html:272 templates/app.html:273
 #: templates/guide.html:136 templates/guide.html:346
 #: templates/menu_animation.html:61 templates/menu_data_parcours.html:110
-#: templates/menu_photos_parcours.html:28
+#: templates/menu_photos_parcours.html:25
 msgid "Arrêter"
 msgstr ""
 
@@ -11670,7 +11670,7 @@ msgstr ""
 #: templates/_app_header.html:50 templates/guide.html:236
 #: templates/guide.html:513 templates/menu_images.html:215
 #: templates/menu_names.html:282 templates/menu_options.html:31
-#: templates/menu_photos_parcours.html:248 templates/menu_stats.html:356
+#: templates/menu_photos_parcours.html:252 templates/menu_stats.html:356
 #: templates/menu_trail.html:94 templates/menu_zones.html:128
 #: templates/stats_page.html:443
 msgid "Apparence"
@@ -11728,7 +11728,7 @@ msgstr ""
 
 #: templates/_event_flash_rows.html:17 templates/menu_flash.html:19
 #: templates/menu_flash_disappear.html:19 templates/menu_flash_dnf.html:24
-#: templates/menu_flash_dnf.html:95 templates/menu_photos_parcours.html:94
+#: templates/menu_flash_dnf.html:95 templates/menu_photos_parcours.html:97
 #: templates/menu_points.html:320 templates/menu_points.html:359
 msgid "Carré"
 msgstr ""
@@ -12032,7 +12032,7 @@ msgid "Sélectionner des exports CSV"
 msgstr ""
 
 #: templates/app.html:132 templates/menu_data_evolution.html:58
-#: templates/menu_data_parcours.html:114 templates/menu_photos_parcours.html:32
+#: templates/menu_data_parcours.html:114 templates/menu_photos_parcours.html:29
 msgid "ou glissez-déposez vos fichiers n'importe où sur la page"
 msgstr ""
 
@@ -15320,7 +15320,7 @@ msgid ""
 "Déplacer la carte pendant la lecture la laisse en place."
 msgstr ""
 
-#: templates/menu_animation.html:305 templates/menu_photos_parcours.html:91
+#: templates/menu_animation.html:305 templates/menu_photos_parcours.html:94
 #: templates/stats_page.html:698
 msgid "Cadrage"
 msgstr ""
@@ -16610,54 +16610,54 @@ msgid ""
 msgstr ""
 
 #: templates/menu_images.html:167 templates/menu_informations.html:321
-#: templates/menu_photos_parcours.html:180
+#: templates/menu_photos_parcours.html:184
 msgid "Emplacement"
 msgstr ""
 
 #: templates/menu_images.html:170 templates/menu_info_parcours.html:35
-#: templates/menu_informations.html:324 templates/menu_photos_parcours.html:174
-#: templates/menu_photos_parcours.html:182 templates/menu_stats.html:310
+#: templates/menu_informations.html:324 templates/menu_photos_parcours.html:178
+#: templates/menu_photos_parcours.html:186 templates/menu_stats.html:310
 #: templates/menu_zones.html:170
 msgid "En haut à gauche"
 msgstr ""
 
 #: templates/menu_images.html:170 templates/menu_informations.html:324
-#: templates/menu_photos_parcours.html:183 templates/menu_stats.html:310
+#: templates/menu_photos_parcours.html:187 templates/menu_stats.html:310
 msgid "En haut au centre"
 msgstr ""
 
 #: templates/menu_images.html:170 templates/menu_info_parcours.html:36
-#: templates/menu_informations.html:324 templates/menu_photos_parcours.html:173
-#: templates/menu_photos_parcours.html:184 templates/menu_stats.html:310
+#: templates/menu_informations.html:324 templates/menu_photos_parcours.html:177
+#: templates/menu_photos_parcours.html:188 templates/menu_stats.html:310
 #: templates/menu_zones.html:171
 msgid "En haut à droite"
 msgstr ""
 
-#: templates/menu_images.html:171 templates/menu_photos_parcours.html:185
+#: templates/menu_images.html:171 templates/menu_photos_parcours.html:189
 #: templates/menu_stats.html:311
 msgid "Au milieu à gauche"
 msgstr ""
 
-#: templates/menu_images.html:171 templates/menu_photos_parcours.html:186
+#: templates/menu_images.html:171 templates/menu_photos_parcours.html:190
 #: templates/menu_stats.html:311
 msgid "Au milieu à droite"
 msgstr ""
 
 #: templates/menu_images.html:172 templates/menu_info_parcours.html:37
-#: templates/menu_informations.html:326 templates/menu_photos_parcours.html:176
-#: templates/menu_photos_parcours.html:187 templates/menu_stats.html:312
+#: templates/menu_informations.html:326 templates/menu_photos_parcours.html:180
+#: templates/menu_photos_parcours.html:191 templates/menu_stats.html:312
 #: templates/menu_zones.html:168
 msgid "En bas à gauche"
 msgstr ""
 
 #: templates/menu_images.html:172 templates/menu_informations.html:326
-#: templates/menu_photos_parcours.html:188 templates/menu_stats.html:312
+#: templates/menu_photos_parcours.html:192 templates/menu_stats.html:312
 msgid "En bas au centre"
 msgstr ""
 
 #: templates/menu_images.html:172 templates/menu_info_parcours.html:38
-#: templates/menu_informations.html:326 templates/menu_photos_parcours.html:175
-#: templates/menu_photos_parcours.html:189 templates/menu_stats.html:312
+#: templates/menu_informations.html:326 templates/menu_photos_parcours.html:179
+#: templates/menu_photos_parcours.html:193 templates/menu_stats.html:312
 #: templates/menu_zones.html:169
 msgid "En bas à droite"
 msgstr ""
@@ -16719,7 +16719,7 @@ msgstr ""
 msgid "Photo encadrée"
 msgstr ""
 
-#: templates/menu_images.html:240 templates/menu_photos_parcours.html:223
+#: templates/menu_images.html:240 templates/menu_photos_parcours.html:227
 #: templates/menu_stats.html:112
 msgid "Forme"
 msgstr ""
@@ -16893,16 +16893,16 @@ msgid "Effet"
 msgstr ""
 
 #: templates/menu_images.html:428 templates/menu_names.html:241
-#: templates/menu_names.html:252 templates/menu_photos_parcours.html:282
+#: templates/menu_names.html:252 templates/menu_photos_parcours.html:286
 msgid "Fondu"
 msgstr ""
 
-#: templates/menu_images.html:429 templates/menu_photos_parcours.html:283
+#: templates/menu_images.html:429 templates/menu_photos_parcours.html:287
 msgid "Glissement depuis le bord"
 msgstr ""
 
-#: templates/menu_images.html:430 templates/menu_photos_parcours.html:102
-#: templates/menu_photos_parcours.html:284
+#: templates/menu_images.html:430 templates/menu_photos_parcours.html:105
+#: templates/menu_photos_parcours.html:288
 msgid "Zoom"
 msgstr ""
 
@@ -16942,11 +16942,11 @@ msgstr ""
 msgid "Nulle part"
 msgstr ""
 
-#: templates/menu_info_parcours.html:33 templates/menu_photos_parcours.html:196
+#: templates/menu_info_parcours.html:33 templates/menu_photos_parcours.html:200
 msgid "En haut"
 msgstr ""
 
-#: templates/menu_info_parcours.html:34 templates/menu_photos_parcours.html:195
+#: templates/menu_info_parcours.html:34 templates/menu_photos_parcours.html:199
 msgid "En bas"
 msgstr ""
 
@@ -17624,7 +17624,7 @@ msgstr ""
 msgid "Logs marquants plus grands"
 msgstr ""
 
-#: templates/menu_names.html:191 templates/menu_photos_parcours.html:278
+#: templates/menu_names.html:191 templates/menu_photos_parcours.html:282
 msgid "Mouvement"
 msgstr ""
 
@@ -18016,6 +18016,18 @@ msgid "Photos du parcours"
 msgstr ""
 
 #: templates/menu_photos_parcours.html:20
+msgid "Photos à ajouter"
+msgstr ""
+
+#: templates/menu_photos_parcours.html:22
+msgid "Ajouter des photos"
+msgstr ""
+
+#: templates/menu_photos_parcours.html:32
+msgid "Comment les photos se rattachent aux étapes ?"
+msgstr ""
+
+#: templates/menu_photos_parcours.html:34
 msgid ""
 "Une photo géolocalisée se rattache seule à l'étape la plus proche (150 m)"
 " et son heure cale celle de l'étape. Sans GPS, l'heure de l'appareil est "
@@ -18024,327 +18036,323 @@ msgid ""
 "appareil décalé, ou choisissez l'étape à la main."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:23
-msgid "Photos à ajouter"
-msgstr ""
-
-#: templates/menu_photos_parcours.html:25
-msgid "Ajouter des photos"
-msgstr ""
-
-#: templates/menu_photos_parcours.html:39
+#: templates/menu_photos_parcours.html:42
 msgid "Photos affichées"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:45
+#: templates/menu_photos_parcours.html:48
 msgid "Ctrl+clic ou Maj+clic : sélectionner plusieurs photos."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:48
+#: templates/menu_photos_parcours.html:51
 msgid "Photos sélectionnées"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:66
+#: templates/menu_photos_parcours.html:69
 msgid "Partie gardée de la photo : glisser, ou flèches du clavier"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:76
+#: templates/menu_photos_parcours.html:79
 msgid "Montrer dans la lecture et la vidéo"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:81
+#: templates/menu_photos_parcours.html:84
 msgid "Photo favorite"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:82
+#: templates/menu_photos_parcours.html:85
 msgid ""
 "Les favorites ornent les cartons d'ouverture, de journée et de fin, et "
 "passent en premier au-delà du plafond par étape."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:85
-#: templates/menu_photos_parcours.html:270 templates/menu_zones.html:165
+#: templates/menu_photos_parcours.html:88
+#: templates/menu_photos_parcours.html:274 templates/menu_zones.html:165
 #: templates/stats_page.html:695
 msgid "Légende"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:87
+#: templates/menu_photos_parcours.html:90
 msgid "Sommet du Semnoz, pique-nique…"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:93
+#: templates/menu_photos_parcours.html:96
 msgid "Photo entière"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:95
+#: templates/menu_photos_parcours.html:98
 msgid "Paysage 4:3"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:96
+#: templates/menu_photos_parcours.html:99
 msgid "Portrait 3:4"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:97
+#: templates/menu_photos_parcours.html:100
 msgid "Large 16:9"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:124
+#: templates/menu_photos_parcours.html:127
 msgid "Affichage dans la vidéo"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:132
+#: templates/menu_photos_parcours.html:131
+msgid "Ces réglages s'appliqueront aux photos que vous ajouterez."
+msgstr ""
+
+#: templates/menu_photos_parcours.html:136
 msgid "Revenir aux réglages par défaut"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:135
+#: templates/menu_photos_parcours.html:139
 msgid "En faire les réglages par défaut"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:140
+#: templates/menu_photos_parcours.html:144
 msgid "Styles tout faits"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:142
-#: templates/menu_photos_parcours.html:253
+#: templates/menu_photos_parcours.html:146
+#: templates/menu_photos_parcours.html:257
 msgid "Carte postale"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:145
+#: templates/menu_photos_parcours.html:149
 msgid "Carnet de voyage"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:148 templates/menu_points.html:411
+#: templates/menu_photos_parcours.html:152 templates/menu_points.html:411
 msgid "Sobre"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:151
-#: templates/menu_photos_parcours.html:259
+#: templates/menu_photos_parcours.html:155
+#: templates/menu_photos_parcours.html:263
 msgid "Pellicule"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:155
-#: templates/menu_photos_parcours.html:157
+#: templates/menu_photos_parcours.html:159
+#: templates/menu_photos_parcours.html:161
 msgid "Placement"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:159
+#: templates/menu_photos_parcours.html:163
 msgid "Près de l'étape"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:160
+#: templates/menu_photos_parcours.html:164
 msgid "Emplacement fixe de l'écran"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:161
+#: templates/menu_photos_parcours.html:165
 msgid "Bande de vignettes"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:162
+#: templates/menu_photos_parcours.html:166
 msgid "Aucune photo dans la vidéo"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:164
+#: templates/menu_photos_parcours.html:168
 msgid ""
 "Les photos d'une étape passent l'une après l'autre, à l'arrivée sur "
 "l'étape. Bande : chacune entre en grand puis rejoint le ruban."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:170
+#: templates/menu_photos_parcours.html:174
 msgid "Côté"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:172
+#: templates/menu_photos_parcours.html:176
 msgid "Automatique (vers le centre)"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:193
+#: templates/menu_photos_parcours.html:197
 msgid "Bande"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:208
+#: templates/menu_photos_parcours.html:212
 msgid "Trait vers l'étape"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:212
+#: templates/menu_photos_parcours.html:216
 msgid "Empiler les photos d'une étape"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:213
+#: templates/menu_photos_parcours.html:217
 msgid "Chacune se pose sur les précédentes ; la pile s'efface après la dernière."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:217
+#: templates/menu_photos_parcours.html:221
 msgid "Laisser une vignette sur la carte"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:218
+#: templates/menu_photos_parcours.html:222
 msgid ""
 "Les photos d'une étape s'y posent en petit, du côté le moins encombré par"
 " le trajet, et y restent."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:225
+#: templates/menu_photos_parcours.html:229
 msgid "Petite carte"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:226
+#: templates/menu_photos_parcours.html:230
 msgid "Médaillon rond"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:231
+#: templates/menu_photos_parcours.html:235
 msgid "Taille des vignettes"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:236
+#: templates/menu_photos_parcours.html:240
 msgid ""
 "Médaillon : un par étape, cerclé de la couleur de la journée, avec le "
 "nombre de photos."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:239
+#: templates/menu_photos_parcours.html:243
 msgid "Regrouper les vignettes qui se chevauchent"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:240
+#: templates/menu_photos_parcours.html:244
 msgid ""
 "Vue d'ensemble, zoom arrière : seule la plus récente reste, avec le "
 "nombre de photos regroupées."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:245
+#: templates/menu_photos_parcours.html:249
 msgid "Vider la bande à chaque journée"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:251
+#: templates/menu_photos_parcours.html:255
 msgid "Cadre"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:254
+#: templates/menu_photos_parcours.html:258
 msgid "Polaroid"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:255
+#: templates/menu_photos_parcours.html:259
 msgid "Coins arrondis"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:256
+#: templates/menu_photos_parcours.html:260
 msgid "Sans cadre"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:257
+#: templates/menu_photos_parcours.html:261
 msgid "Timbre"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:258
+#: templates/menu_photos_parcours.html:262
 msgid "Scotch (carnet)"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:265
+#: templates/menu_photos_parcours.html:269
 msgid "Légère inclinaison"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:274
+#: templates/menu_photos_parcours.html:278
 #, python-brace-format
 msgid ""
 "Balises : {legende} (celle de la photo), {etape}, {heure}, {jour}, "
 "{date}. Vide : pas de légende."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:285
+#: templates/menu_photos_parcours.html:289
 msgid "Depuis l'étape"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:290
+#: templates/menu_photos_parcours.html:294
 msgid "Zoom lent pendant l'affichage"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:291
+#: templates/menu_photos_parcours.html:295
 msgid ""
 "Avancée, recul ou travelling, en alternance d'une photo à l'autre, "
 "centrés sur le point d'intérêt du cadrage."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:295
+#: templates/menu_photos_parcours.html:299
 msgid "Éclair sur l'étape"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:296
+#: templates/menu_photos_parcours.html:300
 msgid "Un bref éclair, comme un flash d'appareil, à l'arrivée de chaque photo."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:300
+#: templates/menu_photos_parcours.html:304
 msgid "Faire défiler les panoramas"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:301
+#: templates/menu_photos_parcours.html:305
 msgid ""
 "Une photo au moins deux fois plus large que haute (sans cadrage choisi) "
 "est montrée dans une fenêtre 16:9 qui la parcourt de gauche à droite."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:304
+#: templates/menu_photos_parcours.html:308
 msgid "Temps d'écran"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:308
+#: templates/menu_photos_parcours.html:312
 msgid "Durée par photo (s)"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:312
+#: templates/menu_photos_parcours.html:316
 msgid "Plafond par étape"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:318
+#: templates/menu_photos_parcours.html:322
 msgid "Au-delà du plafond"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:320
+#: templates/menu_photos_parcours.html:324
 msgid "Montrer toutes les photos, plus brièvement"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:321
+#: templates/menu_photos_parcours.html:325
 msgid "Ne montrer que les premières"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:323
+#: templates/menu_photos_parcours.html:327
 msgid ""
 "Au-delà de ce nombre de photos, une étape ne s'allonge plus : ses photos "
 "se partagent ce temps, ou seules les premières prises sont montrées."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:327
+#: templates/menu_photos_parcours.html:331
 msgid "Montrer les photos prises en chemin"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:328
+#: templates/menu_photos_parcours.html:332
 msgid ""
 "Prises entre deux étapes, loin de l'une comme de l'autre (photo "
 "géolocalisée, ou située par la trace) : le géocacheur s'arrête à leur "
 "position le temps de les montrer."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:332
+#: templates/menu_photos_parcours.html:336
 msgid "Planche de la journée"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:333
+#: templates/menu_photos_parcours.html:337
 msgid ""
 "À la fin de chaque journée qui a montré au moins deux photos, la carte "
 "s'assombrit et ses photos reviennent en planche-contact (9 au plus, les "
 "favorites d'abord), 3 s avant la nuit."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:339
+#: templates/menu_photos_parcours.html:343
 msgid "Montrer chaque réglage sur la carte"
 msgstr ""
 
-#: templates/menu_photos_parcours.html:340
+#: templates/menu_photos_parcours.html:344
 msgid ""
 "Un réglage changé ouvre l'aperçu en pause sur la photo ouverte dans le "
 "détail, ou sur la première."
 msgstr ""
 
-#: templates/menu_photos_parcours.html:343
+#: templates/menu_photos_parcours.html:347
 msgid "Voir la première photo sur la carte"
 msgstr ""
 

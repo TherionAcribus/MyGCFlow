@@ -965,20 +965,32 @@ export function createPhotosPanel(deps) {
         show('parcoursPhotoStackRow', layout === 'stop' || layout === 'fixed');
         show('parcoursPhotoPinRow', layout === 'stop' || layout === 'fixed');
         show('parcoursPhotoPinSizeRow', (layout === 'stop' || layout === 'fixed') && photoDisplay.pin);
+        // Parcours ouvert sans photo : les réglages ne peuvent rien montrer,
+        // ils sont verrouillés (le hint #parcoursPhotoDisplayEmpty l'annonce).
+        // Sans parcours ouvert, ils écrivent le défaut global — usage
+        // légitime, la colonne reste active.
+        const { inputs, timeline } = s();
+        const locked = !!inputs && !(inputs.photos || []).length;
+        const emptyHint = el('parcoursPhotoDisplayEmpty');
+        if (emptyHint) emptyHint.hidden = !locked;
         const fields = el('parcoursPhotoDisplayFields');
-        if (fields) fields.disabled = layout === PHOTO_LAYOUT_NONE;
-        const { timeline } = s();
+        if (fields) fields.disabled = locked || layout === PHOTO_LAYOUT_NONE;
+        const layoutSelect = el('parcoursPhotoLayout');
+        if (layoutSelect) layoutSelect.disabled = locked;
         const preview = el('btnParcoursPhotoPreview');
         if (preview) preview.disabled = layout === PHOTO_LAYOUT_NONE || !timeline || photoSlots(timeline).length === 0;
         // Styles tout faits : celui que les réglages reproduisent est pressé.
         const preset = photoDisplayPreset(photoDisplay);
         document.querySelectorAll('[data-photo-preset]').forEach((button) => {
             button.setAttribute('aria-pressed', String(button.dataset.photoPreset === preset));
-            button.disabled = layout === PHOTO_LAYOUT_NONE;
+            button.disabled = locked || layout === PHOTO_LAYOUT_NONE;
         });
         renderPhotoDisplayScope();
         const auto = el('parcoursPhotoAutoPreview');
-        if (auto) auto.checked = autoPreviewEnabled();
+        if (auto) {
+            auto.checked = autoPreviewEnabled();
+            auto.disabled = locked;
+        }
     }
 
     // Temps d'écran des photos (section « Temps d'écran ») : combien de
