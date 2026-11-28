@@ -38,7 +38,10 @@
                         <option value="bottom_right">{{ _("En bas à droite") }}</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-3">
+                <!-- Les cellules sans effet dans le mode choisi sont masquées
+                     plutôt que grisées (parcours_info_ui.mjs, sync) : leurs
+                     valeurs restent lues et conservées dans le thème. -->
+                <div class="col-6 col-md-3" id="parcoursInfoDurationCell">
                     <label class="form-label" for="parcoursInfoDuration">{{ _("Durée minimale") }}</label>
                     <div class="input-group input-group-sm">
                         <input id="parcoursInfoDuration" type="number" class="form-control" min="1" max="15" step="1">
@@ -46,7 +49,7 @@
                     </div>
                 </div>
             </div>
-            <div class="row g-3 mt-1">
+            <div class="row g-3 mt-1" id="parcoursInfoFilterRow">
                 <div class="col-12 col-md-5">
                     <label class="form-label" for="parcoursInfoFilter">{{ _("En permanent, montrer") }}</label>
                     <select id="parcoursInfoFilter" class="form-select" aria-describedby="parcoursInfoWhereHints">
@@ -55,7 +58,7 @@
                         <option value="dt">{{ _("D ou T au moins égal au seuil") }}</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-2">
+                <div class="col-6 col-md-2" id="parcoursInfoFilterDtCell">
                     <label class="form-label" for="parcoursInfoFilterDt">{{ _("Seuil") }}</label>
                     <input id="parcoursInfoFilterDt" type="number" class="form-control" min="1" max="5" step="1">
                 </div>
@@ -65,10 +68,8 @@
                 <small id="helpInfoAll" class="form-hint text-muted" hidden>{{ _("Permanent : chaque étape atteinte garde sa fiche ; celles qui n'ont pas la place sont masquées, l'étape en cours passe toujours. Au repos, toutes les fiches.") }}</small>
                 <small id="helpInfoFixed" class="form-hint text-muted" hidden>{{ _("Le cartouche reprend la fiche de l'étape en cours — à éviter là où se trouve le titre.") }}</small>
                 <small id="helpInfoEverywhere" class="form-hint text-muted" hidden>{{ _("Sur la carte et dans la vidéo.") }}</small>
-                <small id="helpInfoDuration" class="form-hint text-muted" hidden>{{ _("Sans effet ici : la durée minimale ne vaut que pour le temporaire et le cartouche.") }}</small>
-                <small id="helpInfoFilter" class="form-hint text-warning" hidden>{{ _("Sans effet ici : le filtre ne vaut que pour le permanent. L'étape en cours, l'étape survolée et la fiche d'exemple passent toujours.") }}</small>
             </div>
-            <small id="parcoursInfoOffHint" class="form-hint text-info" hidden>{{ _("La fiche est coupée : choisissez « À côté de la cache » ou « Ailleurs sur l'image » pour l'afficher.") }}</small>
+            <small id="parcoursInfoOffHint" class="form-hint text-info" hidden>{{ _("La fiche est coupée — celle épinglée sur la carte est un exemple : rien ne s'affichera dans la lecture ni dans la vidéo.") }}</small>
         </div>
     </div>
 

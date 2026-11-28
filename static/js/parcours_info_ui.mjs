@@ -164,10 +164,17 @@ export function createParcoursInfoUI(deps) {
         if (!off) lastActive = { near: info.near, fixed: info.fixed };
         const on = el('parcoursInfoOn');
         if (on) on.checked = !off;
-        const accentColor = el('parcoursInfoAccentColor');
-        if (accentColor) accentColor.disabled = info.accent !== 'fixed';
-        const duration = el('parcoursInfoDuration');
-        if (duration) duration.disabled = info.near !== 'current' && info.fixed === 'none';
+        // Sans effet dans le mode choisi = masqué plutôt que grisé : le
+        // nuancier d'accent ne vaut qu'en couleur fixe, la durée minimale
+        // que pour le temporaire et le cartouche, le filtre que pour le
+        // permanent (et son seuil que pour le filtre D/T). Les valeurs des
+        // champs masqués restent lues par read() et conservées dans le
+        // thème — masquer ne réinitialise rien.
+        const show = (id, yes) => { const node = el(id); if (node) node.hidden = !yes; };
+        show('parcoursInfoAccentColor', info.accent === 'fixed');
+        show('parcoursInfoDurationCell', info.near === 'current' || info.fixed !== 'none');
+        show('parcoursInfoFilterRow', info.near === 'all');
+        show('parcoursInfoFilterDtCell', info.near === 'all' && info.filter === 'dt');
         // Bandeau : le fond est la couleur d'accent et le texte s'y adapte —
         // les deux couleurs sont sans effet, le montrer.
         const banner = info.design === 'banner';
@@ -176,20 +183,12 @@ export function createParcoursInfoUI(deps) {
         const backgroundColor = el('parcoursInfoBackgroundColor');
         if (backgroundColor) backgroundColor.disabled = banner;
         // Aides courtes suivant le mode choisi, plutôt qu'un pavé couvrant
-        // les trois modes à la fois. Celle de la durée minimale explique
-        // pourquoi elle est grisée en permanent sans cartouche — le seul
-        // cas actif où elle ne vaut pour rien.
+        // les trois modes à la fois.
         const hint = (id, yes) => { const node = el(id); if (node) node.hidden = !yes; };
         hint('helpInfoCurrent', info.near === 'current');
         hint('helpInfoAll', info.near === 'all');
         hint('helpInfoFixed', info.fixed !== 'none');
         hint('helpInfoEverywhere', !off);
-        hint('helpInfoDuration', info.near === 'all' && info.fixed === 'none');
-        hint('helpInfoFilter', info.near !== 'all' && info.filter !== 'all');
-        const filterSelect = el('parcoursInfoFilter');
-        if (filterSelect) filterSelect.disabled = info.near !== 'all';
-        const filterDt = el('parcoursInfoFilterDt');
-        if (filterDt) filterDt.disabled = info.near !== 'all' || info.filter !== 'dt';
         // Rien de coché : la fiche ne s'affichera nulle part, le dire.
         const empty = !Object.keys(FIELD_IDS).some((key) => info[key]);
         const emptyHint = el('parcoursInfoEmptyHint');

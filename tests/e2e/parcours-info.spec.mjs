@@ -127,22 +127,24 @@ test('interrupteur : active en temporaire, restaure la dernière configuration',
   await page.locator('#parcoursInfoOn').check();
   await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'current', fixed: 'none' });
   await expect(page.locator('#parcoursInfoOffHint')).toBeHidden();
-  // L'aide suit le mode choisi : temporaire seule, sans le cartouche.
+  // L'aide suit le mode choisi : temporaire seule, sans le cartouche. La
+  // durée minimale vaut pour le temporaire : sa cellule est visible.
   await expect(page.locator('#helpInfoCurrent')).toBeVisible();
   await expect(page.locator('#helpInfoAll')).toBeHidden();
   await expect(page.locator('#helpInfoFixed')).toBeHidden();
-  await expect(page.locator('#helpInfoDuration')).toBeHidden();
+  await expect(page.locator('#parcoursInfoDurationCell')).toBeVisible();
 
-  // Permanent sans cartouche : son aide, et celle de la durée grisée.
+  // Permanent sans cartouche : son aide — et la durée minimale, sans effet
+  // ici, est masquée plutôt que grisée.
   await page.locator('#parcoursInfoNear').selectOption('all');
   await expect(page.locator('#helpInfoAll')).toBeVisible();
   await expect(page.locator('#helpInfoCurrent')).toBeHidden();
-  await expect(page.locator('#helpInfoDuration')).toBeVisible();
-  // Avec un cartouche, la durée vaut pour lui : son aide disparaît.
+  await expect(page.locator('#parcoursInfoDurationCell')).toBeHidden();
+  // Avec un cartouche, la durée vaut pour lui : la cellule réapparaît.
   await page.locator('#parcoursInfoFixed').selectOption('bottom');
   await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'all', fixed: 'bottom' });
   await expect(page.locator('#helpInfoFixed')).toBeVisible();
-  await expect(page.locator('#helpInfoDuration')).toBeHidden();
+  await expect(page.locator('#parcoursInfoDurationCell')).toBeVisible();
   await page.locator('#parcoursInfoOn').uncheck();
   await expect.poll(async () => (await info(page)).settings).toMatchObject({ near: 'none', fixed: 'none' });
   await expect(page.locator('#parcoursInfoOffHint')).toBeVisible();
@@ -196,32 +198,34 @@ test('au repos : permanent sur les étapes, temporaire sur l’étape survolée,
   expect(errors).toEqual([]);
 });
 
-test('filtre du permanent : seuil D/T, contrôles grisés hors permanent', async ({ page }) => {
+test('filtre du permanent : seuil D/T, contrôles masqués hors permanent', async ({ page }) => {
   const errors = collectErrors(page);
   await openReady(page);
   await openInfoTab(page);
 
-  // Hors permanent : le filtre est grisé.
-  await expect(page.locator('#parcoursInfoFilter')).toBeDisabled();
+  // Hors permanent : la ligne du filtre est masquée plutôt que grisée.
+  await expect(page.locator('#parcoursInfoFilterRow')).toBeHidden();
   await page.locator('#parcoursInfoNear').selectOption('all');
-  await expect(page.locator('#parcoursInfoFilter')).toBeEnabled();
-  await expect(page.locator('#parcoursInfoFilterDt')).toBeDisabled();
+  await expect(page.locator('#parcoursInfoFilterRow')).toBeVisible();
+  // Filtre « toutes » : le seuil, sans effet, est masqué.
+  await expect(page.locator('#parcoursInfoFilterDtCell')).toBeHidden();
   await expect.poll(async () => (await info(page)).rest.near.length).toBeGreaterThan(2);
   const all = (await info(page)).rest.near.length;
 
   // Fixture : D 1,5 / T 2 partout — au seuil 3 (le défaut), plus rien.
   await page.locator('#parcoursInfoFilter').selectOption('dt');
-  await expect(page.locator('#parcoursInfoFilterDt')).toBeEnabled();
+  await expect(page.locator('#parcoursInfoFilterDtCell')).toBeVisible();
   await expect.poll(async () => (await info(page)).settings).toMatchObject({ filter: 'dt', filter_dt: 3 });
   await expect.poll(async () => (await info(page)).rest.near).toEqual([]);
   // Au seuil 1, tout repasse.
   await page.locator('#parcoursInfoFilterDt').fill('1');
   await expect.poll(async () => (await info(page)).rest.near.length).toBe(all);
 
-  // Retour en temporaire : le filtre réglé est sans effet — grisé et signalé.
+  // Retour en temporaire : le filtre réglé est sans effet — la ligne est
+  // masquée, mais sa valeur est conservée dans le thème.
   await page.locator('#parcoursInfoNear').selectOption('current');
-  await expect(page.locator('#parcoursInfoFilter')).toBeDisabled();
-  await expect(page.locator('#helpInfoFilter')).toBeVisible();
+  await expect(page.locator('#parcoursInfoFilterRow')).toBeHidden();
+  await expect.poll(async () => (await info(page)).settings).toMatchObject({ filter: 'dt', filter_dt: 1 });
   expect(errors).toEqual([]);
 });
 
