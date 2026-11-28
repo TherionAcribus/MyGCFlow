@@ -514,6 +514,17 @@ Autres repères :
   « à vérifier » (`#parcoursStopsReview`, combinable avec la recherche) :
   `stop.confidence === CONFIDENCE_GEO` (heure déduite de la géographie
   seule ; la fixture n'en a que sur la journée 2).
+  Actions des lignes d'étape (lire, monter, descendre, poignée) : dans un
+  conteneur `.parcours-stop-actions` superposé au bout de la ligne, hors du
+  flux — le texte prend toute la largeur au repos — visible au
+  survol/focus/ajustement sur fond opaque ; `pointer-events` coupés quand
+  il est caché, donc un clic direct sans survol ne les atteint pas (le
+  survol de la souris lors du clic Playwright les réactive). La provenance
+  de l'heure (« ordre des logs », « géographie »…) n'est plus dans le
+  détail des lignes ni des bulles de la carte : elle s'explique dans le
+  panneau d'ajustement, ligne « Heure » (`.parcours-edit-reason`, étapes
+  non ancrées seulement) ; une épingle discrète (`.parcours-stop-pin`)
+  suit l'heure épinglée dans la ligne.
   Apparence des étapes et du trait (`points.parcours_style`, thème) : un
   spec la règle par l'onglet Style ou en mémoire — rien à remettre ; relevés
   `style`, `stopStyles` (numéro, couleur, rayon de chaque pastille ;

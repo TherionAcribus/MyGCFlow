@@ -264,7 +264,13 @@ test('créer un parcours : étapes reconstruites par jour, heures, sur la carte'
   await expect(page.locator('.parcours-stop').first()).toContainText('Départ du sentier');
   await expect(page.locator('.parcours-stop-time').first()).toHaveText('≈ 09:00');
   await expect(page.locator('.parcours-day-diagnostic').first()).toContainText('ordre de saisie des logs retenu');
-  await expect(page.locator('.parcours-stop[data-stop-key="GCPAR04"]')).toContainText('souvent loguée après coup');
+  // La provenance de l'heure n'est plus dans le détail de la ligne : elle
+  // s'explique dans le panneau d'ajustement, ligne « Heure ».
+  await expect(page.locator('.parcours-stop[data-stop-key="GCPAR04"]')).not.toContainText('souvent loguée après coup');
+  await page.locator('.parcours-stop[data-stop-key="GCPAR04"] .parcours-stop-text').click();
+  await expect(page.locator('.parcours-stop-edit[data-edit-key="GCPAR04"]')).toContainText('souvent loguée après coup');
+  await page.locator('.parcours-stop[data-stop-key="GCPAR04"] .parcours-stop-text').click();
+  await expect(page.locator('.parcours-stop-edit')).toHaveCount(0);
   await expect(page.locator('.parcours-stop-index').last()).toHaveText('5');
 
   // Un parcours existe : le formulaire se replie derrière « Nouveau

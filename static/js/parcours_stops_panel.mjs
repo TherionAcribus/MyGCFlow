@@ -13,6 +13,7 @@ import {
     categoryOptionLabel,
     dayDiagnostic,
     formatDay,
+    reasonLabel,
     stopCategoryIcon,
     stopDetail,
     stopLabel,
@@ -24,6 +25,7 @@ import {
     CONFIDENCE_GEO,
     KIND_BASE,
     KIND_PLACE,
+    REASON_PINNED,
     isCountedStop,
     minutesToTime,
     visitMinutes,
@@ -556,6 +558,18 @@ export function createStopsPanel(deps) {
         time.className = 'parcours-stop-time small mt-1';
         time.classList.toggle('text-muted', stop.confidence !== CONFIDENCE_ANCHORED);
         time.textContent = stopTime(stop);
+        // Heure épinglée : une épingle discrète suit l'heure — son titre
+        // rappelle pourquoi elle est exacte (pas de « ≈ »).
+        let pinMark = null;
+        if (deps.pinnedTimeOf(stop)) {
+            pinMark = document.createElement('span');
+            pinMark.className = 'parcours-stop-pin ms-1 mt-1 small text-muted';
+            pinMark.title = reasonLabel(REASON_PINNED);
+            const pinIcon = document.createElement('i');
+            pinIcon.className = 'ti ti-pin';
+            pinIcon.setAttribute('aria-hidden', 'true');
+            pinMark.append(pinIcon);
+        }
         const badge = document.createElement('span');
         badge.className = 'parcours-stop-index';
         // Même peinture que le plan ; creuse : fond blanc cerclé de la couleur.
@@ -595,19 +609,27 @@ export function createStopsPanel(deps) {
         // Ses photos sous le texte (hors du bouton : un bouton n'en contient
         // pas d'autre) — un clic ouvre la photo dans l'onglet Photos.
         const photos = deps.photoStrip?.(stop.key, { max: 5 });
+        const head = pinMark ? [time, pinMark] : [time];
         if (photos) {
             const body = document.createElement('div');
             body.className = 'flex-grow-1 min-w-0';
             body.append(text, photos);
-            item.append(time, badge, icon, body);
+            item.append(...head, badge, icon, body);
         } else {
-            item.append(time, badge, icon, text);
+            item.append(...head, badge, icon, text);
         }
+        // Les quatre actions vivent dans un conteneur superposé au bout de la
+        // ligne (`.parcours-stop-actions`, positionné en absolu par le CSS) :
+        // elles n'encombrent plus le flux — le texte prend toute la largeur
+        // au repos — et n'apparaissent qu'au survol, au focus clavier dans la
+        // ligne, à son survol sur la carte et pendant son ajustement.
+        const actions = document.createElement('div');
+        actions.className = 'parcours-stop-actions';
         if (deps.playFromStop) {
             const play = button('btn btn-sm btn-ghost-secondary parcours-stop-play', 'ti-player-play',
                 t('Lire depuis ici'));
             play.addEventListener('click', () => deps.playFromStop(stop));
-            item.append(play);
+            actions.append(play);
         }
 
         const position = movable.indexOf(stop);
@@ -618,7 +640,7 @@ export function createStopsPanel(deps) {
             const down = button('btn btn-sm btn-ghost-secondary parcours-stop-down', 'ti-arrow-down', t('Descendre'));
             down.disabled = position === movable.length - 1;
             down.addEventListener('click', () => deps.moveStop(day, stop.key, 1));
-            item.append(up, down);
+            actions.append(up, down);
             // Poignée de glisser-déposer (Pointer Events, cf. bindDrag) :
             // décorative — le clavier réordonne par les flèches et la liste
             // déroulante « Journée » du panneau d'ajustement.
@@ -629,8 +651,9 @@ export function createStopsPanel(deps) {
             const gripIcon = document.createElement('i');
             gripIcon.className = 'ti ti-grip-vertical';
             grip.append(gripIcon);
-            item.append(grip);
+            actions.append(grip);
         }
+        if (actions.children.length > 0) item.append(actions);
         return editKey === stop.key ? [item, renderEditPanel(stop, day)] : [item];
     }
 
@@ -692,6 +715,17 @@ export function createStopsPanel(deps) {
                     { text: t('Retirer') });
                 unpin.addEventListener('click', () => deps.pinStopTime(stop, null));
                 row.append(unpin);
+            }
+            // Heure estimée (« ≈ ») : la provenance, retirée du détail des
+            // lignes, s'explique ici — là où l'utilisateur peut l'épingler.
+            if (stop.confidence !== CONFIDENCE_ANCHORED) {
+                const reason = reasonLabel(stop.reason);
+                if (reason) {
+                    const hint = document.createElement('span');
+                    hint.className = 'small text-muted parcours-edit-reason';
+                    hint.textContent = reason;
+                    row.append(hint);
+                }
             }
             panel.append(row);
 

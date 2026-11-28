@@ -4354,26 +4354,35 @@ body[data-mode="parcours"] .rhythm-rate-field {
 }
 
 /* Actions d'une étape (lire depuis ici, monter, descendre, poignée) : quatre
-   icônes pâles par ligne encombraient la liste — elles n'apparaissent qu'au
-   survol, au focus clavier dans la ligne, à son survol sur la carte et
-   pendant son ajustement. Opacité plutôt que display : la ligne ne bouge
-   pas, le clic reste possible. */
-.parcours-stop:not(.is-excluded) > .parcours-stop-play,
-.parcours-stop:not(.is-excluded) > .parcours-stop-up,
-.parcours-stop:not(.is-excluded) > .parcours-stop-down,
-.parcours-stop:not(.is-excluded) > .parcours-stop-grip {
+   icônes par ligne encombraient la liste — même masquées, elles réservaient
+   leur largeur en bout de ligne et compressaient le texte. Elles vivent
+   désormais dans un conteneur superposé au bout de la ligne, hors du flux :
+   le texte prend toute la largeur au repos et les actions n'apparaissent
+   qu'au survol, au focus clavier dans la ligne, à son survol sur la carte
+   et pendant son ajustement, sur un fond opaque qui les garde lisibles
+   au-dessus du texte. `pointer-events: none` quand elles sont cachées :
+   sinon les boutons invisibles superposés au texte intercepteraient ses
+   clics (le texte ouvre le panneau d'ajustement). */
+.parcours-stop {
+    position: relative;
+}
+.parcours-stop-actions {
+    position: absolute;
+    top: 0.1rem;
+    right: 0.2rem;
+    display: flex;
+    align-items: center;
+    z-index: 2;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.12s ease;
+    background: var(--tblr-card-bg, #fff);
+    border-radius: 4px;
+    padding-left: 0.4rem;
 }
-.parcours-stop:is(:hover, :focus-within, .is-map-hover, .is-editing) > :is(.parcours-stop-play, .parcours-stop-grip),
-.parcours-stop:is(:hover, :focus-within, .is-map-hover, .is-editing) > :is(.parcours-stop-up, .parcours-stop-down):not(:disabled) {
-    opacity: 0.7;
-}
-.parcours-stop:is(:hover, :focus-within, .is-map-hover, .is-editing) > :is(.parcours-stop-up, .parcours-stop-down):disabled {
-    opacity: 0.25;
-}
-.parcours-stop > :is(.parcours-stop-play, .parcours-stop-up, .parcours-stop-down, .parcours-stop-grip):is(:hover, :focus-visible):not(:disabled) {
+.parcours-stop:is(:hover, :focus-within, .is-map-hover, .is-editing) > .parcours-stop-actions {
     opacity: 1;
+    pointer-events: auto;
 }
 /* « Lire depuis ici » : discret, net au survol du bouton lui-même. */
 .parcours-day-play {

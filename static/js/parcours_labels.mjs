@@ -161,8 +161,9 @@ export function stopDetail(stop, photoCount = 0) {
     else if (stop.posSource === 'corrected') parts.push(t('coordonnées corrigées'));
     else if (stop.posSource === 'manual') parts.push(t('position saisie'));
     if (stop.favorite) parts.push(t('PF donné'));
-    const reason = reasonLabel(stop.reason);
-    if (reason) parts.push(reason);
+    // La provenance de l'heure (« ordre des logs », « géographie »…) ne figure
+    // plus dans le détail — jargon interne redondant avec le « ≈ » des heures
+    // estimées ; elle est expliquée dans le panneau d'ajustement, ligne Heure.
     if (stop.movedFrom) parts.push(t('déplacée du ${day}', { day: formatDay(stop.movedFrom, { day: 'numeric', month: 'short' }) }));
     if (photoCount) parts.push(photoCount === 1 ? t('1 photo') : t('${n} photos', { n: photoCount }));
     return parts.join(' · ');

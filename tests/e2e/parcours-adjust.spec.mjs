@@ -37,6 +37,22 @@ const row = (page, key) => page.locator(`.parcours-stop[data-stop-key="${key}"]`
 // Le glisser-déposer part de la poignée de la ligne (Pointer Events).
 const grip = (page, key) => row(page, key).locator('.parcours-stop-grip');
 
+// Les actions d'une ligne sont superposées, sans pointer-events au repos :
+// le hit-test de Playwright échouerait avant même que la souris ne les
+// survole — comme un utilisateur, survoler la ligne avant de les cliquer.
+async function clickAction(page, key, selector) {
+  await row(page, key).hover();
+  await row(page, key).locator(selector).click();
+}
+
+async function dragStop(page, key, target, options) {
+  // Survol de la ligne plutôt que de la poignée : le hit-test de la poignée
+  // échouerait (le texte intercepte tant que les actions sont masquées),
+  // celui de la ligne passe — le texte est son propre descendant.
+  await row(page, key).hover();
+  await grip(page, key).dragTo(target, options);
+}
+
 // Attend la reconstruction qui suit un ajustement enregistré.
 async function adjusted(page, revision) {
   await expect.poll(async () => (await snapshot(page)).adjustmentRevision).toBeGreaterThan(revision);
@@ -49,7 +65,7 @@ test('ordre manuel : flèches, glisser-déposer, persistance, retour à l’ordr
   let state = await snapshot(page);
   expect(state.days[0].keys).toEqual(['GCPAR03', 'GCPAR01', 'GCPAR02']);
 
-  await row(page, 'GCPAR03').locator('.parcours-stop-down').click();
+  await clickAction(page, 'GCPAR03', '.parcours-stop-down');
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
   expect(state.days[0].manual).toBe(true);
@@ -59,7 +75,7 @@ test('ordre manuel : flèches, glisser-déposer, persistance, retour à l’ordr
   await expect(row(page, 'GCPAR01').locator('.parcours-stop-index')).toHaveText('1');
 
   // Glisser GCPAR02 au-dessus de GCPAR01.
-  await grip(page, 'GCPAR02').dragTo(row(page, 'GCPAR01'), { targetPosition: { x: 20, y: 2 } });
+  await dragStop(page, 'GCPAR02', row(page, 'GCPAR01'), { targetPosition: { x: 20, y: 2 } });
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR02', 'GCPAR01', 'GCPAR03']);
 
@@ -83,7 +99,7 @@ test('glisser-déposer une étape vers la journée suivante', async ({ page }) =
   expect(state.days).toHaveLength(2);
 
   // GCPAR03 lâchée au-dessus de GCPAR04 : elle ouvre le dimanche.
-  await grip(page, 'GCPAR03').dragTo(row(page, 'GCPAR04'), { targetPosition: { x: 20, y: 2 } });
+  await dragStop(page, 'GCPAR03', row(page, 'GCPAR04'), { targetPosition: { x: 20, y: 2 } });
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR02']);
   expect(state.days[1].keys).toEqual(['GCPAR03', 'GCPAR04', 'GCPAR05']);
@@ -134,13 +150,14 @@ test('journées repliables : chevron, tout plier, dépôt qui déplie', async ({
   // En-tête : majuscule au seul premier mot (le mois restait capitalisé).
   await expect(sat.locator('.parcours-day-title')).toHaveText('Samedi 12 juillet 2025');
 
-  // Actions d'une étape : effacées au repos, montrées au survol de la ligne.
+  // Actions d'une étape : le conteneur superposé est effacé au repos (sans
+  // pointer-events, pour ne pas piéger le clic du texte), montré au survol.
   const opacity = (locator) => locator.evaluate((node) => Number(getComputedStyle(node).opacity));
-  const play = row(page, 'GCPAR01').locator('.parcours-stop-play');
+  const actions = row(page, 'GCPAR01').locator('.parcours-stop-actions');
   await page.mouse.move(0, 0);
-  await expect.poll(() => opacity(play)).toBe(0);
+  await expect.poll(() => opacity(actions)).toBe(0);
   await row(page, 'GCPAR01').hover();
-  await expect.poll(() => opacity(play)).toBeGreaterThan(0.5);
+  await expect.poll(() => opacity(actions)).toBeGreaterThan(0.5);
 
   // Chevron : la journée se replie, son nombre d'étapes reste lisible.
   await sat.locator('.parcours-day-toggle').click();
@@ -163,7 +180,7 @@ test('journées repliables : chevron, tout plier, dépôt qui déplie', async ({
   // Déposer sur une journée repliée la déplie : le résultat reste visible.
   await sun.locator('.parcours-day-toggle').click();
   const before = (await snapshot(page)).adjustmentRevision;
-  await grip(page, 'GCPAR03').dragTo(sun);
+  await dragStop(page, 'GCPAR03', sun);
   const state = await adjusted(page, before);
   expect(state.days[1].keys).toEqual(['GCPAR04', 'GCPAR05', 'GCPAR03']);
   await expect(sun.locator('.parcours-day-body')).toBeVisible();
@@ -179,7 +196,7 @@ test('annuler / rétablir : boutons, Ctrl+Z, et remise à zéro annulable', asyn
   await expect(undo).toBeDisabled();
 
   // Un déplacement : le bouton Annuler s'active, l'annulation le défait.
-  await row(page, 'GCPAR03').locator('.parcours-stop-down').click();
+  await clickAction(page, 'GCPAR03', '.parcours-stop-down');
   state = await adjusted(page, state.adjustmentRevision);
   expect(state.days[0].keys).toEqual(['GCPAR01', 'GCPAR03', 'GCPAR02']);
   await expect(undo).toBeEnabled();
@@ -345,10 +362,10 @@ test('clics rapides sur « descendre » : les deux déplacements composent', asy
   const rev = (await snapshot(page)).adjustmentRevision;
   expect((await snapshot(page)).days[0].keys).toEqual(['GCPAR03', 'GCPAR01', 'GCPAR02']);
 
-  await row(page, 'GCPAR03').locator('.parcours-stop-down').click();
+  await clickAction(page, 'GCPAR03', '.parcours-stop-down');
   // La ligne est déjà re-rendue à sa nouvelle place : le second clic repart
   // de cet état pendant que le premier envoi est encore en vol.
-  await row(page, 'GCPAR03').locator('.parcours-stop-down').click();
+  await clickAction(page, 'GCPAR03', '.parcours-stop-down');
 
   const state = await adjusted(page, rev);
   expect(urls.length).toBe(2);
@@ -662,7 +679,7 @@ test('annuler / rétablir : création et suppression de lieu', async ({ page, re
 
   // Le lieu est déplacé d'un rang : l'ajustement cite sa clé.
   const down = row(page, newKey).locator('.parcours-stop-down');
-  await (await down.isDisabled() ? row(page, newKey).locator('.parcours-stop-up') : down).click();
+  await clickAction(page, newKey, await down.isDisabled() ? '.parcours-stop-up' : '.parcours-stop-down');
   state = await adjusted(page, state.adjustmentRevision);
   const rankIndex = state.days[0].keys.indexOf(newKey);
   expect(state.overrides.some((o) => o.key === newKey)).toBe(true);

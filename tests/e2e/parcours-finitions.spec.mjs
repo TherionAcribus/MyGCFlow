@@ -471,8 +471,13 @@ test('« Lire depuis ici » : la lecture démarre à l’étape ou à la journé
   const targetIndex = 3;
   const targetQ = stopQ[targetIndex];
   // Depuis le repos, via le bouton de la ligne d'étape (l'ordre de la liste
-  // est celui de la chronologie).
-  await page.locator('.parcours-stop-play').nth(targetIndex).click();
+  // est celui de la chronologie). Survol d'abord : les actions superposées
+  // sont sans pointer-events au repos.
+  const playButton = page.locator('.parcours-stop-play').nth(targetIndex);
+  // force : le hit-test du survol échouerait — tant que les actions sont
+  // masquées (sans pointer-events), le texte intercepte au-dessus d'elles.
+  await playButton.hover({ force: true });
+  await playButton.click();
   await expect.poll(async () => (await snapshot(page)).running).toBe(true);
   const playing = await snapshot(page);
   expect(playing.currentQ).toBeGreaterThanOrEqual(targetQ);

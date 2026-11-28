@@ -120,7 +120,12 @@ test('banc : temps d’image en lecture sur 500 étapes', async ({ page, request
   const [frames, snap] = await Promise.all([
     measureFrames(page, 12_000),
     (async () => {
-      await page.locator('.parcours-stop-play').nth(249).click();
+      // Survol d'abord (force : le hit-test échouerait — tant que les
+      // actions sont masquées, le texte intercepte au-dessus d'elles) :
+      // les actions superposées sont sans pointer-events au repos.
+      const playButton = page.locator('.parcours-stop-play').nth(249);
+      await playButton.hover({ force: true });
+      await playButton.click();
       await expect.poll(async () => (await snapshot(page)).running).toBe(true);
       await page.waitForTimeout(10_000);
       return snapshot(page);
