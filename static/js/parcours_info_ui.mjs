@@ -48,6 +48,8 @@ export function createParcoursInfoUI(deps) {
         }
         const twoLines = el('parcoursInfoTwoLines');
         if (twoLines) raw.two_lines = twoLines.checked;
+        const places = el('parcoursInfoPlaces');
+        if (places) raw.places = places.checked;
         return normalizeParcoursInfo({ ...raw, ...extra }, deps.getInfo());
     }
 
@@ -152,6 +154,8 @@ export function createParcoursInfoUI(deps) {
         }
         const twoLines = el('parcoursInfoTwoLines');
         if (twoLines) twoLines.checked = info.two_lines;
+        const places = el('parcoursInfoPlaces');
+        if (places) places.checked = info.places;
         const opacity = el('parcoursInfoBackgroundOpacityValue');
         if (opacity) opacity.textContent = `${info.background_opacity}%`;
         // Interrupteur : reflète l'état et retient la dernière configuration
@@ -197,7 +201,7 @@ export function createParcoursInfoUI(deps) {
 
     function bind() {
         if (!el('parcoursInfo')) return;
-        for (const id of [...Object.values(VALUE_IDS), ...Object.values(FIELD_IDS), 'parcoursInfoTwoLines']) {
+        for (const id of [...Object.values(VALUE_IDS), ...Object.values(FIELD_IDS), 'parcoursInfoTwoLines', 'parcoursInfoPlaces']) {
             el(id)?.addEventListener('change', () => commit());
         }
         // Valeur bornée réaffichée à la sortie du champ (40 → 28).

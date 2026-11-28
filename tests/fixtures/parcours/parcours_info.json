@@ -56,6 +56,7 @@
     "name": true,
     "near": "none",
     "owner": false,
+    "places": false,
     "size": 13,
     "step": false,
     "text_color": "#212529",

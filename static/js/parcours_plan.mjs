@@ -482,21 +482,21 @@ export function createParcoursPlan(deps) {
         return stop ? { stop, coords: feature.getGeometry().getCoordinates(), alpha: 1, force, preview } : null;
     }
 
-    function infoFeatureEligible(feature) {
+    function infoFeatureEligible(feature, places = false) {
         const role = feature.get('role');
         const kind = feature.get('kind');
-        if (kind === KIND_PLACE || kind === KIND_BASE) return false;
+        if ((kind === KIND_PLACE || kind === KIND_BASE) && !places) return false;
         return role === 'fan' || (role === 'stop' && !feature.get('stacked') && !feature.get('stackKeys'));
     }
 
     // Fiche épinglée du studio : l'étape la plus proche du centre de la
     // vue, gardée tant qu'elle reste valide et visible.
-    function previewInfoEntry() {
+    function previewInfoEntry(places = false) {
         const source = parcoursLayer?.getSource();
         const map = deps.getMap();
         const center = map?.getView()?.getCenter();
         if (!source || !center) return null;
-        if (infoPreview?.feature && source.hasFeature(infoPreview.feature) && infoFeatureEligible(infoPreview.feature)) {
+        if (infoPreview?.feature && source.hasFeature(infoPreview.feature) && infoFeatureEligible(infoPreview.feature, places)) {
             const px = map.getPixelFromCoordinate(infoPreview.feature.getGeometry().getCoordinates());
             const size = map.getSize() || [0, 0];
             if (px[0] >= 0 && px[1] >= 0 && px[0] <= size[0] && px[1] <= size[1]) {
@@ -506,7 +506,7 @@ export function createParcoursPlan(deps) {
         let best = null;
         let bestDist = Infinity;
         for (const feature of source.getFeatures()) {
-            if (!infoFeatureEligible(feature)) continue;
+            if (!infoFeatureEligible(feature, places)) continue;
             const [x, y] = feature.getGeometry().getCoordinates();
             const d = (x - center[0]) ** 2 + (y - center[1]) ** 2;
             if (d < bestDist) {
@@ -519,12 +519,14 @@ export function createParcoursPlan(deps) {
     }
 
     function setInfoHover(target) {
+        const places = paints.infoSettings()?.places === true;
         let next = null;
         if (target?.key) next = target;
         else if (target && typeof target.get === 'function') {
             const role = target.get('role');
             const kind = target.get('kind');
-            if ((role === 'stop' || role === 'fan') && kind !== KIND_PLACE && kind !== KIND_BASE && !target.get('stackKeys')) {
+            const cacheKind = kind !== KIND_PLACE && kind !== KIND_BASE;
+            if ((role === 'stop' || role === 'fan') && (cacheKind || places) && !target.get('stackKeys')) {
                 next = { key: target.get('key'), feature: target };
             }
         }
@@ -552,11 +554,11 @@ export function createParcoursPlan(deps) {
         if (mode === 'current') {
             if (first) return [first];
             if (!studio) return [];
-            const preview = previewInfoEntry();
+            const preview = previewInfoEntry(info.places);
             return preview ? [preview] : [];
         }
         const entries = source.getFeatures()
-            .filter((f) => infoFeatureEligible(f))
+            .filter((f) => infoFeatureEligible(f, info.places))
             .sort((a, b) => (a.get('index') ?? 0) - (b.get('index') ?? 0))
             .map((f) => infoEntryOf(f))
             .filter((entry) => entry && entry.stop.key !== first?.stop.key && infoFilterPass(entry.stop, info));

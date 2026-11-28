@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-27 21:16+0100\n"
+"POT-Creation-Date: 2026-11-27 21:38+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3541,7 +3541,7 @@ msgstr ""
 msgid "${period} (au ${date})"
 msgstr ""
 
-#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:1265
+#: static/js/chart_labels.mjs:559 static/js/parcours_play.mjs:1266
 #: static/js/parcours_tbar.mjs:71 static/js/parcours_tbar.mjs:158
 #, python-brace-format
 msgid "Jour ${n}"
@@ -6162,11 +6162,11 @@ msgstr ""
 msgid "Ouvrir la photo ${name} dans l’onglet Photos"
 msgstr ""
 
-#: static/js/parcours_info_ui.mjs:76
+#: static/js/parcours_info_ui.mjs:78
 msgid "Le trésor caché du vieux moulin de la vallée"
 msgstr ""
 
-#: static/js/parcours_info_ui.mjs:119 static/js/parcours_play.mjs:1055
+#: static/js/parcours_info_ui.mjs:121 static/js/parcours_play.mjs:1055
 #, python-brace-format
 msgid "par ${owner}"
 msgstr ""
@@ -7042,21 +7042,21 @@ msgstr ""
 msgid "Poser une base ici"
 msgstr ""
 
-#: static/js/parcours_play.mjs:1259
+#: static/js/parcours_play.mjs:1260
 #, python-brace-format
 msgid "${n} jours plus tard · ${date}"
 msgstr ""
 
-#: static/js/parcours_play.mjs:1283 static/js/parcours_play.mjs:1300
+#: static/js/parcours_play.mjs:1284 static/js/parcours_play.mjs:1301
 #, python-brace-format
 msgid "${n} journées"
 msgstr ""
 
-#: static/js/parcours_play.mjs:1285
+#: static/js/parcours_play.mjs:1286
 msgid "Le parcours"
 msgstr ""
 
-#: static/js/parcours_play.mjs:1301 static/js/parcours_tbar.mjs:94
+#: static/js/parcours_play.mjs:1302 static/js/parcours_tbar.mjs:94
 msgid "Fin du parcours"
 msgstr ""
 
@@ -8395,14 +8395,14 @@ msgid "Comme l'écran"
 msgstr ""
 
 #: static/js/stats_page_dashboard.js:351 templates/_app_header.html:52
-#: templates/menu_info_parcours.html:189 templates/menu_options.html:34
+#: templates/menu_info_parcours.html:195 templates/menu_options.html:34
 #: templates/menu_stats.html:368 templates/menu_style.html:169
 #: templates/stats_page.html:800
 msgid "Clair"
 msgstr ""
 
 #: static/js/stats_page_dashboard.js:352 templates/_app_header.html:53
-#: templates/menu_info_parcours.html:192 templates/menu_options.html:35
+#: templates/menu_info_parcours.html:198 templates/menu_options.html:35
 #: templates/menu_stats.html:367 templates/menu_style.html:172
 #: templates/stats_page.html:801
 msgid "Sombre"
@@ -12718,7 +12718,7 @@ msgstr ""
 msgid "Réglez le"
 msgstr ""
 
-#: templates/guide.html:249 templates/menu_info_parcours.html:167
+#: templates/guide.html:249 templates/menu_info_parcours.html:173
 #: templates/menu_informations.html:144 templates/menu_informations.html:285
 #: templates/menu_stats.html:383
 msgid "Texte"
@@ -16742,13 +16742,13 @@ msgstr ""
 msgid "Retourner en miroir"
 msgstr ""
 
-#: templates/menu_images.html:293 templates/menu_info_parcours.html:171
+#: templates/menu_images.html:293 templates/menu_info_parcours.html:177
 #: templates/menu_informations.html:212 templates/menu_names.html:352
 #: templates/menu_stats.html:379 templates/stats_page.html:797
 msgid "Fond"
 msgstr ""
 
-#: templates/menu_images.html:297 templates/menu_info_parcours.html:181
+#: templates/menu_images.html:297 templates/menu_info_parcours.html:187
 #: templates/menu_names.html:364 templates/menu_stats.html:391
 msgid "Opacité du fond"
 msgstr ""
@@ -17010,78 +17010,81 @@ msgstr ""
 msgid "Trouvailles de la cache"
 msgstr ""
 
-#: templates/menu_info_parcours.html:114
+#: templates/menu_info_parcours.html:117
+msgid "Lieux et bases (nom seul)"
+msgstr ""
+
+#: templates/menu_info_parcours.html:120
 msgid ""
 "Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni "
 "propriétaire, et les points favoris ne sont connus qu'après « Compléter "
-"depuis geocaching.com » (onglet Données). Les lieux et les bases n'ont "
-"pas de fiche."
-msgstr ""
-
-#: templates/menu_info_parcours.html:115
-msgid "Aucun élément coché : la fiche ne s'affiche nulle part."
+"depuis geocaching.com » (onglet Données)."
 msgstr ""
 
 #: templates/menu_info_parcours.html:121
-msgid "Design"
-msgstr ""
-
-#: templates/menu_info_parcours.html:124
-msgid "Design de la fiche"
-msgstr ""
-
-#: templates/menu_info_parcours.html:126
-msgid "Étiquette"
+msgid "Aucun élément coché : la fiche ne s'affiche nulle part."
 msgstr ""
 
 #: templates/menu_info_parcours.html:127
+msgid "Design"
+msgstr ""
+
+#: templates/menu_info_parcours.html:130
+msgid "Design de la fiche"
+msgstr ""
+
+#: templates/menu_info_parcours.html:132
+msgid "Étiquette"
+msgstr ""
+
+#: templates/menu_info_parcours.html:133
 msgid "Fiche"
 msgstr ""
 
-#: templates/menu_info_parcours.html:128
+#: templates/menu_info_parcours.html:134
 msgid "Bandeau"
 msgstr ""
 
-#: templates/menu_info_parcours.html:129
+#: templates/menu_info_parcours.html:135
 msgid "Texte seul"
 msgstr ""
 
-#: templates/menu_info_parcours.html:139 templates/menu_informations.html:164
+#: templates/menu_info_parcours.html:145 templates/menu_informations.html:164
 #: templates/menu_names.html:284
 msgid "Police"
 msgstr ""
 
-#: templates/menu_info_parcours.html:141 templates/menu_names.html:286
+#: templates/menu_info_parcours.html:147 templates/menu_names.html:286
 msgid "Sans empattement"
 msgstr ""
 
-#: templates/menu_info_parcours.html:142 templates/menu_names.html:287
+#: templates/menu_info_parcours.html:148 templates/menu_names.html:287
 msgid "Avec empattement"
 msgstr ""
 
-#: templates/menu_info_parcours.html:143 templates/menu_names.html:289
+#: templates/menu_info_parcours.html:149 templates/menu_names.html:289
 msgid "Arrondie"
 msgstr ""
 
-#: templates/menu_info_parcours.html:144
+#: templates/menu_info_parcours.html:150
 msgid "Condensée"
 msgstr ""
 
-#: templates/menu_info_parcours.html:145 templates/menu_names.html:43
+#: templates/menu_info_parcours.html:151 templates/menu_names.html:43
 #: templates/menu_names.html:288
 msgid "Machine à écrire"
 msgstr ""
 
-#: templates/menu_info_parcours.html:146 templates/menu_names.html:291
+#: templates/menu_info_parcours.html:152 templates/menu_names.html:291
 msgid "Manuscrite"
 msgstr ""
 
-#: templates/menu_info_parcours.html:150 templates/menu_names.html:79
+#: templates/menu_info_parcours.html:156 templates/menu_names.html:79
 #: templates/menu_stats.html:404
 msgid "Taille du texte"
 msgstr ""
 
-#: templates/menu_info_parcours.html:153 templates/menu_names.html:82
+#: templates/menu_info_parcours.html:159 templates/menu_names.html:82
 #: templates/menu_points.html:37 templates/menu_points.html:207
 #: templates/menu_points.html:272 templates/menu_points.html:331
 #: templates/menu_points.html:381 templates/menu_points.html:545
@@ -17089,31 +17092,31 @@ msgstr ""
 msgid "px"
 msgstr ""
 
-#: templates/menu_info_parcours.html:157
+#: templates/menu_info_parcours.html:163
 msgid "Couleur d'accent"
 msgstr ""
 
-#: templates/menu_info_parcours.html:160
+#: templates/menu_info_parcours.html:166
 msgid "Celle de l'étape"
 msgstr ""
 
-#: templates/menu_info_parcours.html:161
+#: templates/menu_info_parcours.html:167
 msgid "Couleur fixe"
 msgstr ""
 
-#: templates/menu_info_parcours.html:163
+#: templates/menu_info_parcours.html:169
 msgid "Couleur d'accent fixe"
 msgstr ""
 
-#: templates/menu_info_parcours.html:177
+#: templates/menu_info_parcours.html:183
 msgid "Nom sur deux lignes"
 msgstr ""
 
-#: templates/menu_info_parcours.html:195 templates/stats_page.html:414
+#: templates/menu_info_parcours.html:201 templates/stats_page.html:414
 msgid "Par défaut"
 msgstr ""
 
-#: templates/menu_info_parcours.html:199
+#: templates/menu_info_parcours.html:205
 msgid ""
 "Les vignettes montrent une fiche d'exemple avec vos réglages. Bandeau : "
 "le fond prend la couleur d'accent, le texte s'y adapte. Texte seul : le "

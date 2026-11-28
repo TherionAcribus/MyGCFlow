@@ -84,6 +84,15 @@ test('contenu : éléments cochés et connus, rien pour un lieu', () => {
     assert.equal(infoContent({ key: 'lab:2', kind: 'lab', name: '' }, info), null);
     assert.equal(infoContent({ key: 'p', kind: 'place', name: 'Parking' }, info), null);
     assert.equal(infoContent({ key: 'b', kind: 'base', name: 'Hôtel' }, info), null);
+    // Case « Lieux et bases » cochée : le nom seul fait une fiche.
+    const withPlaces = { ...info, places: true };
+    assert.deepEqual(infoContent({ key: 'p', kind: 'place', name: 'Parking' }, withPlaces),
+        { name: 'Parking', dt: null, owner: null, favorites: null, ...empty });
+    assert.deepEqual(infoContent({ key: 'b', kind: 'base', name: 'Hôtel' }, withPlaces),
+        { name: 'Hôtel', dt: null, owner: null, favorites: null, ...empty });
+    // Nom décoché ou vide : toujours rien.
+    assert.equal(infoContent({ key: 'p', kind: 'place', name: 'Parking' }, { ...withPlaces, name: false }), null);
+    assert.equal(infoContent({ key: 'p', kind: 'place', name: '' }, withPlaces), null);
     // Éléments décochés.
     assert.deepEqual(infoContent(stop, { ...info, name: false, owner: false }), {
         name: null, dt: { d: 2.5, t: 3 }, owner: null, favorites: 42, ...empty,
@@ -186,6 +195,14 @@ test('fiche en cours : dernière étape comptée atteinte, lieux ignorés', () =
     assert.equal(currentInfo(timeline, 25, { holdQ: 10 }), null);
     // L'arrivée de GC2 coupe celle de GC1 et prend la place.
     assert.deepEqual(currentInfo(timeline, 41, { holdQ: 100 }), { index: 2, alpha: 1 });
+    // Case « Lieux et bases » : le lieu devient l'étape en cours de sa
+    // visite et coupe la fenêtre de la cache précédente.
+    assert.deepEqual(currentInfo(timeline, 21, { holdQ: 30, places: true }), { index: 1, alpha: 1 });
+    // La durée minimale garde la fiche du lieu après son départ, jusqu'à
+    // l'arrivée de GC2 qui la coupe.
+    assert.deepEqual(currentInfo(timeline, 25, { holdQ: 30, places: true }), { index: 1, alpha: 1 });
+    assert.deepEqual(currentInfo(timeline, 41, { holdQ: 30, places: true }), { index: 2, alpha: 1 });
+    assert.deepEqual(currentInfo(timeline, 16, { holdQ: 30, places: true }), { index: 0, alpha: 1 });
     assert.equal(secondsToQuanta(3, 100), 30);
     assert.equal(secondsToQuanta(3, 50), 60);
 });

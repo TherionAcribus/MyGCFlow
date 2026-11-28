@@ -262,3 +262,29 @@ test('lecture : fiches permanentes sur les étapes atteintes, l’étape en cour
   await stopPlayback(page);
   expect(errors).toEqual([]);
 });
+
+test('lieux et bases : la case ouvre la fiche du lieu, nom seul', async ({ page, request }) => {
+  const { id } = (await (await request.get('/api/parcours')).json()).parcours[0];
+  const created = await request.post(`/api/parcours/${id}/places`, {
+    data: { kind: 'place', name: 'Belvédère', lat: 45.903, lon: 6.125, date: '2025-07-12', time: '09:45' },
+  });
+  expect(created.status()).toBe(201);
+  const errors = collectErrors(page);
+  await openReady(page);
+  await openInfoTab(page);
+
+  // Permanent : le lieu n'a pas de fiche tant que la case est décochée.
+  await page.locator('#parcoursInfoNear').selectOption('all');
+  await expect.poll(async () => (await info(page)).rest.near.length).toBeGreaterThan(2);
+  expect((await info(page)).rest.near.some((key) => key.startsWith('place:'))).toBe(false);
+
+  // Cochée : la fiche du lieu apparaît.
+  await page.locator('#parcoursInfoPlaces').check();
+  await expect.poll(async () => (await info(page)).settings.places).toBe(true);
+  await expect.poll(async () => (await info(page)).rest.near.some((key) => key.startsWith('place:'))).toBe(true);
+
+  // Décochée : elle disparaît.
+  await page.locator('#parcoursInfoPlaces').uncheck();
+  await expect.poll(async () => (await info(page)).rest.near.some((key) => key.startsWith('place:'))).toBe(false);
+  expect(errors).toEqual([]);
+});

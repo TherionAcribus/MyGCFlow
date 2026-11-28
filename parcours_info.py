@@ -33,7 +33,7 @@ FONTS = ("sans", "serif", "mono", "rounded", "condensed", "handwritten")
 ACCENTS = ("stop", "fixed")
 FILTERS = ("all", "favorites", "dt")
 FIELDS = ("name", "dt", "owner", "favorites", "code", "type", "finds", "step")
-BOOLS = ("two_lines",)
+BOOLS = ("two_lines", "places")
 
 RANGES = {
     "duration": (1, 15),
@@ -63,6 +63,7 @@ def parcours_info_defaults() -> dict:
         "finds": False,
         "step": False,
         "two_lines": False,
+        "places": False,
         "design": "card",
         "font": "sans",
         "size": 13,

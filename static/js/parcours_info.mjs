@@ -49,6 +49,7 @@ export function parcoursInfoDefaults() {
         finds: false,
         step: false,
         two_lines: false,
+        places: false,
         design: 'card',
         font: 'sans',
         size: 13,
@@ -83,7 +84,7 @@ export function normalizeParcoursInfo(raw, current = null) {
     for (const [key, allowed] of Object.entries(PARCOURS_INFO_CHOICES)) {
         out[key] = allowed.includes(src[key]) ? src[key] : (allowed.includes(base[key]) ? base[key] : defaults[key]);
     }
-    for (const key of [...PARCOURS_INFO_FIELDS, 'two_lines']) {
+    for (const key of [...PARCOURS_INFO_FIELDS, 'two_lines', 'places']) {
         out[key] = typeof src[key] === 'boolean' ? src[key]
             : (typeof base[key] === 'boolean' ? base[key] : defaults[key]);
     }
@@ -115,7 +116,7 @@ function finite(value) {
 // éléments cochés : null pour un lieu, une base, ou quand rien de coché
 // n'est connu (Lab sans D/T ni propriétaire, PF jamais collectés…).
 export function infoContent(stop, info) {
-    if (!stop || !isCountedStop(stop)) return null;
+    if (!stop || (!isCountedStop(stop) && !info?.places)) return null;
     const name = info?.name && typeof stop.name === 'string' && stop.name.trim() ? stop.name.trim() : null;
     const d = finite(stop.difficulty);
     const t = finite(stop.terrain);
@@ -179,13 +180,14 @@ export function infoAlpha(stop, q, { holdQ = 0, fadeQ = 0, untilQ = Infinity } =
 
 // Fiche « temporaire » à la position `q` : la dernière étape comptée
 // atteinte, tant que sa fenêtre court. { index, alpha } ou null.
-export function currentInfo(timeline, q, { holdQ = 0, fadeQ = 0 } = {}) {
+export function currentInfo(timeline, q, { holdQ = 0, fadeQ = 0, places = false } = {}) {
     const stops = timeline?.stops || [];
+    const eligible = (stop) => places || isCountedStop(stop);
     let i = reachedIndex(timeline, q);
-    while (i >= 0 && !isCountedStop(stops[i])) i--;
+    while (i >= 0 && !eligible(stops[i])) i--;
     if (i < 0) return null;
     let next = i + 1;
-    while (next < stops.length && !isCountedStop(stops[next])) next++;
+    while (next < stops.length && !eligible(stops[next])) next++;
     const untilQ = next < stops.length ? Number(stops[next].q) : Infinity;
     const alpha = infoAlpha(stops[i], q, { holdQ, fadeQ, untilQ });
     return alpha > 0 ? { index: i, alpha } : null;

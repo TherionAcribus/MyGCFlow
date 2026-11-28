@@ -111,7 +111,13 @@
                     <span class="form-check-label">{{ _("Trouvailles de la cache") }}</span>
                 </label>
             </div>
-            <small class="form-hint text-muted">{{ _("Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni propriétaire, et les points favoris ne sont connus qu'après « Compléter depuis geocaching.com » (onglet Données). Les lieux et les bases n'ont pas de fiche.") }}</small>
+            <div class="d-flex flex-wrap gap-3 mt-2 pt-2 border-top">
+                <label class="form-check mb-0">
+                    <input id="parcoursInfoPlaces" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">{{ _("Lieux et bases (nom seul)") }}</span>
+                </label>
+            </div>
+            <small class="form-hint text-muted">{{ _("Un élément inconnu est simplement omis : les étapes Lab n'ont ni D/T ni propriétaire, et les points favoris ne sont connus qu'après « Compléter depuis geocaching.com » (onglet Données).") }}</small>
             <small id="parcoursInfoEmptyHint" class="form-hint text-warning" hidden>{{ _("Aucun élément coché : la fiche ne s'affiche nulle part.") }}</small>
         </div>
     </div>

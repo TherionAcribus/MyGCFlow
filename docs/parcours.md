@@ -550,8 +550,12 @@ Style › Fiches propre à la page (`menu_info_parcours.html`,
 
 - **Contenu** (`infoContent`) : un élément inconnu est omis — Lab sans D/T
   ni propriétaire ni code, PF et trouvailles connus seulement après
-  « Compléter depuis geocaching.com ». Lieux et bases n'ont jamais de
-  fiche. À la fiche (design `card`) : numéro d'étape (couleur d'accent,
+  « Compléter depuis geocaching.com ». Lieux et bases n'ont pas de fiche
+  sauf si « Lieux et bases » est coché (`places`) : le nom seul la compose
+  — en temporaire un lieu visité devient l'étape en cours (et coupe la
+  fenêtre de la cache précédente), en permanent ils participent comme les
+  caches (le filtre du permanent, qui vise les caches, les écarte dès
+  qu'il est actif). À la fiche (design `card`) : numéro d'étape (couleur d'accent,
   en tête), D/T, PF (cœur) et trouvailles (coche) sur la ligne des faits,
   code, type et propriétaire sur la ligne discrète, séparés de « · » —
   jamais doublé ni en tête sur les designs à ligne unique. Le nom est

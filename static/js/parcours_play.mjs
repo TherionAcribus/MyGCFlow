@@ -912,6 +912,7 @@ export function createParcoursPlayDraw(deps) {
         return {
             holdQ: secondsToQuanta(info.duration, msPerDay),
             fadeQ: reducedMotion() ? 0 : secondsToQuanta(INFO_FADE_S, msPerDay),
+            places: info.places,
         };
     }
 
@@ -1019,7 +1020,7 @@ export function createParcoursPlayDraw(deps) {
         if (info.near === 'all') {
             for (let i = reachedIndex(timeline, currentQ); i >= 0; i--) {
                 const stop = timeline.stops[i];
-                if (!isCountedStop(stop) || (cur && i === cur.index)) continue;
+                if ((!isCountedStop(stop) && !info.places) || (cur && i === cur.index)) continue;
                 if (anchors.get(i)?.newest === false) continue;
                 if (!infoFilterPass(stop, info)) continue;
                 const alpha = timing.fadeQ > 0 ? Math.min(1, Math.max(0, (currentQ - stop.q) / timing.fadeQ)) : 1;
